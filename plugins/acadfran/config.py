@@ -8,7 +8,8 @@ cfg = {
         "list" : [],
         "count_condition" : {
             "html_exists" : "body > table > tr > td > div"
-        }
+        },
+        "charset": "windows-1252"
     },
     "threadcnt" : 10,
     "filter" : { "html_container" : "body > table" },

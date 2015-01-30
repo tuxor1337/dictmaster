@@ -24,15 +24,17 @@ if __name__ == "__main__":
     except:
         sys.exit("Plugin not found or plugin broken.")
     
+    ed = None
     if not args.use_sqlite:
         if not args.use_raw:
             fetcher.fetch(plugin)
-    
         ed = postprocessor.process(plugin)
-    else:
+        
+    if ed == None:
         g = Glossary()
         g.setInfo("bookname", plugin["dictname"])
         ed = editor.glossEditor(gloss=g, db="data/%s/db.sqlite")
         
-    ed.write("data/%s/stardict.ifo" % plugin["name"])
+    if ed != None:
+        ed.write("data/%s/stardict.ifo" % plugin["name"])
 

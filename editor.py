@@ -26,9 +26,13 @@ class glossEditor(object):
                 key TEXT, value TEXT)''');
             self.glossToDB()
         else:
-            self.conn = sqlite3.connect(db)
-            self.conn.text_factory = str
-            self.c = self.conn.cursor()
+            try:
+                self.conn = sqlite3.connect(db)
+                self.conn.text_factory = str
+                self.c = self.conn.cursor()
+            except sqlite3.OperationalError:
+                print("No or corrupt sqlite database. Exiting...")
+                sys.exit()
         
     def glossToDB(self):
         no = len(self.g.data)
@@ -172,7 +176,9 @@ def findSynonyms(entry):
             if a not in alts and a != entry[0]:
                 alts.append(a)
         except UnicodeWarning:
-            print "Provided data is not encoded in utf-8: %s" % (entry[0],)
+            # ignore for now...
+            # print "Provided data is not encoded in utf-8: %s" % (entry[0],)
+            pass
             
     def add_greek_alt(alts,a):
         orig_a = a

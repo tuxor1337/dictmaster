@@ -2,6 +2,7 @@
 
 import os, shutil, re, importlib, sys, codecs, zipfile
 from pyquery import PyQuery as pq
+from lxml import etree
     
 from pyglossary.glossary import Glossary
 from editor import glossEditor
@@ -12,7 +13,8 @@ def process(plugin):
     data = []
     dirname = "data/%s/raw" % plugin["name"]
     if "zip" in plugin["format"]:
-        shutil.rmtree(dirname)
+        if os.path.exists(dirname):
+            shutil.rmtree(dirname)
         zdirname = "data/%s/zip" % plugin["name"]
         for zfile in os.listdir(zdirname):
             z = zipfile.ZipFile("%s/%s" % (zdirname, zfile))
@@ -49,7 +51,9 @@ def process(plugin):
 def process_html(filename, html_structure):
     data = []
     with codecs.open(filename, "r", "utf-8") as html_file:
-        doc = pq(html_file.read().encode("utf-8"))
+        encoded_str = html_file.read().encode("utf-8")
+        parser = etree.HTMLParser(encoding="utf-8")
+        doc = pq(etree.fromstring(encoded_str, parser=parser))
         if "alternating" in html_structure:
             a = html_structure["alternating"]["a"]
             b = html_structure["alternating"]["b"]
@@ -59,10 +63,6 @@ def process_html(filename, html_structure):
                 dd = dt.nextAll(b).eq(0)
                 term = process_html_element(dt, html_structure["term"])
                 definition = process_html_element(dd, html_structure["definition"], term)
-                if type(term) == "unicode":
-                    term = term.encode("utf-8")
-                if type(definition) == "unicode":
-                    definition = definition.encode("utf-8")
                 data.append((term, definition, None))
                 dt = dt.nextAll(a)
                 if len(data) % 50 == 0:
@@ -72,14 +72,21 @@ def process_html(filename, html_structure):
             for container in doc(html_structure["container_iter"]):
                 term = process_html_element(doc(container), html_structure["term"])
                 definition = process_html_element(doc(container), html_structure["definition"], term)
-                if type(term) == "unicode":
-                    term = term.encode("utf-8")
-                if type(definition) == "unicode":
-                    definition = definition.encode("utf-8")
                 data.append((term, definition, None))
                 if len(data) % 50 == 0:
                     sys.stdout.write("\r\033[19C:%s" % u"{:<20}".format(term))
                     sys.stdout.flush()
+        elif "singleton" in html_structure:
+            if html_structure["singleton"] != "":
+                container = doc(html_structure["singleton"])
+            else:
+                container = doc
+            term = process_html_element(doc(container), html_structure["term"])
+            definition = process_html_element(doc(container), html_structure["definition"], term)
+            data.append((term, definition, None))
+            if len(data) % 50 == 0:
+                sys.stdout.write("\r\033[19C:%s" % u"{:<20}".format(term))
+                sys.stdout.flush()
     return data
             
 def process_html_element(html, rule, term=""):

@@ -81,9 +81,11 @@ class fetcherThread(object):
         
     def fetch_list(self, url_list):
         for i,url in enumerate(url_list):
-            sys.stdout.write("\r\033[%dC%d:%03d" % (6*self.threadno+1, self.threadno, i))
+            sys.stdout.write("\r\033[%dC%d:%04d" % (7*self.threadno+1, self.threadno, i))
             sys.stdout.flush()
             data = download(url)
+            if "charset" in self.plugin["url"] and "zip" not in self.plugin["format"]:
+                data = data.decode(self.plugin["url"]["charset"])
             if self.stop_count(data):
                 break
             self.write_file("%06d" % (i*self.plugin["threadcnt"]+self.threadno), data)
@@ -98,6 +100,8 @@ class fetcherThread(object):
                     .replace("{0..9}", "%d" % pagenumber)
                 
                 data = download(url)
+                if "charset" in self.plugin["url"] and "zip" not in self.plugin["format"]:
+                    data = data.decode(self.plugin["url"]["charset"])
                 if self.stop_count(data):
                     break
                 self.write_file("%s%04d" % (letter, pagenumber), data)
@@ -116,7 +120,12 @@ class fetcherThread(object):
                 
     def write_file(self, basename, data):
         if "zip" not in self.plugin["format"]:
-            filtered = apply_filter(data, self.plugin["filter"]).encode("utf-8")
+            if "filter" in self.plugin:
+                filtered = apply_filter(data, self.plugin["filter"])
+            else:
+                filtered = data
+            if type(filtered) == unicode:
+                filtered = filtered.encode("utf-8")
             dirname = "data/%s/raw" % self.plugin["name"]
         else:
             filtered = data

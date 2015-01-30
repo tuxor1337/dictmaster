@@ -1,0 +1,3 @@
+[submodule "thirdparty/pyglossary"]
+	path = thirdparty/pyglossary
+	url = https://github.com/ilius/pyglossary

@@ -12,7 +12,8 @@ cfg = {
         },
         "count_condition" : {
             "html_exists" : "div#dictionary dl"
-        }
+        },
+        "charset": "iso-8859-1"
     },
     "threadcnt" : 10,
     "filter" : { "html_container" : "div#dictionary dl" },
