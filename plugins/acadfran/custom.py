@@ -25,7 +25,7 @@ def get_url():
     response = opener.open(req)
     html = response.read()
     d = pq(html)
-    
+
     url = d("frame[name=fen2]").attr("src")
     wordcount = int(re.sub(r"^.+t=([0-9]+);.*$", r"\1", url))
     r_var = int(re.sub(r"^.+r=([0-9]+);.*$", r"\1", url))
@@ -47,6 +47,10 @@ def process_html_element(html, term):
         doc("<p/>").html(doc(heading).html()).outerHtml()
     )
     html.find("i").attr("style", "color:#3A4")
+    for b in html.find("b b"):
+        doc(b).replaceWith(
+            doc("<span/>").html(doc(b).html()).outerHtml()
+        )
     return re.sub(r" *<br?/?> *$", "", html.html().strip())
-    
-    
+
+

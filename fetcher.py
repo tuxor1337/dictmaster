@@ -13,25 +13,25 @@ from util import mkdir_p
 
 def fetch(plugin):
     print("Fetching for plugin %s..." % plugin["name"])
-    
+
     ftList = []
     url = None
-    
+
     if "from_script" in plugin["url"]:
-        userscript = importlib.import_module(plugin["url"]["from_script"].replace("/",".").replace(".py",""))
+        userscript = importlib.import_module("plugins.%s.custom" % plugin["name"])
         plugin["url"]["list"] = userscript.get_url()
-        
+
     for j in range(plugin["threadcnt"]):
         ft = fetcherThread(j, plugin, url)
         ftList.append(ft)
         t = threading.Thread(target=ft.fetch)
         t.daemon = True
         t.start()
-        
+
     while threading.active_count() > 1:
         time.sleep(0.2)
-        
-    print("...done fetching.")
+
+    print("\r\n...done fetching.")
 
 def download(url, params=None):
     data = None
@@ -43,11 +43,16 @@ def download(url, params=None):
         sys.stdout.flush()
         time.sleep(0.5)
         return download(url, params)
+    except error as e:
+        sys.stdout.write("\rError on %s: '%s'. Retrying...\n" % (url, e))
+        sys.stdout.flush()
+        time.sleep(0.5)
+        return download(url, params)
 
 def html_exists(data, querystr):
     d = pq(data)
     return len(d(querystr)) > 0
-    
+
 def apply_filter(data, fltr):
     if "html_container" in fltr:
         d = pq(data)
@@ -60,7 +65,7 @@ class fetcherThread(object):
         self.threadno = no
         self.plugin = plugin
         self.url = url
-        
+
     def fetch(self):
         if "singleton" in self.plugin["url"]:
             self.fetch_list([self.plugin["url"]["singleton"]])
@@ -78,7 +83,7 @@ class fetcherThread(object):
                 letterrange = [ALPHA[i] for i in range(self.threadno, len(ALPHA), self.plugin["threadcnt"])]
                 numberrange = range(self.plugin["url"]["itermode"]["alphanum"]["count_start"],1000)
                 self.fetch_alphanum(letterrange, numberrange)
-        
+
     def fetch_list(self, url_list):
         for i,url in enumerate(url_list):
             sys.stdout.write("\r\033[%dC%d:%04d" % (7*self.threadno+1, self.threadno, i))
@@ -89,7 +94,7 @@ class fetcherThread(object):
             if self.stop_count(data):
                 break
             self.write_file("%06d" % (i*self.plugin["threadcnt"]+self.threadno), data)
-        
+
     def fetch_alphanum(self, letterrange, numberrange):
         for letter in letterrange:
             for pagenumber in numberrange:
@@ -98,14 +103,14 @@ class fetcherThread(object):
                 url = self.plugin["url"]["pattern"].replace("{a..z}", letter.lower()) \
                     .replace("{A..Z}", letter.upper()) \
                     .replace("{0..9}", "%d" % pagenumber)
-                
+
                 data = download(url)
                 if "charset" in self.plugin["url"] and "zip" not in self.plugin["format"]:
                     data = data.decode(self.plugin["url"]["charset"])
                 if self.stop_count(data):
                     break
                 self.write_file("%s%04d" % (letter, pagenumber), data)
-                    
+
     def stop_count(self, data):
         stop_count = True
         if "count_condition" in self.plugin["url"]:
@@ -116,8 +121,8 @@ class fetcherThread(object):
         else:
             stop_count = False
         return stop_count
-            
-                
+
+
     def write_file(self, basename, data):
         if "zip" not in self.plugin["format"]:
             if "filter" in self.plugin:

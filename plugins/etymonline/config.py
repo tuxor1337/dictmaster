@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import os
+
 cfg = {
-    "name" : "etymonline",
     "dictname" : "Online Etymology Dictionary, ©Douglas Harper/etymonline.com",
     "url" : {
         "pattern" : "http://www.etymonline.com/index.php?l={A..Z}&p={0..9}",
@@ -25,8 +26,10 @@ cfg = {
                 "regex" : [ (" +\([^)]+\)$","") ]
             },
             "definition" : {
-                "userscript" : "plugins/etymonline/custom.py"
+                "userscript" : ""
             }
         }
     },
 }
+
+cfg["name"] = os.path.split(os.path.dirname(os.path.abspath(__file__)))[1]

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import os
+
 cfg = {
-    "name" : "xmlittre",
     "dictname" : "XMLittré, ©littre.org",
     "url" : {
         "singleton" : "https://bitbucket.org/Mytskine/xmlittre-data/get/master.zip"
@@ -9,7 +10,7 @@ cfg = {
     "threadcnt" : 1,
     "format" :  {
         "zip" : {
-            "userscript" : "plugins/xmlittre/custom.py"
+            "userscript" : ""
         },
         "html" : {
             "container_iter" : "entree",
@@ -20,8 +21,10 @@ cfg = {
                 "lower" : True
             },
             "definition" : {
-                "userscript" : "plugins/xmlittre/custom.py"
+                "userscript" : ""
             }
         }
     },
 }
+
+cfg["name"] = os.path.split(os.path.dirname(os.path.abspath(__file__)))[1]

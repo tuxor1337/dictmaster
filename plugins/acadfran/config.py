@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import os
+
 cfg = {
-    "name" : "acadfran",
     "dictname" : "Dictionnaires de l’Académie française : 8ème édition",
     "url" : {
-        "from_script" : "plugins/acadfran/custom.py",
+        "from_script" : "",
         "list" : [],
         "count_condition" : {
             "html_exists" : "body > table > tr > td > div"
@@ -21,8 +22,10 @@ cfg = {
                 "lower" : True
             },
             "definition" : {
-                "userscript" : "plugins/acadfran/custom.py"
+                "userscript" : ""
             }
         }
     },
 }
+
+cfg["name"] = os.path.split(os.path.dirname(os.path.abspath(__file__)))[1]

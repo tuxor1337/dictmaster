@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import os
+
 cfg = {
-    "name" : "georges",
     "dictname" : "Georges: Ausführliches lateinisch-deutsches Handwörterbuch",
     "url" : {
-        "from_script" : "plugins/georges/custom.py",
+        "from_script" : "",
         "list" : [],
         "charset": "iso-8859-1"
     },
@@ -14,11 +15,14 @@ cfg = {
         "html" : {
             "singleton" : "",
             "term" : {
-                "text_content" : "h2.zenoTXul"
+                "text_content" : "h2.zenoTXul",
+                "userscript" : ""
             },
             "definition" : {
-                "userscript" : "plugins/georges/custom.py"
+                "userscript" : ""
             }
         }
     },
 }
+
+cfg["name"] = os.path.split(os.path.dirname(os.path.abspath(__file__)))[1]

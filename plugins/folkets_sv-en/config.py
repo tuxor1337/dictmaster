@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import os
+
 cfg = {
-    "name" : "folkets_sv-en",
     "dictname" : "Folkets lexikon Sv-En, ©folkets-lexikon.csc.kth.se",
     "url" : {
         "singleton" : "http://folkets-lexikon.csc.kth.se/folkets/folkets_sv_en_public.xml",
@@ -17,8 +18,10 @@ cfg = {
                 }
             },
             "definition" : {
-                "userscript" : "plugins/folkets_sv-en/custom.py"
+                "userscript" : ""
             }
         }
     },
 }
+
+cfg["name"] = os.path.split(os.path.dirname(os.path.abspath(__file__)))[1]

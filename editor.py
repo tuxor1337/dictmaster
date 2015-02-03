@@ -7,7 +7,7 @@ import re, sqlite3, unicodedata
 
 import warnings
 warnings.filterwarnings('error', category=UnicodeWarning)
-        
+
 class glossEditor(object):
     def __init__(self, gloss, db=None):
         self.g = gloss
@@ -15,7 +15,7 @@ class glossEditor(object):
             self.conn = sqlite3.connect(":memory:")
             self.conn.text_factory = str
             self.c = self.conn.cursor()
-            self.c.execute('''CREATE TABLE dict 
+            self.c.execute('''CREATE TABLE dict
                 (id INTEGER PRIMARY KEY,
                 wort TEXT, def TEXT)''');
             self.c.execute('''CREATE TABLE synonyms
@@ -33,7 +33,7 @@ class glossEditor(object):
             except sqlite3.OperationalError:
                 print("No or corrupt sqlite database. Exiting...")
                 sys.exit()
-        
+
     def glossToDB(self):
         no = len(self.g.data)
         for i,entry in enumerate(self.g.data):
@@ -52,19 +52,22 @@ class glossEditor(object):
                 self.c.execute("INSERT INTO dict(wort,def) VALUES (?,?)",(wort,edited[1]))
                 tmp_id = self.c.lastrowid
                 for a in alts:
-                    self.c.execute('''INSERT INTO synonyms(wid,syn)
-                                            VALUES (?,?)''',(tmp_id,a))
+                    try:
+                        self.c.execute('''INSERT INTO synonyms(wid,syn)
+                                                VALUES (?,?)''',(tmp_id, a))
+                    except sqlite3.InterfaceError:
+                        sys.exit("Problem: %s; %s" % (tmp_id, a))
         print "Reading entry %5d of %5d...done." % (no,no)
         print "Reading meta info...",
         for key in self.g.infoKeys():
             self.c.execute("INSERT INTO info(key,value) VALUES (?,?)",(key,self.g.getInfo(key)))
         print "done."
-        
+
         self.remove_empty()
         self.remove_dups()
         self.enumerate_dups()
         self.remove_dup_syns()
-        
+
     def preview_entry(self,word):
         self.c.execute('''SELECT wid FROM synonyms WHERE syn LIKE ?''',(word+"%",))
         wids = self.c.fetchall()
@@ -73,10 +76,10 @@ class glossEditor(object):
             self.c.execute('''SELECT wort,def FROM dict WHERE id=?''',(wid,))
             output.append(self.c.fetchone())
         return output
-        
+
     def remove_empty(self):
         self.c.execute('''DELETE FROM synonyms WHERE syn="" OR syn=" "''')
-        
+
     def remove_dups(self):
         dubs = self.c.execute('''SELECT id,wort,def
             FROM dict GROUP BY wort,def HAVING COUNT(*) > 1''').fetchall()
@@ -92,7 +95,7 @@ class glossEditor(object):
                 self.c.execute('''UPDATE synonyms SET wid=? WHERE wid=?''',(dbl[0],old[0]))
             self.c.execute('''DELETE FROM dict WHERE wort=? AND def=? AND id!=?''',(dbl[1],dbl[2],dbl[0]))
         print "Entferne doppelte Einträge %3d von %3d... done." % (no,no)
-        
+
     def remove_dup_syns(self):
         dubs = self.c.execute('''SELECT id,wid,syn
             FROM synonyms GROUP BY wid,syn HAVING COUNT(*) > 1''').fetchall()
@@ -104,7 +107,7 @@ class glossEditor(object):
                 sys.stdout.flush()
             self.c.execute('''DELETE FROM synonyms WHERE wid=? AND syn=? AND id!=?''',(dbl[1],dbl[2],dbl[0]))
         print "Entferne doppelte Einträge %3d von %3d... done." % (no,no)
-    
+
     def enumerate_dups(self):
         self.c.execute('''SELECT wort FROM dict GROUP BY wort HAVING COUNT(*) > 1''')
         dubs = self.c.fetchall()
@@ -121,7 +124,7 @@ class glossEditor(object):
                                             VALUES (?,?)''',(wid[0],dbl[0]))
                 self.c.execute('''UPDATE dict SET wort=? WHERE id=?''',("%s(%d)" % (dbl[0],j+1),wid[0]))
         print "Nummeriere mehrdeutige Einträge %5d von %5d... done." % (no,no)
-        
+
     def write(self,fname):
         if fname[-6:].lower() == "sqlite":
             try:
@@ -140,7 +143,7 @@ class glossEditor(object):
 
 def print_warning(msg):
     print "W: %s" % msg
-    
+
 def dictFromSqlite(curs):
     info = {}; data = []
     for row in curs.execute('''SELECT key,value FROM info'''):
@@ -154,23 +157,24 @@ def dictFromSqlite(curs):
         defiFormat = info["sametypesequence"]
     else:
         defiFormat = "h"
+    print("Format is %s" % defiFormat)
     for i,row in enumerate(rows):
         sys.stdout.write("Writing entry %5d of %5d...\r" % (i,no))
         sys.stdout.flush()
         data.append((row[0],row[1],{'defiFormat': defiFormat, 'alts':syn_list[row[2]]}))
     print "Writing entry %5d of %5d...done." % (no,no)
     return (info,data)
-    
+
 def remove_accents(input_str):
     if not isinstance(input_str, unicode):
         input_str = unicode(input_str,"utf8")
     nfkd_form = unicodedata.normalize('NFKD', input_str)
     return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
-     
+
 def findSynonyms(entry):
     greek_alph = u'αιηωυεοςρτθπσδφγξκλζχψβνμ'
     latin_alph = u'aihwueosrtqpsdfgcklzxybnm'
-    
+
     def add_alt(alts,a):
         try:
             if a not in alts and a != entry[0]:
@@ -179,7 +183,7 @@ def findSynonyms(entry):
             # ignore for now...
             # print "Provided data is not encoded in utf-8: %s" % (entry[0],)
             pass
-            
+
     def add_greek_alt(alts,a):
         orig_a = a
         a = remove_accents(a).lower().encode("utf8")
@@ -189,13 +193,13 @@ def findSynonyms(entry):
             a = a.replace(x.encode("utf8"),y.encode("utf8"))
         add_alt(alts,a)
         add_alt(alts,a.replace("-",""))
-    
+
     alts = entry[2]['alts']
     add_greek_alt(alts,entry[0])
     for delimiter in [",","#",";"]:
         candidates = entry[0].split(delimiter)
         if len(candidates) != 0:
             [add_greek_alt(alts,c.strip()) for c in candidates]
-    
+
     return alts
-    
+
