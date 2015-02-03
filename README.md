@@ -67,5 +67,5 @@ Legal issues
 
 Keep in mind that you might not be the copyright holder for the data you download with
 the help of dictmaster. I'm not even sure whether this kind of data aggregation itself is legal.
-However, the stardict directories created with dictmaster won't be freely distributable
+However, the stardict dictionaries created with dictmaster won't be freely distributable
 in most cases - personal use should be okay though.
