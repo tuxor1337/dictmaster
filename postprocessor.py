@@ -44,6 +44,10 @@ class ppThread(object):
                 self.output.extend(self._do_bgl(
                     "%s/%s" % (self.dirname, f)
                 ))
+            elif "dictfile" in self.plugin["format"]:
+                self.output.extend(self._do_dictfile(
+                    "%s/%s" % (self.dirname, f)
+                ))
 
     def _do_print_progress_term(self, datalen, term):
         if datalen % 25 == 0:
@@ -56,6 +60,8 @@ class ppThread(object):
             m = re.search(r"^(.*)\([0-9]+\)$", term)
             if m != None:
                 alts = {'alts': [m.group(1),m.group(1).lower()]}
+        else:
+            alts = {'alts': alts}
         data.append((term, definition, alts))
         self._do_print_progress_term(len(data)-1, term)
 
@@ -71,8 +77,11 @@ class ppThread(object):
             definition = definition.decode("utf-8")
             term = term.decode("utf-8")
             if "alts" in alts:
-                for i in range(len(alts["alts"])):
-                    alts["alts"][i] = alts["alts"][i].decode("utf-8")
+                alts = alts["alts"]
+                for i in range(len(alts)):
+                    alts[i] = alts[i].decode("utf-8")
+            else:
+                alts = None
             definition = re.sub(r"(?i)^[^<]+<br>\n<div[^>]+></div>", "", definition)
 
             encoded_str = definition.encode("utf-8")
@@ -100,29 +109,126 @@ class ppThread(object):
             )
         return data
 
+    def _do_dictfile(self, filename):
+        dictfile_opts = self.plugin["format"]["dictfile"]
+        data = []
+        with open(filename, "r") as dictfile:
+            for line in dictfile.readlines():
+                line = line.decode("utf-8").strip().replace(u"\u2028","")
+                self._do_dictfile_append(line, data)
+        return data
+
+    def _do_dictfile_append(self, line, data):
+        dictfile_opts = self.plugin["format"]["dictfile"]
+        entries = []
+
+        if "userscript" in dictfile_opts:
+            entries = self.userscript.process_dictfile_line(line)
+        else:
+            entries = self._do_dictfile_line(line)
+
+        for entry in entries:
+            self._do_data_append(
+                entry["term"], entry["definition"],
+                data, entry["alts"]
+            )
+
+    def _do_dictfile_line(self, line):
+        dictfile_opts = self.plugin["format"]["dictfile"]
+        entries = []
+        if line.startswith("#") or line == "":
+            return entries
+
+        fields = line.split(dictfile_opts["fieldSplit"])[:2]
+        if len(fields) != 2:
+            print("Invalid file structure.")
+            print line
+            return entries
+
+        if "flipCols" in dictfile_opts and dictfile_opts["flipCols"]:
+            fields[0], fields[1] = fields[1], fields[0]
+
+        subfields = [ [], [] ]
+        if "subfieldSplit" in dictfile_opts:
+            subfields[0] = fields[0].split(dictfile_opts["subfieldSplit"])
+            subfields[1] = fields[1].split(dictfile_opts["subfieldSplit"])
+            if len(subfields[0]) != len(subfields[1]):
+                print("Invalid unbalanced entry.")
+                print(line)
+                return entries
+        else:
+            subfields[0] = [fields[0]]
+            subfields[1] = [fields[1]]
+
+        for i in range(len(subfields[0])):
+            subfields[0][i] = subfields[0][i].strip()
+            subfields[1][i] = subfields[1][i].strip()
+            if len(subfields[0][i]) == 0 and len(subfields[1][i]) == 0:
+                print("Empty pair.")
+                print(line)
+                continue
+            if len(subfields[0][i]) == 0:
+                subfields[0][i] = "__"
+            if len(subfields[1][i]) == 0:
+                subfields[1][i] = "__"
+
+        term = subfields[0][0]
+        if term == "__":
+            try:
+                term = subfields[0][1]
+            except:
+                print("What's this?")
+                print(line)
+                return entries
+        if "subsubfieldSplit" in dictfile_opts:
+            syns = term.split(dictfile_opts["subsubfieldSplit"])
+            term = syns[0].strip()
+        definition = ""
+        alts = subfields[0][1:] if "subsubfieldSplit" not in dictfile_opts else []
+        for subfield in zip(subfields[0], subfields[1]):
+            definition += "<dt>%s</dt><dd>%s</dd>" % (subfield[0], subfield[1])
+            if "subsubfieldSplit" in dictfile_opts:
+                syns = subfield[0].split(dictfile_opts["subsubfieldSplit"])
+                if syns[0] == term:
+                    syns = syns[1:]
+                alts.extend([syn.strip() for syn in syns])
+        term = re.sub(r" *(\{[^\}]*\}|\[[^\]]*\])", "", term)
+        alts = [re.sub(r" *(\{[^\}]*\}|\[[^\]]*\])", "", alt) for alt in alts]
+
+        if len(alts) == 0:
+            alts = None
+
+        entries.append({
+            "term": term,
+            "definition": definition,
+            "alts": alts
+        })
+
+        return entries
+
     def _do_html(self,filename):
-        html_structure = self.plugin["format"]["html"]
+        html_opts = self.plugin["format"]["html"]
         data = []
         with codecs.open(filename, "r", "utf-8") as html_file:
             encoded_str = html_file.read().encode("utf-8")
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(encoded_str, parser=parser))
-            if "alternating" in html_structure:
-                a = html_structure["alternating"]["a"]
-                b = html_structure["alternating"]["b"]
+            if "alternating" in html_opts:
+                a = html_opts["alternating"]["a"]
+                b = html_opts["alternating"]["b"]
                 dt = doc(a)
                 while len(dt) > 0:
                     dt, dd = dt.eq(0), dt.nextAll(b).eq(0)
                     self._do_html_data_append(dt, dd, data)
                     dt = dt.nextAll(a)
-            elif "container_iter" in html_structure:
-                for container in doc(html_structure["container_iter"]):
+            elif "container_iter" in html_opts:
+                for container in doc(html_opts["container_iter"]):
                     self._do_html_data_append(
                         doc(container), doc(container), data
                     )
-            elif "singleton" in html_structure:
-                if html_structure["singleton"] != "":
-                    container = doc(html_structure["singleton"])
+            elif "singleton" in html_opts:
+                if html_opts["singleton"] != "":
+                    container = doc(html_opts["singleton"])
                 else:
                     container = doc
                 self._do_html_data_append(
@@ -131,9 +237,9 @@ class ppThread(object):
         return data
 
     def _do_html_data_append(self, dt, dd, data):
-        html_structure = self.plugin["format"]["html"]
-        term = self._do_html_element(dt, html_structure["term"])
-        definition = self._do_html_element(dd, html_structure["definition"], term)
+        html_opts = self.plugin["format"]["html"]
+        term = self._do_html_element(dt, html_opts["term"])
+        definition = self._do_html_element(dd, html_opts["definition"], term)
         self._do_data_append(term, definition, data)
 
     def _do_html_element(self, html, rule, term=""):

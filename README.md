@@ -11,11 +11,19 @@ data is also supported and there is basic support for Babylon dictionaries.
 Supported dictionary sources
 ---
 
-At the moment you can fetch dictionary data from any Babylon dictionary (`*.bgl`) 
+At the moment you can fetch dictionary data from any Babylon dictionary (`*.bgl`)
 available on your computer.
 Furthermore `dictmaster` is able to retrieve data from the following online sources:
-etymonline.com, zeno.org (Georges, Pape), Dictionnaire de l'Académie Française (http://atilf.atilf.fr/academie.htm),
-Folkets Lexikon (http://folkets-lexikon.csc.kth.se/folkets/) and XMLittré (littre.org).
+
+* Online Etymology Dictionary (http://etymonline.com)
+* Georges, Pape (http://wwww.zeno.org)
+* Dictionnaire de l'Académie Française (http://atilf.atilf.fr/academie.htm),
+* Folkets Lexikon (http://folkets-lexikon.csc.kth.se/folkets/)
+* XMLittré (http://www.littre.org)
+* There is basic support for BEOLINGUS (http://dict.tu-chemnitz.de/) and dict.cc
+(http://www.dict.cc/), but the algorithms used in dictmaster don't perform well
+with the csv-like file structure and the Stardict output format is not really
+suitable for this kind of dictionary structure.
 
 Dictionaries that are easily accessible and might be integrated in future versions are
 listed in the following blog post:
@@ -34,7 +42,7 @@ to pull in the third party code with
 Start the tool with:
 
     ./dictmaster.py PLUGIN_NAME
-    
+
 You find available plugins in the `plugins` directory.
 
 Your dictionary data will be saved to `data/PLUGIN_NAME/stardict.*` in
@@ -56,7 +64,7 @@ in order to write new plugins.
 Todo list
 ---
 
-- Extendibility: Implement some kind of standard procedure for adding new plugins or at 
+- Extendibility: Implement some kind of standard procedure for adding new plugins or at
 least provide plugin templates that you can use if you wish to add new ones.
 - Usability: A graphical user interface that guides you through the process.
 - A way to edit existing (ready converted) dictionary data using some kind

@@ -197,9 +197,7 @@ def findSynonyms(entry):
     alts = entry[2]['alts']
     add_greek_alt(alts,entry[0])
     for delimiter in [",","#",";"]:
-        candidates = entry[0].split(delimiter)
-        if len(candidates) != 0:
-            [add_greek_alt(alts,c.strip()) for c in candidates]
+        [add_greek_alt(alts,c.strip()) for c in entry[0].split(delimiter)]
 
     return alts
 
