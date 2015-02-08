@@ -209,9 +209,15 @@ class ppThread(object):
     def _do_html(self,filename):
         html_opts = self.plugin["format"]["html"]
         data = []
-        with codecs.open(filename, "r", "utf-8") as html_file:
-            encoded_str = html_file.read().encode("utf-8")
-            parser = etree.HTMLParser(encoding="utf-8")
+        with open(filename, "r") as html_file:
+            encoded_str = html_file.read()
+            if "pre_parser" in html_opts and "regex" in html_opts["pre_parser"]:
+                for regex in html_opts["pre_parser"]["regex"]:
+                    encoded_str = re.sub(regex[0],regex[1], encoded_str)
+            if "codec" in html_opts:
+                parser = etree.HTMLParser(encoding=html_opts["codec"])
+            else:
+                parser = etree.HTMLParser()
             doc = pq(etree.fromstring(encoded_str, parser=parser))
             if "alternating" in html_opts:
                 a = html_opts["alternating"]["a"]
@@ -239,12 +245,17 @@ class ppThread(object):
     def _do_html_data_append(self, dt, dd, data):
         html_opts = self.plugin["format"]["html"]
         term = self._do_html_element(dt, html_opts["term"])
-        definition = self._do_html_element(dd, html_opts["definition"], term)
+        definition = ""
+        if not term.strip():
+            if len(data) == 0:
+                return
+            if "greedy" in html_opts:
+                term, definition, _ = data.pop()
+        definition += self._do_html_element(dd, html_opts["definition"], term)
         self._do_data_append(term, definition, data)
 
     def _do_html_element(self, html, rule, term=""):
         result = ""
-
         if "attr" in rule:
             if "target" not in rule["attr"]:
                 target = html
@@ -260,11 +271,7 @@ class ppThread(object):
             if rule["text_content"] == "":
                 target = html
             else:
-                try:
-                    target = html.find(rule["text_content"])
-                except:
-                    print html.html()
-                    sys.exit()
+                target = html.find(rule["text_content"])
             result = target.text().strip()
             html = result
 
