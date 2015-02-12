@@ -13,8 +13,9 @@ def process_html_element(html, term):
         if doc(a).text().strip() == "":
             doc(a).replaceWith("")
         else:
+            href = "bword://%s" % doc(a).text().strip(". ")
             doc(a).replaceWith(
-                doc("<a/>").attr("href", "bword://%s" % doc(a).text())
+                doc("<a/>").attr("href", href)
                     .html(doc(a).html()).outerHtml()
             )
     html.find("span.d,span.f").css("color", "#00f")

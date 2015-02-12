@@ -134,16 +134,17 @@ class fetcherThread(object):
     def fetch_words(self, wordlist):
         wordlist_opts = self.plugin["url"]["itermode"]["wordlist"]
         for i,word in enumerate(wordlist):
+            word = word.decode(wordlist_opts["decode"])
             if i % 7 == 0:
                 sys.stdout.write("\r\033[%dC%d:%s" % (
                     6*self.threadno+1,
                     self.threadno,
-                    word.decode("utf-8")[:3].encode("utf-8")
+                    word[:3].encode("utf-8")
                 ))
                 sys.stdout.flush()
             try:
                 url = self.plugin["url"]["pattern"].replace("{word}", urllib2.quote(
-                    word.decode("utf-8").encode(wordlist_opts["codec"])
+                    word.encode(wordlist_opts["encode"])
                 ))
             except:
                 print("\n%s" % word)

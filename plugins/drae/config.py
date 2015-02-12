@@ -2,6 +2,9 @@
 
 import os
 
+# TODO: enmiendas articulos, cf.
+#   https://github.com/vibragiel/glotologia/blob/master/enmiendas_drae/enmiendas-drae.py
+
 cfg = {
     "dictname" : "Diccionario de la lengua española: 22a edición",
     "url" : {
@@ -9,7 +12,8 @@ cfg = {
         "itermode" : {
             "wordlist" : {
                 "from_file" : "words.txt",
-                "codec" : "iso-8859-1"
+                "decode" : "utf-8"
+                "encode" : "iso-8859-1"
             }
         },
         "count_condition" : {

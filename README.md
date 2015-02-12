@@ -20,6 +20,9 @@ Furthermore `dictmaster` is able to retrieve data from the following online sour
 * Dictionnaire de l'Académie Française (http://atilf.atilf.fr/academie.htm),
 * Folkets Lexikon (http://folkets-lexikon.csc.kth.se/folkets/)
 * XMLittré (http://www.littre.org)
+* American Heritage Dictionary (https://ahdictionary.com)
+* Diccionario de la lengua española (http://lema.rae.es/drae/)
+* GNU Collaborative International Dictionary of English (http://gcide.gnu.org.ua/)
 * There is basic support for BEOLINGUS (http://dict.tu-chemnitz.de/) and dict.cc
 (http://www.dict.cc/), but the algorithms used in dictmaster don't perform well
 with the csv-like file structure and the Stardict output format is not really

@@ -322,7 +322,6 @@ class ppThread(object):
 
         if "lower" in rule:
             result = result.lower()
-
         return result
 
 class Postprocessor(object):
