@@ -2,3 +2,4 @@ data/
 drafts/
 __pycache__/
 *.py[cod]
+plugins/bgl_*
