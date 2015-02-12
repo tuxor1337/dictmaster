@@ -23,15 +23,14 @@ Furthermore `dictmaster` is able to retrieve data from the following online sour
 * American Heritage Dictionary (https://ahdictionary.com)
 * Diccionario de la lengua española (http://lema.rae.es/drae/)
 * GNU Collaborative International Dictionary of English (http://gcide.gnu.org.ua/)
+* CIA World Factbook (https://www.cia.gov/library/publications/the-world-factbook/)
 * There is basic support for BEOLINGUS (http://dict.tu-chemnitz.de/) and dict.cc
 (http://www.dict.cc/), but the algorithms used in dictmaster don't perform well
 with the csv-like file structure and the Stardict output format is not really
 suitable for this kind of dictionary structure.
 
 Dictionaries that are easily accessible and might be integrated in future versions are
-listed in the following blog post:
-
-http://tovotu.de/blog/536-Kostenlose-Wrterbcher-fr-die-Offlinenutzung/
+listed in the following blog post: http://tovotu.de/blog/536-Kostenlose-Wrterbcher-fr-die-Offlinenutzung/
 
 How to get started
 ---
