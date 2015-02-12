@@ -13,6 +13,9 @@ cfg = {
             "definition": { }
         }
     },
+    "editor": {
+        "dups": "cat"
+    }
 }
 
 cfg["name"] = os.path.split(os.path.dirname(os.path.abspath(__file__)))[1]

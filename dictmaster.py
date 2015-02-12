@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 if __name__ == "__main__":
-    import argparse, importlib, sys
+    import argparse, importlib, sys, shutil, os
     import fetcher, postprocessor, editor
     from postprocessor import Postprocessor
 
@@ -27,7 +27,13 @@ if __name__ == "__main__":
 
     ed = None
     if not args.use_sqlite:
+        db_file = "data/%s/db.sqlite" % plugin["name"]
+        if os.path.exists(db_file):
+            os.remove(db_file)
         if not args.use_raw and "url" in plugin:
+            dirname = "data/%s/raw" % plugin["name"]
+            if os.path.exists(dirname):
+                shutil.rmtree(dirname)
             fetcher.fetch(plugin)
         proc = Postprocessor(plugin)
         print("Postprocessing...")
@@ -38,7 +44,7 @@ if __name__ == "__main__":
     if ed == None:
         g = Glossary()
         g.setInfo("bookname", plugin["dictname"])
-        ed = editor.glossEditor(gloss=g, db="data/%s/db.sqlite")
+        ed = editor.glossEditor(g, plugin, "data/%s/db.sqlite" % plugin["name"])
 
     if ed != None:
         ed.write("data/%s/stardict.ifo" % plugin["name"])

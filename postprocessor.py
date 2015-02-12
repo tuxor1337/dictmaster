@@ -34,7 +34,12 @@ class ppThread(object):
         for i in range(self.threadno, len(self.files), THREAD_CNT):
             f = self.files[i]
             sys.stdout.write("\r\033[%dC%s %06d:" \
-                % (self.threadno*23 + 1, u"{:<7}".format(f[0:7]), len(self.output)))
+                % (
+                    self.threadno*23 + 1,
+                    u"{:<7}".format(f.decode("utf-8")[0:7]),
+                    len(self.output)
+                  )
+            )
             sys.stdout.flush()
             if "html" in self.plugin["format"]:
                 self.output.extend(self._do_html(
@@ -55,26 +60,28 @@ class ppThread(object):
                 % (self.threadno*23 + 16, u"{:<6}".format(term[0:6])))
             sys.stdout.flush()
 
-    def _do_data_append(self, term, definition, data, alts=None):
-        if alts == None:
+    def _do_data_append(self, term, definition, data, alts=[]):
+        if len(alts) == 0:
             m = re.search(r"^(.*)\([0-9]+\)$", term)
             if m != None:
-                alts = {'alts': [m.group(1),m.group(1).lower()]}
-        else:
-            alts = {'alts': alts}
-        data.append((term, definition, alts))
+                alts = [m.group(1),m.group(1).lower()]
+        data.append((term, definition, {'alts': alts }))
         self._do_print_progress_term(len(data)-1, term)
 
     def _do_bgl(self, filename):
         data = []
         g = Glossary()
-        g.read(filename)
+        g.read(filename, verbose=0)
         if "dictname" not in self.plugin:
             self.plugin["dictname"] = g.getInfo("bookname")
-        shutil.move("%s_files" % filename, "data/%s/res" % self.plugin["name"])
+        dirname = "%s_files" % filename
+        if os.path.exists(dirname):
+            res_dirname = "data/%s/res" % self.plugin["name"]
+            if os.path.exists(res_dirname):
+                shutil.rmtree(res_dirname)
+            shutil.move(dirname, res_dirname)
         for d in g.data:
             term, definition, alts = d
-            definition = definition.decode("utf-8")
             term = term.decode("utf-8")
             if "alts" in alts:
                 alts = alts["alts"]
@@ -82,8 +89,24 @@ class ppThread(object):
                     alts[i] = alts[i].decode("utf-8")
             else:
                 alts = None
-            definition = re.sub(r"(?i)^[^<]+<br>\n<div[^>]+></div>", "", definition)
+            definition = self._do_bgl_definition(definition, term)
+            self._do_data_append(
+                term, definition, data, alts
+            )
+        return data
 
+    def _do_bgl_definition(self, definition, term):
+        bgldef_opts = self.plugin["format"]["bgl"]["definition"]
+        if "bytereplace" in bgldef_opts:
+            for r in bgldef_opts["bytereplace"]:
+                definition = definition.replace(r[0],r[1])
+
+        definition = definition.decode("utf-8")
+        if "regex" in bgldef_opts:
+            for r in bgldef_opts["regex"]:
+                definition = re.sub(r[0],r[1], definition)
+
+        if "no_font_tags" in bgldef_opts:
             encoded_str = definition.encode("utf-8")
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(encoded_str, parser=parser))
@@ -104,10 +127,11 @@ class ppThread(object):
                         ["0.8","1","1.3","1.5","2","2.7","4"][fontsize]+"em")
                 doc(font_el).replaceWith(replacement.outerHtml())
             definition = doc.outerHtml()
-            self._do_data_append(
-                term, definition, data, alts
-            )
-        return data
+
+        if "userscript" in bgldef_opts:
+            definition = self.userscript.process_bgl_definition(definition, term)
+
+        return definition
 
     def _do_dictfile(self, filename):
         dictfile_opts = self.plugin["format"]["dictfile"]
@@ -194,10 +218,6 @@ class ppThread(object):
                 alts.extend([syn.strip() for syn in syns])
         term = re.sub(r" *(\{[^\}]*\}|\[[^\]]*\])", "", term)
         alts = [re.sub(r" *(\{[^\}]*\}|\[[^\]]*\])", "", alt) for alt in alts]
-
-        if len(alts) == 0:
-            alts = None
-
         entries.append({
             "term": term,
             "definition": definition,
@@ -245,14 +265,32 @@ class ppThread(object):
     def _do_html_data_append(self, dt, dd, data):
         html_opts = self.plugin["format"]["html"]
         term = self._do_html_element(dt, html_opts["term"])
+        alts = self._do_html_alts(dd, term)
         definition = ""
         if not term.strip():
             if len(data) == 0:
                 return
             if "greedy" in html_opts:
-                term, definition, _ = data.pop()
+                term, definition, oldalts = data.pop()
+                alts.extend(oldalts["alts"] if oldalts["alts"] else [])
         definition += self._do_html_element(dd, html_opts["definition"], term)
-        self._do_data_append(term, definition, data)
+        self._do_data_append(term, definition, data, alts)
+
+    def _do_html_alts(self, dd, term):
+        html_opts = self.plugin["format"]["html"]
+        d = pq(dd)
+        alts = []
+        if "alts" in html_opts:
+            for tag,regex in html_opts["alts"]:
+                for hw in d.find(tag):
+                    candidate = d(hw).text().strip()
+                    if "alts_lower" in html_opts:
+                        candidate = candidate.lower()
+                    for r in regex:
+                        candidate = re.sub(r[0],r[1],candidate)
+                    if candidate != term:
+                        alts.append(candidate)
+        return alts
 
     def _do_html_element(self, html, rule, term=""):
         result = ""
@@ -271,7 +309,7 @@ class ppThread(object):
             if rule["text_content"] == "":
                 target = html
             else:
-                target = html.find(rule["text_content"])
+                target = html.find(rule["text_content"]).eq(0)
             result = target.text().strip()
             html = result
 
@@ -336,7 +374,6 @@ class Postprocessor(object):
         g.data = self.data
         if "dictname" in self.plugin:
             g.setInfo("bookname", self.plugin["dictname"])
-        ed = glossEditor(g)
-        ed.write("data/%s/db.sqlite" % self.plugin["name"])
+        ed = glossEditor(g, self.plugin, "data/%s/db.sqlite" % self.plugin["name"])
         return ed
 

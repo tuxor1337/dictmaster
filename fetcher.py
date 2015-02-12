@@ -43,7 +43,7 @@ def download(url, params=None):
         sys.stdout.flush()
         time.sleep(0.5)
         return download(url, params)
-    except error as e:
+    except Exception as e:
         sys.stdout.write("\rError on %s: '%s'. Retrying...\n" % (url, e))
         sys.stdout.flush()
         time.sleep(0.5)
@@ -83,12 +83,29 @@ class fetcherThread(object):
                 letterrange = [ALPHA[i] for i in range(self.threadno, len(ALPHA), self.plugin["threadcnt"])]
                 numberrange = range(self.plugin["url"]["itermode"]["alphanum"]["count_start"],1000)
                 self.fetch_alphanum(letterrange, numberrange)
+            elif "wordlist" in self.plugin["url"]["itermode"]:
+                wordlist_opts = self.plugin["url"]["itermode"]["wordlist"]
+                wordlist = []
+                f = None
+                if "from_file" in wordlist_opts:
+                    fname = "data/%s/%s" % (self.plugin["name"],wordlist_opts["from_file"])
+                    f = open(fname,"r")
+                    wordlist = f.readlines()
+                wordlist = [\
+                    wordlist[i].strip() for i in \
+                    range(self.threadno, len(wordlist), self.plugin["threadcnt"]) \
+                ]
+                self.fetch_words(wordlist)
+                f.close() if f else ""
 
     def fetch_list(self, url_list):
         for i,url in enumerate(url_list):
             sys.stdout.write("\r\033[%dC%d:%04d" % (7*self.threadno+1, self.threadno, i))
             sys.stdout.flush()
-            data = download(url)
+            params = None
+            if "postdata" in self.plugin["url"]:
+                params = "postdata"
+            data = download(url, params)
             if "charset" in self.plugin["url"] and "zip" not in self.plugin["format"]:
                 data = data.decode(self.plugin["url"]["charset"])
             if self.stop_count(data):
@@ -104,12 +121,45 @@ class fetcherThread(object):
                     .replace("{A..Z}", letter.upper()) \
                     .replace("{0..9}", "%d" % pagenumber)
 
-                data = download(url)
+                params = None
+                if "postdata" in self.plugin["url"]:
+                    params = "postdata"
+                data = download(url, params)
                 if "charset" in self.plugin["url"] and "zip" not in self.plugin["format"]:
                     data = data.decode(self.plugin["url"]["charset"])
                 if self.stop_count(data):
                     break
                 self.write_file("%s%04d" % (letter, pagenumber), data)
+
+    def fetch_words(self, wordlist):
+        wordlist_opts = self.plugin["url"]["itermode"]["wordlist"]
+        for i,word in enumerate(wordlist):
+            if i % 7 == 0:
+                sys.stdout.write("\r\033[%dC%d:%s" % (
+                    6*self.threadno+1,
+                    self.threadno,
+                    word.decode("utf-8")[:3].encode("utf-8")
+                ))
+                sys.stdout.flush()
+            try:
+                url = self.plugin["url"]["pattern"].replace("{word}", urllib2.quote(
+                    word.decode("utf-8").encode(wordlist_opts["codec"])
+                ))
+            except:
+                print("\n%s" % word)
+                continue
+            params = None
+            if "postdata" in self.plugin["url"]:
+                params = self.plugin["url"]["postdata"]
+            data = download(url, params)
+            if "charset" in self.plugin["url"] and "zip" not in self.plugin["format"]:
+                try:
+                    data = data.decode(self.plugin["url"]["charset"])
+                except:
+                    print("Problem decoding data from %s." % url)
+            if self.stop_count(data):
+                break
+            self.write_file(word, data)
 
     def stop_count(self, data):
         stop_count = True

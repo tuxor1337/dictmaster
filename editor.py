@@ -9,15 +9,16 @@ import warnings
 warnings.filterwarnings('error', category=UnicodeWarning)
 
 class glossEditor(object):
-    def __init__(self, gloss, db=None):
+    def __init__(self, gloss, plugin, db_file):
         self.g = gloss
-        if db == None:
-            self.conn = sqlite3.connect(":memory:")
+        self.plugin = plugin
+        if not os.path.exists(db_file):
+            self.conn = sqlite3.connect(db_file)
             self.conn.text_factory = str
             self.c = self.conn.cursor()
             self.c.execute('''CREATE TABLE dict
                 (id INTEGER PRIMARY KEY,
-                wort TEXT, def TEXT)''');
+                word TEXT, def TEXT)''');
             self.c.execute('''CREATE TABLE synonyms
                 (id INTEGER PRIMARY KEY,
                 wid INTEGER, syn TEXT)''');
@@ -27,7 +28,7 @@ class glossEditor(object):
             self.glossToDB()
         else:
             try:
-                self.conn = sqlite3.connect(db)
+                self.conn = sqlite3.connect(db_file)
                 self.conn.text_factory = str
                 self.c = self.conn.cursor()
             except sqlite3.OperationalError:
@@ -48,8 +49,8 @@ class glossEditor(object):
             edited = [ed.strip() for ed in edited]
             if len(edited) > 1 and edited[0] != "" and edited[1] != "":
                 alts = findSynonyms((edited[0],edited[1],{'alts':alts}))
-                wort = edited[0]
-                self.c.execute("INSERT INTO dict(wort,def) VALUES (?,?)",(wort,edited[1]))
+                word = edited[0]
+                self.c.execute("INSERT INTO dict(word,def) VALUES (?,?)",(word,edited[1]))
                 tmp_id = self.c.lastrowid
                 for a in alts:
                     try:
@@ -64,66 +65,83 @@ class glossEditor(object):
         print "done."
 
         self.remove_empty()
-        self.remove_dups()
-        self.enumerate_dups()
-        self.remove_dup_syns()
+        self.dupentries_remove()
+        if self.plugin["editor"]["dups"] == "enumerate":
+            self.dupidx_enumerate()
+        elif self.plugin["editor"]["dups"] == "cat":
+            self.dupidx_cat()
+        self.dupsyns_remove()
 
     def preview_entry(self,word):
         self.c.execute('''SELECT wid FROM synonyms WHERE syn LIKE ?''',(word+"%",))
         wids = self.c.fetchall()
         output = []
         for (wid,) in wids:
-            self.c.execute('''SELECT wort,def FROM dict WHERE id=?''',(wid,))
+            self.c.execute('''SELECT word,def FROM dict WHERE id=?''',(wid,))
             output.append(self.c.fetchone())
         return output
 
     def remove_empty(self):
         self.c.execute('''DELETE FROM synonyms WHERE syn="" OR syn=" "''')
 
-    def remove_dups(self):
-        dubs = self.c.execute('''SELECT id,wort,def
-            FROM dict GROUP BY wort,def HAVING COUNT(*) > 1''').fetchall()
+    def dupentries_remove(self):
+        dubs = self.c.execute('''SELECT id,word,def
+            FROM dict GROUP BY word,def HAVING COUNT(*) > 1''').fetchall()
         no, i = len(dubs), 0
         for dbl in dubs:
             i += 1
             if i % 3 == 0:
-                sys.stdout.write("Entferne doppelte Einträge %3d von %3d...\r" % (i,no))
+                sys.stdout.write("Removing duplicates %3d of %3d...\r" % (i,no))
                 sys.stdout.flush()
-            self.c.execute('''SELECT id FROM dict WHERE wort=? AND def=?''',(dbl[1],dbl[2]))
+            self.c.execute('''SELECT id FROM dict WHERE word=? AND def=?''',(dbl[1],dbl[2]))
             old_ids = self.c.fetchall()
             for old in old_ids:
                 self.c.execute('''UPDATE synonyms SET wid=? WHERE wid=?''',(dbl[0],old[0]))
-            self.c.execute('''DELETE FROM dict WHERE wort=? AND def=? AND id!=?''',(dbl[1],dbl[2],dbl[0]))
-        print "Entferne doppelte Einträge %3d von %3d... done." % (no,no)
+            self.c.execute('''DELETE FROM dict WHERE word=? AND def=? AND id!=?''',(dbl[1],dbl[2],dbl[0]))
+        print "Removing duplicates %3d of %3d... done." % (no,no)
 
-    def remove_dup_syns(self):
-        dubs = self.c.execute('''SELECT id,wid,syn
-            FROM synonyms GROUP BY wid,syn HAVING COUNT(*) > 1''').fetchall()
-        no, i = len(dubs), 0
-        for dbl in dubs:
-            i += 1
-            if i % 3 == 0:
-                sys.stdout.write("Entferne doppelte Einträge %3d von %3d...\r" % (i,no))
-                sys.stdout.flush()
-            self.c.execute('''DELETE FROM synonyms WHERE wid=? AND syn=? AND id!=?''',(dbl[1],dbl[2],dbl[0]))
-        print "Entferne doppelte Einträge %3d von %3d... done." % (no,no)
+    def dupsyns_remove(self):
+        sys.stdout.write("Removing duplicate synonyms...")
+        sys.stdout.flush()
+        dubs = self.c.execute('''DELETE FROM synonyms WHERE id NOT IN
+            (SELECT max(id) FROM synonyms GROUP BY wid,syn)
+        ''')
+        sys.stdout.write("done (%d entries affected).\n" % self.c.rowcount)
 
-    def enumerate_dups(self):
-        self.c.execute('''SELECT wort FROM dict GROUP BY wort HAVING COUNT(*) > 1''')
+    def dupidx_enumerate(self):
+        self.c.execute('''SELECT word FROM dict GROUP BY word HAVING COUNT(*) > 1''')
         dubs = self.c.fetchall()
         no = len(dubs)
         i = 0
         for dbl in dubs:
             i += 1
             if i % 7 == 0:
-                sys.stdout.write("Nummeriere mehrdeutige Einträge %5d von %5d...\r" % (i,no))
+                sys.stdout.write("Enumerating ambivalent entries %5d of %5d...\r" % (i,no))
                 sys.stdout.flush()
-            self.c.execute('''SELECT id FROM dict WHERE wort=?''',(dbl[0],))
+            self.c.execute('''SELECT id FROM dict WHERE word=?''',(dbl[0],))
             for j,wid in enumerate(self.c.fetchall()):
                 self.c.execute('''INSERT INTO synonyms(wid,syn)
                                             VALUES (?,?)''',(wid[0],dbl[0]))
-                self.c.execute('''UPDATE dict SET wort=? WHERE id=?''',("%s(%d)" % (dbl[0],j+1),wid[0]))
-        print "Nummeriere mehrdeutige Einträge %5d von %5d... done." % (no,no)
+                self.c.execute('''UPDATE dict SET word=? WHERE id=?''',("%s(%d)" % (dbl[0],j+1),wid[0]))
+        print "Enumerating ambivalent entries %5d of %5d... done." % (no,no)
+
+    def dupidx_cat(self):
+        self.c.execute('''SELECT id,word,def FROM dict GROUP BY word HAVING COUNT(*) > 1''')
+        critical = self.c.fetchall()
+        no = len(critical)
+        for i,entry in enumerate(critical):
+            if i % 7 == 0:
+                sys.stdout.write("Concatenating ambivalent entries %5d of %5d...\r" % (i,no))
+                sys.stdout.flush()
+            self.c.execute('''SELECT id,def FROM dict WHERE word=? AND id!=?''',(entry[1],entry[0]))
+            dups = self.c.fetchall()
+            defn = entry[2]
+            for dup in dups:
+                self.c.execute('''DELETE FROM dict WHERE id=?''', (dup[0],))
+                self.c.execute('''UPDATE synonyms SET wid=? WHERE wid=?''', (entry[0],dup[0]))
+                defn += dup[1]
+            self.c.execute('''UPDATE dict SET def=? WHERE id=?''',(defn,entry[0]))
+        print "Concatenating ambivalent entries %5d of %5d... done." % (no,no)
 
     def write(self,fname):
         if fname[-6:].lower() == "sqlite":
@@ -148,7 +166,7 @@ def dictFromSqlite(curs):
     info = {}; data = []
     for row in curs.execute('''SELECT key,value FROM info'''):
         info[row[0]]=row[1]
-    curs.execute('''SELECT wort,def,id FROM dict''')
+    curs.execute('''SELECT word,def,id FROM dict''')
     rows = curs.fetchall(); no = len(rows)
     syns = curs.execute('''SELECT syn,wid FROM synonyms''').fetchall()
     syn_list = {x[2]:[] for x in rows}
