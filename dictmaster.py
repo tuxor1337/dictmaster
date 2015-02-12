@@ -13,6 +13,8 @@ if __name__ == "__main__":
                             help='The plugin to use.')
     parser.add_argument('-o','--output', metavar='FILE', type=str,
                             help='Output file for conversion/changes.')
+    parser.add_argument('--clean', action="store_true", default=False,
+                    help=("Discard data from last time."))
     parser.add_argument('--use-raw', action="store_true", default=False,
                     help=("Don't download anything. Use provided data."))
     parser.add_argument('--use-sqlite', action="store_true", default=False,
@@ -31,9 +33,11 @@ if __name__ == "__main__":
         if os.path.exists(db_file):
             os.remove(db_file)
         if not args.use_raw and "url" in plugin:
-            dirname = "data/%s/raw" % plugin["name"]
-            if os.path.exists(dirname):
-                shutil.rmtree(dirname)
+            if args.clean:
+                dirnames = ["data/%s/%s" % (plugin["name"],s) for s in ["raw", "zip"]]
+                for d in dirnames:
+                    if os.path.exists(d):
+                        shutil.rmtree(d)
             fetcher.fetch(plugin)
         proc = Postprocessor(plugin)
         print("Postprocessing...")

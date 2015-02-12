@@ -6,7 +6,7 @@ from urllib2 import URLError
 from httplib import BadStatusLine
 import urllib2
 
-import sys, threading, time, importlib
+import sys, threading, time, importlib, os
 from string import lowercase as ALPHA
 
 from util import mkdir_p
@@ -65,6 +65,10 @@ class fetcherThread(object):
         self.threadno = no
         self.plugin = plugin
         self.url = url
+        if "zip" in self.plugin["format"]:
+            self.output_dir = "data/%s/zip" % self.plugin["name"]
+        else:
+            self.output_dir = "data/%s/raw" % self.plugin["name"]
 
     def fetch(self):
         if "singleton" in self.plugin["url"]:
@@ -102,6 +106,9 @@ class fetcherThread(object):
         for i,url in enumerate(url_list):
             sys.stdout.write("\r\033[%dC%d:%04d" % (7*self.threadno+1, self.threadno, i))
             sys.stdout.flush()
+            output_file = "%06d" % (i*self.plugin["threadcnt"]+self.threadno)
+            if self.file_exists(output_file):
+                continue
             params = None
             if "postdata" in self.plugin["url"]:
                 params = "postdata"
@@ -110,17 +117,19 @@ class fetcherThread(object):
                 data = data.decode(self.plugin["url"]["charset"])
             if self.stop_count(data):
                 break
-            self.write_file("%06d" % (i*self.plugin["threadcnt"]+self.threadno), data)
+            self.write_file(output_file, data)
 
     def fetch_alphanum(self, letterrange, numberrange):
         for letter in letterrange:
             for pagenumber in numberrange:
                 sys.stdout.write("\r\033[%dC%s:%03d" % (6*self.threadno+1, letter, pagenumber))
                 sys.stdout.flush()
+                output_file = "%s%04d" % (letter, pagenumber)
+                if self.file_exists(output_file):
+                    continue
                 url = self.plugin["url"]["pattern"].replace("{a..z}", letter.lower()) \
                     .replace("{A..Z}", letter.upper()) \
                     .replace("{0..9}", "%d" % pagenumber)
-
                 params = None
                 if "postdata" in self.plugin["url"]:
                     params = "postdata"
@@ -129,7 +138,7 @@ class fetcherThread(object):
                     data = data.decode(self.plugin["url"]["charset"])
                 if self.stop_count(data):
                     break
-                self.write_file("%s%04d" % (letter, pagenumber), data)
+                self.write_file(output_file, data)
 
     def fetch_words(self, wordlist):
         wordlist_opts = self.plugin["url"]["itermode"]["wordlist"]
@@ -142,6 +151,9 @@ class fetcherThread(object):
                     word[:3].encode("utf-8")
                 ))
                 sys.stdout.flush()
+            output_file = word
+            if self.file_exists(output_file):
+                continue
             try:
                 url = self.plugin["url"]["pattern"].replace("{word}", urllib2.quote(
                     word.encode(wordlist_opts["encode"])
@@ -160,7 +172,7 @@ class fetcherThread(object):
                     print("Problem decoding data from %s." % url)
             if self.stop_count(data):
                 break
-            self.write_file(word, data)
+            self.write_file(output_file, data)
 
     def stop_count(self, data):
         stop_count = True
@@ -173,6 +185,9 @@ class fetcherThread(object):
             stop_count = False
         return stop_count
 
+    def file_exists(self, basename):
+        path = os.path.join(self.output_dir, basename)
+        return os.path.exists(path)
 
     def write_file(self, basename, data):
         if "zip" not in self.plugin["format"]:
@@ -182,12 +197,12 @@ class fetcherThread(object):
                 filtered = data
             if type(filtered) == unicode:
                 filtered = filtered.encode("utf-8")
-            dirname = "data/%s/raw" % self.plugin["name"]
         else:
             filtered = data
-            dirname = "data/%s/zip" % self.plugin["name"]
-        mkdir_p(dirname)
-        path = "%s/%s" % (dirname, basename)
-        with open(path, mode="w") as a_file:
-            a_file.write(filtered)
+        mkdir_p(self.output_dir)
+        path = os.path.join(self.output_dir, basename)
+        tmp_path = os.path.join(self.output_dir, "#%s#"%basename)
+        with open(tmp_path, mode="w") as tmp_file:
+            tmp_file.write(filtered)
+        os.rename(tmp_path, path)
 
