@@ -20,6 +20,7 @@ from editor import glossEditor
 from util import mkdir_p
 
 THREAD_CNT = 3
+DEF_VERBOSITY = True
 
 class ppThread(object):
     def __init__(self, threadno, plugin, file_list, dirname):
@@ -29,17 +30,19 @@ class ppThread(object):
         self.plugin = plugin
         self.userscript = importlib.import_module("plugins.%s.custom" % self.plugin["name"])
         self.files = file_list
+        self.verbose = DEF_VERBOSITY
 
     def run(self):
         for i in range(self.threadno, len(self.files), THREAD_CNT):
             f = self.files[i]
-            sys.stdout.write("\r\033[%dC%s %06d:" \
-                % (
-                    self.threadno*23 + 1,
-                    u"{:<7}".format(f.decode("utf-8")[0:7]),
-                    len(self.output)
-                  )
-            )
+            if self.verbose:
+                sys.stdout.write("\r\033[%dC%s %06d:" \
+                    % (
+                        self.threadno*23 + 1,
+                        u"{:<7}".format(f.decode("utf-8")[0:7]),
+                        len(self.output)
+                      )
+                )
             sys.stdout.flush()
             if "html" in self.plugin["format"]:
                 self.output.extend(self._do_html(
@@ -55,7 +58,7 @@ class ppThread(object):
                 ))
 
     def _do_print_progress_term(self, datalen, term):
-        if datalen % 25 == 0:
+        if datalen % 25 == 0 and self.verbose:
             sys.stdout.write("\r\033[%dC%s" \
                 % (self.threadno*23 + 16, u"{:<6}".format(term[0:6])))
             sys.stdout.flush()
@@ -288,7 +291,8 @@ class ppThread(object):
                         candidate = candidate.lower()
                     for r in regex:
                         candidate = re.sub(r[0],r[1],candidate)
-                    if candidate != term:
+                    candidate = candidate.strip()
+                    if candidate != term and candidate != "":
                         alts.append(candidate)
         return alts
 

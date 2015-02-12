@@ -36,6 +36,7 @@ class glossEditor(object):
                 sys.exit()
 
     def glossToDB(self):
+        editor_opts = self.plugin["editor"]
         no = len(self.g.data)
         for i,entry in enumerate(self.g.data):
             edited = [entry[0].strip(),entry[1].strip()]
@@ -48,7 +49,8 @@ class glossEditor(object):
                 sys.stdout.flush()
             edited = [ed.strip() for ed in edited]
             if len(edited) > 1 and edited[0] != "" and edited[1] != "":
-                alts = findSynonyms((edited[0],edited[1],{'alts':alts}))
+                if "no_auto_synonyms" not in editor_opts:
+                    alts = findSynonyms((edited[0],edited[1],{'alts':alts}))
                 word = edited[0]
                 self.c.execute("INSERT INTO dict(word,def) VALUES (?,?)",(word,edited[1]))
                 tmp_id = self.c.lastrowid
@@ -66,9 +68,9 @@ class glossEditor(object):
 
         self.remove_empty()
         self.dupentries_remove()
-        if self.plugin["editor"]["dups"] == "enumerate":
+        if editor_opts["dups"] == "enumerate":
             self.dupidx_enumerate()
-        elif self.plugin["editor"]["dups"] == "cat":
+        elif editor_opts["dups"] == "cat":
             self.dupidx_cat()
         self.dupsyns_remove()
 
