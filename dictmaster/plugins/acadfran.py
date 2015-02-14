@@ -3,21 +3,21 @@
 import re
 from pyquery import PyQuery as pq
 
-from dictmaster.util import html_container_filter, CancelableThread
+from dictmaster.util import html_container_filter
 from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import Fetcher
+from dictmaster.fetcher import Fetcher, UrlFetcher
 from dictmaster.postprocessor import HtmlContainerProcessor
 from dictmaster.editor import Editor
+
+BASE_URL = "http://atilf.atilf.fr/dendien/scripts/generic"
+STEP_SIZE = 100
 
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
         self.url_list = []
         self.dictname = "Dictionnaires de l’Académie française : 8ème édition"
-        fetcher = Fetcher(self.output_directory,
-            urls=self.url_list,
-            filter_fct=html_container_filter("body > table", charset="windows-1252")
-        )
+        fetcher = AcadfranFetcher(self.output_directory, urls=self.url_list)
         postprocessor = AcadfranProcessor(self)
         editor = Editor(
             output_directory=self.output_directory,
@@ -30,14 +30,13 @@ class Plugin(PluginThread):
             editor
         ]
 
-BASE_URL = "http://atilf.atilf.fr/dendien/scripts/generic"
-STEP_SIZE = 100
+class AcadfranFetcher(Fetcher):
+    class FetcherThread(Fetcher.FetcherThread):
+        def fetchUrl(self, url):
+            Fetcher.FetcherThread.fetchUrl(self, BASE_URL + url)
+        filter_data = html_container_filter("body > table", charset="windows-1252")
 
-class AcadfranUrlFetcher(CancelableThread):
-    def __init__(self, plugin):
-        super(AcadfranUrlFetcher, self).__init__()
-        self.plugin = plugin
-
+class AcadfranUrlFetcher(UrlFetcher):
     def progress(self):
         if self._canceled:
             return "Sleeping..."
@@ -60,8 +59,8 @@ class AcadfranUrlFetcher(CancelableThread):
         for i, j in enumerate(range(0,wordcount,STEP_SIZE)):
             if self._canceled:
                 return
-            url = "%s/affiche.exe?%d;s=%s;d=%d;f=%d,t=%d,r=%d;" \
-                % (BASE_URL, 120+i, session_id, j+1, j+STEP_SIZE, wordcount, r_var)
+            url = "/affiche.exe?%d;s=%s;d=%d;f=%d,t=%d,r=%d;" \
+                % (120+i, session_id, j+1, j+STEP_SIZE, wordcount, r_var)
             self.plugin.url_list.append(url)
 
 class AcadfranProcessor(HtmlContainerProcessor):

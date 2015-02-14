@@ -6,6 +6,7 @@ import lxml.sax, lxml.html
 
 import re
 from pyquery import PyQuery as pq
+from lxml import etree
 
 from dictmaster.util import html_container_filter
 from dictmaster.pthread import PluginThread
@@ -17,20 +18,28 @@ class Plugin(PluginThread):
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
         self.dictname = "Online Etymology Dictionary, ©Douglas Harper/etymonline.com"
-        fetcher = AlphanumFetcher(self.output_directory,
-            url_pattern = "http://www.etymonline.com/index.php?l={alpha}&p={num}",
-            filter_fct = html_container_filter("div#dictionary dl", err_msg="nextBlock")
+        fetcher = EtymonlineFetcher(
+            self.output_directory,
+            url_pattern="http://www.etymonline.com/index.php?l={alpha}&p={num}"
         )
         postprocessor = EtymonlineProcessor(self)
-        editor = Editor(
-            output_directory=self.output_directory,
-            plugin=self
-        )
+        editor = Editor(output_directory=self.output_directory, plugin=self)
         self._stages = [
             fetcher,
             postprocessor,
             editor
         ]
+
+class EtymonlineFetcher(AlphanumFetcher):
+    class FetcherThread(AlphanumFetcher.FetcherThread):
+        def filter_override(self, encoded_str):
+            container = "div#dictionary dl"
+            parser = etree.HTMLParser(encoding="utf-8")
+            doc = pq(etree.fromstring(encoded_str, parser=parser))
+            if len(doc(container)) == 0:
+                raise Exception("next_block")
+            else:
+                return doc(container).html().encode("utf-8")
 
 class EtymonlineProcessor(HtmlABProcessor):
     def __init__(self, plugin):

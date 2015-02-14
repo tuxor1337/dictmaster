@@ -29,11 +29,11 @@ class Plugin(PluginThread):
         if popts not in WORD_LISTS:
             popts = DEFAULT_WORDLIST
         decoder = WORD_LISTS[popts]
-        fetcher = WordFetcher(self.output_directory,
+        fetcher = AhdictFetcher(
+            self.output_directory,
             url_pattern="https://ahdictionary.com/word/search.html?q={word}",
             word_file="words.txt",
-            word_codec=(decoder, "utf-8"),
-            filter_fct=ahdict_filter("#results")
+            word_codec=(decoder, "utf-8")
         )
         postprocessor = AhdictProcessor(self)
         editor = Editor(
@@ -46,18 +46,9 @@ class Plugin(PluginThread):
             editor
         ]
 
-def ahdict_filter(container, charset="utf-8", err_msg="rejected"):
-    def tmp_func(data):
-        encoded_str = data.decode(charset).encode("utf-8")
-        parser = etree.HTMLParser(encoding="utf-8")
-        doc = pq(etree.fromstring(encoded_str, parser=parser))
-        if len(doc(container)) == 0:
-            raise Exception(err_msg)
-        elif doc(container).text() == "No word definition found":
-            raise Exception(err_msg)
-        else:
-            return doc(container).html().encode("utf-8")
-    return tmp_func
+class AhdictFetcher(WordFetcher):
+    class FetcherThread(WordFetcher.FetcherThread):
+        filter_data = html_container_filter("#results", bad_content="No word definition found")
 
 class AhdictProcessor(HtmlContainerProcessor):
     def __init__(self, plugin):

@@ -39,13 +39,15 @@ def load_plugin(plugin_name, popts, dirname):
         pthread = None
     return pthread
 
-def html_container_filter(container, charset="utf-8", err_msg="rejected"):
-    def tmp_func(data):
+def html_container_filter(container, charset="utf-8", bad_content=None):
+    def tmp_func(fthread, data):
         encoded_str = data.decode(charset).encode("utf-8")
         parser = etree.HTMLParser(encoding="utf-8")
         doc = pq(etree.fromstring(encoded_str, parser=parser))
         if len(doc(container)) == 0:
-            raise Exception(err_msg)
+            return None
+        elif bad_content != None and doc(container).text() == bad_content:
+            return None
         else:
             return doc(container).html().encode(charset)
     return tmp_func
