@@ -25,7 +25,7 @@ def main(args):
 
     while plugin.is_alive():
         time.sleep(1)
-        sys.stdout.write("\r{:<50}".format(plugin.progress()))
+        sys.stdout.write("\r{:<65}".format(plugin.progress()))
         sys.stdout.flush()
 
     print

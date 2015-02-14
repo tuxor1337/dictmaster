@@ -32,10 +32,8 @@ class Editor(CancelableThread):
         self.plugin = plugin
 
     def progress(self):
-        if self._canceled:
-            return "Sleeping..."
-        else:
-            return self._status
+        if self._canceled: return "Sleeping..."
+        else: return self._status
 
     def run(self):
         db_file = os.path.join(self.output_directory, "db.sqlite")

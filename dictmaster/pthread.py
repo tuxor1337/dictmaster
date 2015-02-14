@@ -25,10 +25,8 @@ class PluginThread(CancelableThread):
         self.setup_dirs()
 
     def progress(self):
-        if self._curr_stage == None or self._canceled:
-            return "Sleeping..."
-        else:
-            return self._curr_stage.progress()
+        if self._curr_stage == None or self._canceled: return "Sleeping..."
+        return self._curr_stage.progress()
 
     def run(self):
         for stage in self._stages:

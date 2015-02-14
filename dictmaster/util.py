@@ -66,10 +66,8 @@ class CancelableThread(threading.Thread):
         self.daemon = True
 
     def progress(self):
-        if self._canceled:
-            return "Sleeping..."
-        else:
-            return "Active..."
+        if self._canceled: return "Sleeping..."
+        return "Active..."
 
     def cancel(self):
         self._canceled = True

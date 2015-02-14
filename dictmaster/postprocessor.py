@@ -23,10 +23,8 @@ class Processor(CancelableThread):
         self.plugin = plugin
 
     def progress(self):
-        if self._curr_f == "" or self._canceled:
-            return "Sleeping..."
-        else:
-            return "Processing... {}: {}".format(self._curr_f, len(self.output))
+        if self._curr_f == "" or self._canceled: return "Sleeping..."
+        return "Processing... {}: {}".format(self._curr_f, len(self.output))
 
     def run(self):
         for f in sorted(os.listdir(self.input_directory)):

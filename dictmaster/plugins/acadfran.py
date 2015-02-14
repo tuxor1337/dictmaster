@@ -38,9 +38,7 @@ class AcadfranFetcher(Fetcher):
 
 class AcadfranUrlFetcher(UrlFetcher):
     def progress(self):
-        if self._canceled:
-            return "Sleeping..."
-        return "Collecting URLs..."
+        return "Sleeping..." if self._canceled else "Collecting URLs..."
 
     def run(self):
         url = "%s/showps.exe?p=main.txt;host=interface_academie8.txt;java=no;" % BASE_URL

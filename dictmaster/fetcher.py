@@ -49,10 +49,8 @@ class FetcherThread(CancelableThread):
             self.fetchUrl(url)
 
     def progress(self):
-        if self._download_status != "":
-            return self._download_status
-        if self._canceled:
-            return "Sleeping..."
+        if self._download_status != "": return self._download_status
+        if self._canceled: return ""
         return "{}:{:.1f}%".format(self.no, 100*self._i/float(len(self.urls)))
 
     def write_file(self, basename, data):
@@ -159,10 +157,8 @@ class WordFetcher(Fetcher):
 class AlphanumFetcher(Fetcher):
     class FetcherThread(FetcherThread):
         def progress(self):
-            if self._download_status != "":
-                return self._download_status
-            if self._canceled:
-                return "Sleeping..."
+            if self._download_status != "": return self._download_status
+            if self._canceled: return ""
             total = len(self.urls)*50
             return "{}:{:.1f}%".format(self.no, 100*self._i/float(total))
 
@@ -215,8 +211,7 @@ class Unzipper(CancelableThread):
         self.unzip_directory = os.path.join(output_directory, "raw")
 
     def progress(self):
-        if self._canceled:
-            return "Sleeping..."
+        if self._canceled: return "Sleeping..."
         return "Unzipping..."
 
     def run(self):
