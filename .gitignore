@@ -2,4 +2,4 @@ data/
 drafts/
 __pycache__/
 *.py[cod]
-plugins/bgl_*
+dictmaster/plugins/bgl_*

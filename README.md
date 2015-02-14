@@ -5,8 +5,8 @@ A simple tool that automatically fetches dictionary data from
 different offline and online sources.
 The dictionaries are prettified and automatically converted to stardict
 format.
-The input format might be some XML or HTML format. Zipped
-data is also supported and there is basic support for Babylon dictionaries.
+The input format might be some XML or HTML format.
+Zipped data is also supported and there is basic support for Babylon dictionaries.
 
 Supported dictionary sources
 ---
@@ -45,15 +45,21 @@ Start the tool with:
 
     ./dictmaster.py PLUGIN_NAME
 
-You find available plugins in the `plugins` directory.
+You find available plugins in the `dictmaster/plugins` directory.
+Some plugins need addition plugin-specific option string that you can provide
+with the `--popts OPTION` parameter, e.g.:
 
-Your dictionary data will be saved to `data/PLUGIN_NAME/stardict.*` in
-stardict format. (Note that for some dictionaries the directory
-`data/PLUGIN_NAME/res` is also needed.)
+    ./dictmaster.py zeno --popts "Pape-1880"
 
-If the data has been fetched but postprocessing fails or if you want to
-rerun postprocessing for whatever reason without redownloading all the data
-you simply add the option `--use-raw`.
+Your dictionary data will be saved (by default) to `data/PLUGIN_NAME/stardict.*`
+in stardict format.
+(Note that for some dictionaries the directory `data/PLUGIN_NAME/res` is also needed.)
+
+Interrupting the running process with Ctrl+C should gracely cancel the process.
+From most parts of the download stage, dictmaster is able to recover and continue
+at a later time from where it stopped last time.
+If you want to force redownloading the data add the parameter `--reset` to
+you command line.
 
 Limitations
 ---
@@ -61,7 +67,9 @@ Limitations
 Even though this projects looks pretty modularized and extendible at first
 glance, let me tell you that this is unfortunately not the case - yet.
 For now, you really have to go through the code and understand what's happening
-in order to write new plugins.
+in order to write new plugins because there is no API documentation.
+But if you still want to write a new plugin, try to start from one of the
+existing ones.
 
 Todo list
 ---
