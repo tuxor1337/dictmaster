@@ -17,8 +17,7 @@ class PluginThread(CancelableThread):
         self.output_directory = dirname
         self.setup_dirs()
 
-    def setup_dirs(self):
-        mkdir_p(os.path.join(self.output_directory, "raw"))
+    def setup_dirs(self): mkdir_p(os.path.join(self.output_directory, "raw"))
 
     def reset(self):
         shutil.rmtree(self.output_directory)
@@ -30,15 +29,13 @@ class PluginThread(CancelableThread):
 
     def run(self):
         for stage in self._stages:
-            if self._canceled:
-                break
+            if self._canceled: break
             stage.start()
             self._curr_stage = stage
             stage.join()
-            print "done."
+            print " done."
 
     def cancel(self):
         CancelableThread.cancel(self)
-        if self._curr_stage:
-            self._curr_stage.cancel()
+        if self._curr_stage: self._curr_stage.cancel()
 

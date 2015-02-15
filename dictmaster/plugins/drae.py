@@ -23,10 +23,10 @@ POSTDATA = "TS014dfc77_id=3"\
 
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
-        super(Plugin, self).__init__(popts, dirname)
         word_file = popts
         if not os.path.exists(word_file):
             sys.exit("Provide full path to (existing) word list file!")
+        super(Plugin, self).__init__(popts, dirname)
         self.dictname = "Diccionario de la lengua española: 22a edición"
         fetcher = DraeFetcher(
             self.output_directory,

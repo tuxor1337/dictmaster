@@ -21,22 +21,18 @@ def warn_nl(msg):
     sys.stdout.flush()
 
 def mkdir_p(path):
-    try:
-        os.makedirs(path)
+    try: os.makedirs(path)
     except OSError as exc: # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
+        if exc.errno == errno.EEXIST and os.path.isdir(path): pass
         else: raise
 
 def load_plugin(plugin_name, popts, dirname):
-    if dirname == "":
-        dirname = "data/%s/" % plugin_name
+    if dirname == "": dirname = "data/%s/" % plugin_name
     try:
         plugin_module = importlib.import_module("dictmaster.plugins.%s" % plugin_name)
         pthread = plugin_module.Plugin(popts, dirname)
     except ImportError as e:
-        print e.args
-        pthread = None
+        print e.args; pthread = None
     return pthread
 
 def html_container_filter(container, charset="utf-8", bad_content=None):
@@ -44,12 +40,10 @@ def html_container_filter(container, charset="utf-8", bad_content=None):
         encoded_str = data.decode(charset).encode("utf-8")
         parser = etree.HTMLParser(encoding="utf-8")
         doc = pq(etree.fromstring(encoded_str, parser=parser))
-        if len(doc(container)) == 0:
-            return None
+        if len(doc(container)) == 0: return None
         elif bad_content != None and doc(container).text() == bad_content:
             return None
-        else:
-            return doc(container).html().encode(charset)
+        else: return doc(container).html().encode(charset)
     return tmp_func
 
 """
@@ -69,19 +63,16 @@ class CancelableThread(threading.Thread):
         if self._canceled: return "Sleeping..."
         return "Active..."
 
-    def cancel(self):
-        self._canceled = True
+    def cancel(self): self._canceled = True
 
     def _chunk_download(self, response, total_size):
-        data = ""
-        chunk_size = 2**16
+        data, chunk_size = "", 2**16
         while True:
             if self._canceled:
                 data = None
                 break
             chunk = response.read(chunk_size)
-            if not chunk:
-                break
+            if not chunk: break
             data += chunk
             self._download_status = "Downloading... {: 6d} of {: 6d} KB".format(
                 len(data)/1000, total_size/1000
@@ -90,20 +81,16 @@ class CancelableThread(threading.Thread):
         return data
 
     def download_retry(self, url, params=None):
-        if self._canceled:
-            return None
+        if self._canceled: return None
         try:
             response = urllib2.urlopen(url, params)
             total_size = response.info().getheader('Content-Length')
-            if total_size != None:
-                total_size = int(total_size.strip())
-            else:
-                total_size = 0
+            if total_size != None: total_size = int(total_size.strip())
+            else: total_size = 0
             if total_size > 5*2**16:
                 print("\nDownloading large file ({:.2f} MB)!".format(total_size/1000000.0))
                 data = self._chunk_download(response, total_size)
-            else:
-                data = response.read()
+            else: data = response.read()
             return data
         except (URLError, BadStatusLine):
             warn_nl("Connection to %s failed. Retrying..." % url)

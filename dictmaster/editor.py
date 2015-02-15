@@ -72,13 +72,10 @@ class Editor(CancelableThread):
 
     def glossToDB(self):
         for i,entry in enumerate(self.data):
-            if self._canceled:
-                break
+            if self._canceled: break
             edited = [entry[0].strip(),entry[1].strip()]
-            try:
-                alts = entry[2]['alts']
-            except:
-                alts = []
+            try: alts = entry[2]['alts']
+            except: alts = []
             edited = [ed.strip() for ed in edited]
             if len(edited) > 1 and edited[0] != "" and edited[1] != "":
                 if self.auto_synonyms:
@@ -87,8 +84,7 @@ class Editor(CancelableThread):
                 self.c.execute("INSERT INTO dict(word,def) VALUES (?,?)",(word,edited[1]))
                 tmp_id = self.c.lastrowid
                 for a in alts:
-                    try:
-                        self.c.execute('''INSERT INTO synonyms(wid,syn)
+                    try: self.c.execute('''INSERT INTO synonyms(wid,syn)
                                                 VALUES (?,?)''',(tmp_id, a))
                     except sqlite3.InterfaceError:
                         sys.exit("Problem: %s; %s" % (tmp_id, a))
@@ -102,10 +98,8 @@ class Editor(CancelableThread):
 
         self.remove_empty()
         self.dupentries_remove()
-        if self.enumerate:
-            self.dupidx_enumerate()
-        else:
-            self.dupidx_cat()
+        if self.enumerate: self.dupidx_enumerate()
+        else: self.dupidx_cat()
         self.dupsyns_remove()
 
     def preview_entry(self,word):
@@ -158,8 +152,7 @@ class Editor(CancelableThread):
         critical = self.c.fetchall()
         no = len(critical)
         for i,entry in enumerate(critical):
-            if i % 7 == 0:
-                self._status = "Concatenating ambivalent entries %5d of %5d..." % (i,no)
+            self._status = "Concatenating ambivalent entries %5d of %5d..." % (i,no)
             self.c.execute('''SELECT id,def FROM dict WHERE word=? AND id!=?''',(entry[1],entry[0]))
             dups = self.c.fetchall()
             defn = entry[2]
@@ -171,8 +164,7 @@ class Editor(CancelableThread):
 
     def write(self,fname):
         if fname[-6:].lower() == "sqlite":
-            try:
-                os.unlink(fname)
+            try: os.unlink(fname)
             except OSError: pass
             outfile_db = sqlite3.connect(fname)
             outfile_db.text_factory = str
@@ -196,10 +188,8 @@ class Editor(CancelableThread):
         syns = self.c.execute('''SELECT syn,wid FROM synonyms''').fetchall()
         syn_list = {x[2]:[] for x in rows}
         [syn_list[syn[1]].append(syn[0]) for syn in syns]
-        if "sametypesequence" in info:
-            defiFormat = info["sametypesequence"]
-        else:
-            defiFormat = "h"
+        if "sametypesequence" in info: defiFormat = info["sametypesequence"]
+        else: defiFormat = "h"
         for i,row in enumerate(rows):
             self._status = "Writing entry %5d of %5d..." % (i,no)
             data.append((row[0],row[1],{'defiFormat': defiFormat, 'alts':syn_list[row[2]]}))
@@ -217,10 +207,8 @@ def findSynonyms(entry):
 
     def add_alt(alts,a):
         try:
-            if a not in alts and a != entry[0]:
-                alts.append(a)
-        except UnicodeWarning:
-            pass
+            if a not in alts and a != entry[0]: alts.append(a)
+        except UnicodeWarning: pass
 
     def add_greek_alt(alts,a):
         orig_a = a

@@ -8,25 +8,22 @@ from dictmaster.util import load_plugin
 
 def main(args):
     plugin = load_plugin(args.plugin, args.popts, args.output)
-    if plugin == None:
-        sys.exit("Plugin not found or plugin broken.")
+    if plugin == None: sys.exit("Plugin not found or plugin broken.")
 
-    if args.reset:
-        plugin.reset()
-
+    if args.reset: plugin.reset()
     plugin.start()
 
     def ctrl_c(signal, frame):
         print("\nUser interrupt. Stopping the plugin...")
         plugin.cancel()
-
     signal.signal(signal.SIGINT, ctrl_c)
 
     while plugin.is_alive():
-        sys.stdout.write("\r{:<65}".format(plugin.progress()))
+        prog = plugin.progress()
+        sys.stdout.write("\r{}".format(" "*len(prog)))
+        sys.stdout.write("\r{}".format(plugin.progress()))
         sys.stdout.flush()
         plugin.join(1)
-
     print
 
 if __name__ == "__main__":

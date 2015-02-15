@@ -1,5 +1,4 @@
 data/
-drafts/
 __pycache__/
 *.py[cod]
 dictmaster/plugins/bgl_*
