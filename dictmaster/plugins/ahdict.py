@@ -17,14 +17,14 @@ from dictmaster.editor import Editor
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
         word_file = popts
-        if not os.file.exists(word_file):
+        if not os.path.exists(word_file):
             sys.exit("Provide full path to (existing) word list file!")
         super(Plugin, self).__init__(popts, dirname)
         self.dictname = "The American Heritage Dictionary of the English Language, Fifth Edition"
         fetcher = AhdictFetcher(
             self.output_directory,
             url_pattern="https://ahdictionary.com/word/search.html?q={word}",
-            word_file="words.txt",
+            word_file=word_file,
             word_codec=("utf-8", "utf-8")
         )
         postprocessor = AhdictProcessor(self)

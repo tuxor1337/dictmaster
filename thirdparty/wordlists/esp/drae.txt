@@ -8432,7 +8432,7 @@ fácula
 facundo
 fadrubado
 faetón
-fago- o ‒́fago
+fago- o -fago
 fagocitosis
 fainera
 faisán
@@ -8951,7 +8951,7 @@ fueloil
 fuesa
 fufú
 fugible
-‒́fugo
+-fugo
 fuina
 fula
 jugar ~
@@ -9216,7 +9216,7 @@ genetista
 genista
 -génito
 genitura
-‒́geno
+-geno
 genolí
 gentarada
 gentileza
@@ -11412,7 +11412,7 @@ lirismo
 lis
 lisbonense
 lisina
-‒́lisis
+-lisis
 lisonja
 lisonjeramente
 listero
@@ -17326,7 +17326,7 @@ tiberio
 tibial
 ~ gata
 ticera
-‒́tico
+-tico
 ticuriche
 tientaparedes
 tierracalentano
@@ -24188,7 +24188,7 @@ craneopatía
 crapuloso
 cras
 crasiento
-‒́crata
+-crata
 cratícula
 crazada
 creacionismo
@@ -27209,7 +27209,7 @@ factible
 factoría
 fada
 fafarachero
-fago- o ‒́fago
+fago- o -fago
 fagot o fagote
 de puro ~
 fainería
@@ -27431,7 +27431,7 @@ filipichín
 filló
 filmación
 filmográfico
-filo- o ‒́filo
+filo- o -filo
 filogenético
 filológicamente
 filomático
@@ -27536,7 +27536,7 @@ fluoración
 fluoruro
 fluxibilidad
 fluyente
-‒́fobo
+-fobo
 focalizar
 focino
 fodolí
@@ -27564,7 +27564,7 @@ fondón
 fonébol
 fonendo
 fonetismo
-fono- o ‒́fono
+fono- o -fono
 fonográfico
 fonolita
 fonólogo
@@ -28171,13 +28171,13 @@ graciosamente
 gradación
 gradecilla
 gradiente
-‒́grado
+-grado
 gradualismo
 grafema
 gráficamente
 grafio
 grafitero
-‒́grafo
+-grafo
 grafólogo
 grafoscopio
 grajero
@@ -30256,7 +30256,7 @@ lodoño
 logadero
 ~ neperiano
 logical
-‒́logo
+-logo
 logopeda
 logrero
 loguero
@@ -31013,7 +31013,7 @@ metonímico
 metraje
 metreta
 metrificatura
-‒́metro
+-metro
 mexicanismo
 mexiqueño
 mezcal
@@ -42179,7 +42179,7 @@ cojinoba o cojinova
 cojobo
 cojudez
 cojutepequense
-‒́cola
+-cola
 colaborar
 colágeno
 colambre
@@ -46218,7 +46218,7 @@ fonema
 fonendoscopio
 fonetista
 fonil
-fono- o ‒́fono
+fono- o -fono
 fonógrafo
 fonología
 fonometría
@@ -46795,7 +46795,7 @@ gonchu
 gonete
 gonfaloniero
 gongorismo
-‒́gono
+-gono
 gonorrea
 sin ~
 gorga
@@ -48870,7 +48870,7 @@ lirón
 lisa y llanamente
 lisera
 lisiar
-‒́lisis
+-lisis
 lisonjeador
 lisonjero
 listeado
@@ -49290,7 +49290,7 @@ manito
 manivela
 manjelín
 manjuarí
-‒́mano
+-mano
 mañoco
 manola
 manómetro
@@ -51038,7 +51038,7 @@ parlanchín
 parlería
 parlotear
 parnasiano
-‒́paro
+-paro
 paródico
 pároli
 paronimia
@@ -51201,7 +51201,7 @@ pedicuro
 pedidura
 pedigüeño
 pedimiento
-‒́pedo
+-pedo
 pedorra
 pedorrero
 como ~ en ojo de boticario
@@ -51764,7 +51764,7 @@ podador
 podálico
 poderhabiente
 podiatra
-podo- o ‒́podo
+podo- o -podo
 podón
 podredumbre
 ser algo todo un ~
@@ -52246,7 +52246,7 @@ psicótico
 psiquiatra
 psiquis
 psitacismo
-ptero- o ‒́ptero
+ptero- o -ptero
 ptosis
 puar
 pubertad
@@ -55187,7 +55187,7 @@ trocatinte
 a ~
 trocla
 trócola
-‒́trofo
+-trofo
 troglodítico
 trojado
 troleada
@@ -64651,7 +64651,7 @@ fermata
 fermentador
 fermi
 fermosura
-‒́fero
+-fero
 feroz
 ferrallista
 ferreal
@@ -64688,7 +64688,7 @@ fibrocartilaginoso
 fibroma
 fibrosis
 -ficar
-‒́fico
+-fico
 ficus
 fideero
 fideísmo
@@ -64856,7 +64856,7 @@ folletín
 folleto
 follonería
 fome
-fono- o ‒́fono
+fono- o -fono
 foncarralero
 fondado
 fondista
@@ -64898,7 +64898,7 @@ fornel
 fornicar
 fornido
 fornir
-‒́foro
+-foro
 forrear
 fortachón
 fortaleza
@@ -65320,7 +65320,7 @@ geniazo
 genipa
 genitivo
 genitourinario
-‒́geno
+-geno
 genol
 genotipo
 gentalla
@@ -67497,7 +67497,7 @@ lironero
 lisboeta
 lisérgico
 lisimaquia
-‒́lisis
+-lisis
 lisol
 lisonjear
 listel
@@ -69842,7 +69842,7 @@ pedículo
 pedigón
 pedilón
 pedinche
-‒́pedo
+-pedo
 pedorrear
 pedorreta
 pedral
@@ -73357,7 +73357,7 @@ tiberino
 tibieza
 tibor
 tic
-‒́tico
+-tico
 ticuco
 tientaguja
 tierrero
@@ -74476,7 +74476,7 @@ vomitel
 vomitón
 vorace
 vorahúnda
-‒́voro
+-voro
 vosear
 ~ secreta
 voto a tal

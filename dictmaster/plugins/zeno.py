@@ -73,14 +73,15 @@ class ZenoFetcher(Fetcher):
                 return doc(container).html().encode("utf-8")
 
 class ZenoUrlFetcher(UrlFetcher):
-    class FetcherThread(UrlFetcher.FetcherThread): pass
+    class FetcherThread(UrlFetcher.FetcherThread):
+        def get_offset(self):
+            return UrlFetcher.FetcherThread.get_offset(self) / 20
+        
     def __init__(self, plugin, url_pattern, wordcount):
         super(ZenoUrlFetcher, self).__init__(plugin)
         self.urls = range(0,wordcount,20)
         def fetchUrl_override(fthread, url):
             fthread._i += 1
-            if fthread.offset > (fthread._i-1)*20:
-                return ""
             url = url_pattern % url
             d = pq(fthread.download_retry(url))
             hitlist = d("span.zenoSRHitTitle")

@@ -15,7 +15,7 @@ class FetcherThread(CancelableThread):
     postdata = None
     output_directory = ""
     no = -1
-
+    offset = 0
     _i = 0
 
     def __init__(self, no, urls, output_directory, postdata=None):
@@ -24,6 +24,14 @@ class FetcherThread(CancelableThread):
         self.postdata = postdata
         self.output_directory = output_directory
         self.no = no
+        self.offset = self.get_offset()
+        self._i = self.offset
+        
+    def get_offset(self):
+        downloaded = sorted(glob.glob("%s/%d_*" % (self.output_directory,self.no)))
+        if len(downloaded) > 0:
+            return int(downloaded[-1][-6:])
+        return 0
 
     def fullpath(self, basename):
         return os.path.join(self.output_directory, basename)
@@ -34,8 +42,6 @@ class FetcherThread(CancelableThread):
     def fetchUrl(self, url):
         self._i += 1
         output_file = "%d_%06d" % (self.no, self._i)
-        if os.path.exists(self.fullpath(output_file)):
-            return None
         data = self.download_retry(url, self.postdata)
         data = self.filter_data(data)
         if data == None or len(data) < 2:
@@ -43,7 +49,7 @@ class FetcherThread(CancelableThread):
         self.write_file(output_file, data)
 
     def run(self):
-        for url in self.urls:
+        for url in self.urls[self.offset:]:
             if self._canceled:
                 break
             self.fetchUrl(url)
@@ -140,19 +146,14 @@ class WordFetcher(Fetcher):
             wordlist = [w.decode(word_codec[0]).strip() for w in f.readlines()]
         tmplist = []
         for w in wordlist:
-            try:
-                tmplist.append(urllib2.quote(w.encode(word_codec[1])))
+            try: tmplist.append(urllib2.quote(w.encode(word_codec[1])))
             except:
-                print "Codec problem while reading in word file:"
-                print w
+                print "Codec error reading word file:", w
                 break
         self.urls = tmplist
-        def run_override(fthread):
-            for w in fthread.urls:
-                if fthread._canceled:
-                    break
-                fthread.fetchUrl(url_pattern.format(word=w))
-        self.FetcherThread.run = run_override
+        def fetchUrl_override(fthread, url):
+            FetcherThread.fetchUrl(fthread, url_pattern.format(word=url))
+        self.FetcherThread.fetchUrl = fetchUrl_override
 
 class AlphanumFetcher(Fetcher):
     class FetcherThread(FetcherThread):
@@ -230,12 +231,11 @@ class Unzipper(CancelableThread):
             z.close()
 
 class UrlFetcherThread(FetcherThread):
-    def __init__(self, no, urls, output_directory, postdata=None):
-        super(UrlFetcherThread, self).__init__(no, urls, output_directory, postdata)
+    def get_offset(self):
         self.output_path = self.fullpath("url_%d.txt" % self.no)
-        self.offset = 0
         if os.path.exists(self.output_path):
-            self.offset = sum(1 for line in open(self.output_path))
+            return sum(1 for line in open(self.output_path))
+        return 0
 
     def write_file(self, basename, data):
         with open(self.output_path, mode="a") as f:

@@ -3,7 +3,6 @@
 
 import sys
 import signal
-import time
 
 from dictmaster.util import load_plugin
 
@@ -24,9 +23,9 @@ def main(args):
     signal.signal(signal.SIGINT, ctrl_c)
 
     while plugin.is_alive():
-        time.sleep(1)
         sys.stdout.write("\r{:<65}".format(plugin.progress()))
         sys.stdout.flush()
+        plugin.join(1)
 
     print
 

@@ -25,7 +25,7 @@ class Plugin(PluginThread):
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
         word_file = popts
-        if not os.file.exists(word_file):
+        if not os.path.exists(word_file):
             sys.exit("Provide full path to (existing) word list file!")
         self.dictname = "Diccionario de la lengua española: 22a edición"
         fetcher = DraeFetcher(
@@ -48,12 +48,12 @@ class Plugin(PluginThread):
 
 class DraeFetcher(WordFetcher):
     class FetcherThread(WordFetcher.FetcherThread):
-        def filter_data(self, encoded_str):
+        def filter_data(self, data):
             if data == None or len(data) == 0:
                 return None
             cont = "body > div"
             parser = etree.HTMLParser(encoding="utf-8")
-            doc = pq(etree.fromstring(encoded_str, parser=parser))
+            doc = pq(etree.fromstring(data, parser=parser))
             if len(doc(cont)) == 0:
                 return None
             elif len(doc(u"img[alt='Ver artículo enmendado']")) > 0:
