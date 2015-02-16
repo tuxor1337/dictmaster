@@ -88,7 +88,7 @@ class Fetcher(CancelableThread):
             )
 
     def progress(self):
-        if self._canceled or self._subthreads[0] == None: return "Sleeping..."
+        if self._canceled or None in self._subthreads: return "Sleeping..."
         prog = "Fetching... "
         for i in range(len(self._subthreads)):
             sub_progress = self._subthreads[i].progress()

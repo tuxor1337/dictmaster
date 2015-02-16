@@ -12,6 +12,9 @@ from dictmaster.fetcher import WordFetcher
 from dictmaster.postprocessor import HtmlContainerProcessor
 from dictmaster.editor import Editor
 
+# TODO: Put into output format described here (better for mobile devices)
+# http://www.rae.es/sites/default/files/Articulos_de_muestra.pdf
+
 POSTDATA = "TS014dfc77_id=3"\
     + "&TS014dfc77_cr=6df4b31271d91b172321d2080cefbee7:becd:943t352k:1270247778"\
     + "&TS014dfc77_76=0"\

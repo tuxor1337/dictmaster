@@ -29,10 +29,10 @@ class PluginThread(CancelableThread):
 
     def run(self):
         for stage in self._stages:
-            if self._canceled: break
             stage.start()
             self._curr_stage = stage
             stage.join()
+            if self._canceled: break
             print " done."
 
     def cancel(self):

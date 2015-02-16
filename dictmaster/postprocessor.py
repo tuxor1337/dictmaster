@@ -32,6 +32,7 @@ class Processor(CancelableThread):
     def run(self):
         for f in sorted(os.listdir(self.input_directory)):
             self._curr_f = os.path.join(self.input_directory, f)
+            self.process()
             if self._canceled: break
         self.plugin.data = self.output
 
@@ -183,7 +184,8 @@ class HtmlProcessor(Processor):
     def do_html_definition(self, dd, term): return ""
 
     def append(self, dt, dd):
-        term, alts = self.do_html_term(dt), self.do_html_alts(dd, term)
+        term = self.do_html_term(dt)
+        alts = self.do_html_alts(dd, term)
         definition = self.do_html_definition(dd, term)
         Processor.append(self, term, definition, alts)
 

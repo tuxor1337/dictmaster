@@ -27,7 +27,7 @@ class Plugin(PluginThread):
             word_file=word_file,
             word_codec=("utf-8", "utf-8")
         )
-        postprocessor = AhdictProcessor(self)
+        postprocessor = AhdictProcessor("td", self)
         editor = Editor(
             output_directory=self.output_directory,
             plugin=self
@@ -43,9 +43,6 @@ class AhdictFetcher(WordFetcher):
         filter_data = html_container_filter("#results", bad_content="No word definition found")
 
 class AhdictProcessor(HtmlContainerProcessor):
-    def __init__(self, plugin):
-        super(AhdictProcessor, self).__init__("td", plugin)
-
     def do_pre_html(self, encoded_str):
         regex = [
             # pronunciation
@@ -104,3 +101,4 @@ class AhdictProcessor(HtmlContainerProcessor):
             doc(span).replaceWith(doc(span).html())
 
         return html.html().strip()
+

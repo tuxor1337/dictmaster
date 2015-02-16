@@ -3,6 +3,7 @@
 import os
 import sqlite3
 import unicodedata
+import time
 
 import warnings
 warnings.filterwarnings('error', category=UnicodeWarning)
@@ -47,15 +48,18 @@ class Editor(CancelableThread):
             self.conn = sqlite3.connect(db_file)
             self.conn.text_factory = str
             self.c = self.conn.cursor()
-            self.c.execute('''CREATE TABLE dict
-                (id INTEGER PRIMARY KEY,
-                word TEXT, def TEXT)''');
-            self.c.execute('''CREATE TABLE synonyms
-                (id INTEGER PRIMARY KEY,
-                wid INTEGER, syn TEXT)''');
-            self.c.execute('''CREATE TABLE info
-                (id INTEGER PRIMARY KEY,
-                key TEXT, value TEXT)''');
+            self.c.execute('''
+                CREATE TABLE dict
+                (id INTEGER PRIMARY KEY, word TEXT, def TEXT)
+            ''');
+            self.c.execute('''
+                CREATE TABLE synonyms
+                (id INTEGER PRIMARY KEY, wid INTEGER, syn TEXT)
+            ''');
+            self.c.execute('''
+                CREATE TABLE info
+                (id INTEGER PRIMARY KEY, key TEXT, value TEXT)
+            ''');
             self.data = self.plugin.data
             self.glossToDB()
         else:
@@ -88,13 +92,12 @@ class Editor(CancelableThread):
                                                 VALUES (?,?)''',(tmp_id, a))
                     except sqlite3.InterfaceError:
                         sys.exit("Problem: %s; %s" % (tmp_id, a))
-            self._status = "Reading entry {} of {}...".format(i, len(self.data))
-        self._status = "Reading meta info..."
+            self._status = "Writing to db entry {} of {}...".format(i, len(self.data))
+        self._status = "Storing meta info..."
 
-        self.c.execute(
-            "INSERT INTO info(key,value) VALUES (?,?)",
-            ("bookname", self.dictname)
-        )
+        self.c.execute("""
+            INSERT INTO info(key,value) VALUES (?,?)
+        """, ("bookname", self.dictname))
 
         self.remove_empty()
         self.dupentries_remove()
@@ -102,65 +105,102 @@ class Editor(CancelableThread):
         else: self.dupidx_cat()
         self.dupsyns_remove()
 
-    def preview_entry(self,word):
-        self.c.execute('''SELECT wid FROM synonyms WHERE syn LIKE ?''',(word+"%",))
-        wids = self.c.fetchall()
-        output = []
-        for (wid,) in wids:
-            self.c.execute('''SELECT word,def FROM dict WHERE id=?''',(wid,))
-            output.append(self.c.fetchone())
-        return output
-
     def remove_empty(self):
         self.c.execute('''DELETE FROM synonyms WHERE syn="" OR syn=" "''')
 
     def dupentries_remove(self):
-        dubs = self.c.execute('''SELECT id,word,def
-            FROM dict GROUP BY word,def HAVING COUNT(*) > 1''').fetchall()
-        no = len(dubs)
-        for i,dbl in enumerate(dubs):
-            if i % 3 == 0:
-                self._status = "Removing duplicates {} of {}...".format(i,no)
-            self.c.execute('''SELECT id FROM dict WHERE word=? AND def=?''',(dbl[1],dbl[2]))
-            old_ids = self.c.fetchall()
-            for old in old_ids:
-                self.c.execute('''UPDATE synonyms SET wid=? WHERE wid=?''',(dbl[0],old[0]))
-            self.c.execute('''DELETE FROM dict WHERE word=? AND def=? AND id!=?''',(dbl[1],dbl[2],dbl[0]))
+        self._status = "Removing duplicate entries (this might take a few minutes)..."
+        start_time = time.time()
+        self.c.execute('''
+            CREATE TEMP TABLE TempDict AS
+                SELECT k.id, q.MaxId
+                FROM dict k
+                JOIN (SELECT MAX(d.id) as MaxId, d.word, d.def
+                      FROM dict d
+                      GROUP BY d.word,d.def) q
+                ON q.word = k.word
+                AND q.def = k.def
+        ''')
+        affected = self.c.execute("SELECT COUNT(*) FROM TempDict GROUP BY MaxId").fetchall()[0][0]
+        self._status = "Removing {} duplicate entries...".format(affected)
+        self.c.execute('''
+            UPDATE synonyms
+            SET wid = (SELECT MaxId
+                       FROM TempDict d
+                       WHERE d.id = synonyms.wid)
+        ''')
+        self.c.execute('''
+            DELETE FROM dict
+            WHERE id NOT IN (SELECT MaxId FROM TempDict)
+        ''')
+        #print "\n%d seconds\n" % (time.time() - start_time,)
+        self._status = "Done removing duplicate entries ({} entries affected).".format(self.c.rowcount)
 
     def dupsyns_remove(self):
         self._status = "Removing duplicate synonyms..."
-        dubs = self.c.execute('''DELETE FROM synonyms WHERE id NOT IN
-            (SELECT max(id) FROM synonyms GROUP BY wid,syn)
+        dubs = self.c.execute('''
+            DELETE FROM synonyms
+            WHERE id NOT IN (SELECT max(id)
+                             FROM synonyms
+                             GROUP BY wid,syn)
         ''')
         self._status = "Done removing duplicate synonyms ({} entries affected).".format(self.c.rowcount)
 
     def dupidx_enumerate(self):
-        self.c.execute('''SELECT word FROM dict GROUP BY word HAVING COUNT(*) > 1''')
+        self.c.execute('''
+            SELECT word
+            FROM dict
+            GROUP BY word
+            HAVING COUNT(*) > 1
+        ''')
         dubs = self.c.fetchall()
         no = len(dubs)
         for i,dbl in enumerate(dubs):
-            if i % 7 == 0:
-                self._status = "Enumerating ambivalent entries %5d of %5d..." % (i,no)
+            self._status = "Enumerating ambivalent entries %5d of %5d..." % (i,no)
             self.c.execute('''SELECT id FROM dict WHERE word=?''',(dbl[0],))
             for j,wid in enumerate(self.c.fetchall()):
-                self.c.execute('''INSERT INTO synonyms(wid,syn)
-                                            VALUES (?,?)''',(wid[0],dbl[0]))
-                self.c.execute('''UPDATE dict SET word=? WHERE id=?''',("%s(%d)" % (dbl[0],j+1),wid[0]))
+                self.c.execute('''
+                    INSERT INTO synonyms(wid,syn)
+                    VALUES (?,?)
+                ''', (wid[0],dbl[0]))
+                self.c.execute('''
+                    UPDATE dict
+                    SET word=?
+                    WHERE id=?
+                ''', ("%s(%d)" % (dbl[0],j+1),wid[0]))
 
     def dupidx_cat(self):
-        self.c.execute('''SELECT id,word,def FROM dict GROUP BY word HAVING COUNT(*) > 1''')
+        self.c.execute('''
+            SELECT id, word, def
+            FROM dict
+            GROUP BY word
+            HAVING COUNT(*) > 1
+        ''')
         critical = self.c.fetchall()
         no = len(critical)
         for i,entry in enumerate(critical):
             self._status = "Concatenating ambivalent entries %5d of %5d..." % (i,no)
-            self.c.execute('''SELECT id,def FROM dict WHERE word=? AND id!=?''',(entry[1],entry[0]))
+            self.c.execute('''
+                SELECT id, def
+                FROM dict
+                WHERE word=?
+                AND id!=?
+            ''', (entry[1],entry[0]))
             dups = self.c.fetchall()
             defn = entry[2]
             for dup in dups:
                 self.c.execute('''DELETE FROM dict WHERE id=?''', (dup[0],))
-                self.c.execute('''UPDATE synonyms SET wid=? WHERE wid=?''', (entry[0],dup[0]))
+                self.c.execute('''
+                    UPDATE synonyms
+                    SET wid=?
+                    WHERE wid=?
+                ''', (entry[0],dup[0]))
                 defn += dup[1]
-            self.c.execute('''UPDATE dict SET def=? WHERE id=?''',(defn,entry[0]))
+            self.c.execute('''
+                UPDATE dict
+                SET def=?
+                WHERE id=?
+            ''', (defn,entry[0]))
 
     def write(self,fname):
         if fname[-6:].lower() == "sqlite":
