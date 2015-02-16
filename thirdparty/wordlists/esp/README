@@ -1,0 +1,19 @@
+
+words.txt
+---------
+
+The list of words contained in the DRAE according to the project on
+https://code.google.com/p/tokland/wiki/DiccionarioRAE.
+
+Note that the downloader presented there is from 2012 and doesn't work anymore.
+
+drae.txt
+--------
+
+According to http://www.rae.es/sites/default/files/Preambulo.pdf, the DRAE
+(22th edition) contains 88431 (23rd ed: 93111) entries.
+
+The file `words.txt` contains 87603 words and hence seems to be a good
+approximation. But when I tried to fetch these 87603 words, for about 8000
+words the download failed. The file `drae.txt` contains roughly the words from
+`words.txt` for which the download did not fail.

@@ -1,3 +1,13 @@
-     
 
 All files are encoded as Unicode (UTF-8) with Unix style line breaks.
+
+ahdict.txt
+----------
+
+According to the paperback version of the 5th edition, the American Heritage
+Dictionary contains "more than 70000 entries".
+
+I tried fetching all the words in UKACD17.txt from the ahdictionary.com page.
+For half of the words the download failed and in some cases, different words
+yielded the same dictionary entry. The file `ahdict.txt` contains
+roughly the words for which the download did not fail, and that's 62800.
