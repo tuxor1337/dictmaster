@@ -32,7 +32,7 @@ class Plugin(PluginThread):
 
 class EtymonlineFetcher(AlphanumFetcher):
     class FetcherThread(AlphanumFetcher.FetcherThread):
-        def filter_override(self, encoded_str):
+        def filter_data(self, encoded_str):
             container = "div#dictionary dl"
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(encoded_str, parser=parser))

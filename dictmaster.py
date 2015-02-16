@@ -27,9 +27,9 @@ def main(args):
     if args.reset:
         broadcast("Resetting plugin data in '{}'.".format(plugin.output_directory))
         plugin.reset()
-    
+
     broadcast("Running plugin '{}'.".format(args.plugin))
-    broadcast("Output is written to '{}'.".format(plugin.output_directory))
+    broadcast("Output will be written to '{}'.".format(plugin.output_directory))
     plugin.start()
 
     def ctrl_c(signal, frame):
