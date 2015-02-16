@@ -13,6 +13,7 @@ from dictmaster.postprocessor import HtmlContainerProcessor
 from dictmaster.editor import Editor
 
 # TODO: get full word list
+# TODO: add index of indoeurop. roots: https://www.ahdictionary.com/word/indoeurop.html
 
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
@@ -40,20 +41,35 @@ class Plugin(PluginThread):
 
 class AhdictFetcher(WordFetcher):
     class FetcherThread(WordFetcher.FetcherThread):
-        filter_data = html_container_filter("#results", bad_content="No word definition found")
+        def filter_data(self, data):
+            if '<div id="results">' not in data: return None
+            if '<div id="results">No word definition found</div>' in data:
+                return None
+            repl = [
+                ["<!--end-->",""],
+                # pronunciation
+                ["","′"],
+                ["","o͞o"],
+                ["","ᴋʜ"] # AH uses ᴋʜ for x in IPA
+            ]
+            for r in repl: data = data.replace(r[0], r[1])
+            regex = [
+                [r'<div align="right">[^<]*<a[^>]*>[^<]*</a><script[^>]*>[^<]*</script></div>',""],
+                [r'<div class="figure"><font[^>]*>[^<]*</font></div>',""],
+                [r'<(img|a)[^>]*/>',""],
+                [r'<a[^>]*(authorName=|indoeurop.html|\.wav")[^>]*>([^<]*)</a>',r"\2"],
+                [r'<hr[^>]*><span class="copyright">[^<]*<br/>[^<]*</span>',""],
+                [r'<(a|span)[^>]*>[ \n]*</(span|a)>',""],
+                [r' (name|target|title|border|cellspacing)="[^"]*"',r""],
+                [r'<table width="100%">',"<table>"],
+                [r"</?font[^>]*>",""]
+            ]
+            for r in regex: data = re.sub(r[0], r[1], data)
+            parser = etree.HTMLParser(encoding="utf-8")
+            doc = pq(etree.fromstring(data, parser=parser))
+            return doc("#results").html().encode("utf-8")
 
 class AhdictProcessor(HtmlContainerProcessor):
-    def do_pre_html(self, encoded_str):
-        regex = [
-            # pronunciation
-            [r"","′"],
-            [r"","o͞o"],
-            [r"</?font[^>]*>",""]
-        ]
-        for r in regex:
-            encoded_str = re.sub(r[0], r[1], encoded_str)
-        return encoded_str
-
     def do_html_term(self, doc):
         term = doc("b").eq(0).text().strip()
         regex = [
@@ -66,10 +82,6 @@ class AhdictProcessor(HtmlContainerProcessor):
 
     def do_html_definition(self, html, term):
         doc = pq(html)
-        doc("img").remove()
-        doc("div[align=right]").remove()
-        doc("a").removeAttr("name")
-        doc("a").removeAttr("target")
         for a in html.find("a:not([href])"):
             if doc(a).text().strip() == "":
                 doc(a).remove()
@@ -96,7 +108,7 @@ class AhdictProcessor(HtmlContainerProcessor):
                 doc("<p/>").css("margin-left","1ex")
                     .html(doc(div).html()).outerHtml()
             )
-        html.find("*").removeAttr("class").removeAttr("title")
+        html.find("*").removeAttr("class")
         for span in html.find("span"):
             doc(span).replaceWith(doc(span).html())
 
