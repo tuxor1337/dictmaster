@@ -3,7 +3,6 @@
 import os
 import sqlite3
 import unicodedata
-import time
 
 import warnings
 warnings.filterwarnings('error', category=UnicodeWarning)
@@ -57,6 +56,10 @@ class Editor(CancelableThread):
                 (id INTEGER PRIMARY KEY, wid INTEGER, syn TEXT)
             ''');
             self.c.execute('''
+                CREATE INDEX synonym_wid_idx
+                ON synonyms (wid)
+            ''')
+            self.c.execute('''
                 CREATE TABLE info
                 (id INTEGER PRIMARY KEY, key TEXT, value TEXT)
             ''');
@@ -85,13 +88,15 @@ class Editor(CancelableThread):
                 if self.auto_synonyms:
                     alts = findSynonyms((edited[0],edited[1],{'alts':alts}))
                 word = edited[0]
-                self.c.execute("INSERT INTO dict(word,def) VALUES (?,?)",(word,edited[1]))
+                self.c.execute('''
+                    INSERT INTO dict(word,def)
+                    VALUES (?,?)
+                ''', (word, edited[1]))
                 tmp_id = self.c.lastrowid
-                for a in alts:
-                    try: self.c.execute('''INSERT INTO synonyms(wid,syn)
-                                                VALUES (?,?)''',(tmp_id, a))
-                    except sqlite3.InterfaceError:
-                        sys.exit("Problem: %s; %s" % (tmp_id, a))
+                self.c.executemany('''
+                    INSERT INTO synonyms(wid,syn)
+                    VALUES (?,?)
+                ''', [(tmp_id, a) for a in alts])
             self._status = "Writing to db entry {} of {}...".format(i, len(self.data))
         self._status = "Storing meta info..."
 
@@ -110,18 +115,23 @@ class Editor(CancelableThread):
 
     def dupentries_remove(self):
         self._status = "Removing duplicate entries (this might take a few minutes)..."
-        start_time = time.time()
         self.c.execute('''
-            CREATE TEMP TABLE TempDict AS
-                SELECT k.id, q.MaxId
-                FROM dict k
-                JOIN (SELECT MAX(d.id) as MaxId, d.word, d.def
-                      FROM dict d
-                      GROUP BY d.word,d.def) q
-                ON q.word = k.word
-                AND q.def = k.def
+            CREATE TEMP TABLE TempDict
+            (id INTEGER PRIMARY KEY, MaxId INTEGER)
+        ''');
+        self.c.execute('''
+            INSERT INTO TempDict (id, MaxId)
+            SELECT k.id, q.MaxId
+            FROM dict k
+            JOIN (SELECT MAX(d.id) as MaxId, d.word, d.def
+                  FROM dict d
+                  GROUP BY d.word,d.def) q
+            ON q.word = k.word
+            AND q.def = k.def
         ''')
-        affected = self.c.execute("SELECT COUNT(*) FROM TempDict GROUP BY MaxId").fetchall()[0][0]
+        affected = self.c.execute('''
+            SELECT COUNT(*) FROM TempDict WHERE MaxId <> id
+        ''').fetchall()[0][0]
         self._status = "Removing {} duplicate entries...".format(affected)
         self.c.execute('''
             UPDATE synonyms
@@ -133,7 +143,9 @@ class Editor(CancelableThread):
             DELETE FROM dict
             WHERE id NOT IN (SELECT MaxId FROM TempDict)
         ''')
-        #print "\n%d seconds\n" % (time.time() - start_time,)
+        self.c.execute('''
+            DROP TABLE TempDict
+        ''');
         self._status = "Done removing duplicate entries ({} entries affected).".format(self.c.rowcount)
 
     def dupsyns_remove(self):
@@ -156,7 +168,7 @@ class Editor(CancelableThread):
         dubs = self.c.fetchall()
         no = len(dubs)
         for i,dbl in enumerate(dubs):
-            self._status = "Enumerating ambivalent entries %5d of %5d..." % (i,no)
+            self._status = "Enumerating ambivalent entries %d of %d..." % (i,no)
             self.c.execute('''SELECT id FROM dict WHERE word=?''',(dbl[0],))
             for j,wid in enumerate(self.c.fetchall()):
                 self.c.execute('''
@@ -179,7 +191,7 @@ class Editor(CancelableThread):
         critical = self.c.fetchall()
         no = len(critical)
         for i,entry in enumerate(critical):
-            self._status = "Concatenating ambivalent entries %5d of %5d..." % (i,no)
+            self._status = "Concatenating ambivalent entries %d of %d..." % (i,no)
             self.c.execute('''
                 SELECT id, def
                 FROM dict
@@ -187,20 +199,19 @@ class Editor(CancelableThread):
                 AND id!=?
             ''', (entry[1],entry[0]))
             dups = self.c.fetchall()
-            defn = entry[2]
-            for dup in dups:
-                self.c.execute('''DELETE FROM dict WHERE id=?''', (dup[0],))
-                self.c.execute('''
-                    UPDATE synonyms
-                    SET wid=?
-                    WHERE wid=?
-                ''', (entry[0],dup[0]))
-                defn += dup[1]
+            self.c.executemany('''
+                DELETE FROM dict WHERE id=?
+            ''', [(d[0],) for d in dups])
+            self.c.executemany('''
+                UPDATE synonyms
+                SET wid=?
+                WHERE wid=?
+            ''', [(entry[0],d[0]) for d in dups])
             self.c.execute('''
                 UPDATE dict
                 SET def=?
                 WHERE id=?
-            ''', (defn,entry[0]))
+            ''', (entry[2] + "".join(d[1] for d in dups),entry[0]))
 
     def write(self,fname):
         if fname[-6:].lower() == "sqlite":
