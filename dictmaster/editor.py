@@ -114,7 +114,7 @@ class Editor(CancelableThread):
         self.c.execute('''DELETE FROM synonyms WHERE syn="" OR syn=" "''')
 
     def dupentries_remove(self):
-        self._status = "Removing duplicate entries (this might take a few minutes)..."
+        self._status = "Removing duplicate entries..."
         self.c.execute('''
             CREATE TEMP TABLE TempDict
             (id INTEGER PRIMARY KEY, MaxId INTEGER)
@@ -242,7 +242,7 @@ class Editor(CancelableThread):
         if "sametypesequence" in info: defiFormat = info["sametypesequence"]
         else: defiFormat = "h"
         for i,row in enumerate(rows):
-            self._status = "Writing entry %5d of %5d..." % (i,no)
+            self._status = "Reading from db entry %d of %d..." % (i,no)
             data.append((row[0],row[1],{'defiFormat': defiFormat, 'alts':syn_list[row[2]]}))
         return (info, data)
 
