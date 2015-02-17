@@ -29,14 +29,10 @@ class Plugin(PluginThread):
             word_codec=("utf-8", "utf-8")
         )
         postprocessor = AhdictProcessor("td", self)
-        editor = Editor(
-            output_directory=self.output_directory,
-            plugin=self
-        )
         self._stages = [
             fetcher,
             postprocessor,
-            editor
+            editor = Editor(plugin=self)
         ]
 
 class AhdictFetcher(WordFetcher):

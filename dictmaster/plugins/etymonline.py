@@ -8,7 +8,6 @@ import re
 from pyquery import PyQuery as pq
 from lxml import etree
 
-from dictmaster.util import html_container_filter
 from dictmaster.pthread import PluginThread
 from dictmaster.fetcher import AlphanumFetcher
 from dictmaster.postprocessor import HtmlABProcessor
@@ -22,36 +21,31 @@ class Plugin(PluginThread):
             self.output_directory,
             url_pattern="http://www.etymonline.com/index.php?l={alpha}&p={num}"
         )
-        postprocessor = EtymonlineProcessor(self)
-        editor = Editor(output_directory=self.output_directory, plugin=self)
         self._stages = [
             fetcher,
-            postprocessor,
-            editor
+            EtymonlineProcessor(("dt", "dd"), self, "iso-8859-1"),
+            Editor(plugin=self)
         ]
 
 class EtymonlineFetcher(AlphanumFetcher):
     class FetcherThread(AlphanumFetcher.FetcherThread):
-        def filter_data(self, encoded_str):
+        def filter_data(self, data):
+            if '<div id="dictionary">' not in data \
+                or '<p>No matching terms found.</p>' in data: 
+                raise Exception("next_block")
             container = "div#dictionary dl"
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(encoded_str, parser=parser))
-            if len(doc(container)) == 0:
-                raise Exception("next_block")
-            else:
-                return doc(container).html().encode("utf-8")
+            if len(doc(container)) == 0: raise Exception("next_block")
+            else: return doc(container).html().encode("utf-8")
 
 class EtymonlineProcessor(HtmlABProcessor):
-    def __init__(self, plugin):
-        super(EtymonlineProcessor, self).__init__(("dt", "dd"), plugin, "iso-8859-1")
-
     def do_html_term(self, doc):
         term = doc("a").eq(0).text().strip()
         regex = [
             [r" +\([^)]+\)$",r""]
         ]
-        for r in regex:
-            term = re.sub(r[0], r[1], term)
+        for r in regex: term = re.sub(r[0], r[1], term)
         return term
 
     def do_html_definition(self, html, term):
@@ -73,18 +67,17 @@ class EtymonlineProcessor(HtmlABProcessor):
         for span in d("blockquote p.src"):
             d(span).attr("style","font-style:normal;font-size:x-small;text-align:right")
             d(span).find("span.meaning").removeAttr("style")
+        d("*").removeAttr("class")
         return "<dt>%s</dt><dd>%s</dd>" % (term, d.html())
 
 def _walkTextNodes(dom, fn):
     for node in dom.childNodes:
         if node.nodeType == Node.TEXT_NODE:
             node.replaceWholeText(fn(node.nodeValue))
-        else:
-            _walkTextNodes(node, fn)
+        else: _walkTextNodes(node, fn)
 
 def _processText(text):
-    text = re.sub(r'"([^"]+)"', r'[span class=meaning]"\1"[/span]', text)
-    return text
+    return re.sub(r'"([^"]+)"', r'[span class=meaning]"\1"[/span]', text)
 
 def _replace_quotes(pq_obj):
     handler = SAX2DOM()
@@ -96,8 +89,7 @@ def _replace_quotes(pq_obj):
     return pq(dom)
 
 def _processBlockquote(text):
-    text = re.sub(r'\[([^\]]+)\]', r'[p class=src][\1][/p]', text)
-    return text
+    return re.sub(r'\[([^\]]+)\]', r'[p class=src][\1][/p]', text)
 
 def _replace_blockquote_src(d, dd):
     for block in d("blockquote"):

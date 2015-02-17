@@ -38,15 +38,10 @@ class Plugin(PluginThread):
             word_codec=("utf-8", "iso-8859-1"),
             postdata=POSTDATA
         )
-        postprocessor = DraeProcessor(self)
-        editor = Editor(
-            output_directory=self.output_directory,
-            plugin=self
-        )
         self._stages = [
             fetcher,
-            postprocessor,
-            editor
+            DraeProcessor("div", self),
+            Editor(plugin=self)
         ]
 
 class DraeFetcher(WordFetcher):
@@ -67,9 +62,6 @@ class DraeFetcher(WordFetcher):
                 return "".join(doc(d).outerHtml().encode("utf-8") for d in doc(cont))
 
 class DraeProcessor(HtmlContainerProcessor):
-    def __init__(self, plugin):
-        super(DraeProcessor, self).__init__("div", plugin)
-
     def do_html_term(self, doc):
         term = doc("p.p span.f b").eq(0).text().strip()
         return term

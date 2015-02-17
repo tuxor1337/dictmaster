@@ -314,17 +314,11 @@ class Plugin(PluginThread):
                 "https://www.cia.gov/library/publications/download/download-2014/graphics.zip"
             ]
         )
-        postprocessor = FactbookProcessor(self)
-        editor = Editor(
-            output_directory=self.output_directory,
-            plugin=self,
-            auto_synonyms=False
-        )
         self._stages = [
             fetcher,
             FactbookUnzipper(self.output_directory),
-            postprocessor,
-            editor
+            FactbookProcessor("div.CollapsiblePanel", self),
+            Editor(plugin=self, auto_synonyms=False)
         ]
 
     def setup_dirs(self):
@@ -364,9 +358,6 @@ class FactbookUnzipper(Unzipper):
             shutil.rmtree(path)
 
 class FactbookProcessor(HtmlContainerProcessor):
-    def __init__(self, plugin):
-        super(FactbookProcessor, self).__init__("div.CollapsiblePanel", plugin)
-
     def do_html_alts(self, dd, term):
         d = pq(dd)
         alts = []

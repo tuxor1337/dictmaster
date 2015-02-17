@@ -565,17 +565,11 @@ class Plugin(PluginThread):
             self.output_directory,
             urls=["ftp://ftp.gnu.org/gnu/gcide/gcide-0.51.zip"]
         )
-        postprocessor = GcideProcessor(self)
-        editor = Editor(
-            output_directory=self.output_directory,
-            plugin=self,
-            enumerate=False
-        )
         self._stages = [
             fetcher,
             GcideUnzipper(self.output_directory),
-            postprocessor,
-            editor
+            GcideProcessor("p", self, charset="windows-1252"),
+            Editor(plugin=self, enumerate=False)
         ]
 
     def setup_dirs(self):
@@ -598,9 +592,6 @@ class GcideUnzipper(Unzipper):
         shutil.rmtree(path)
 
 class GcideProcessor(HtmlContainerProcessor):
-    def __init__(self, plugin):
-        super(GcideProcessor, self).__init__("p", plugin, charset="windows-1252")
-
     def append(self, dt, dd):
         term = self.do_html_term(dt)
         alts = self.do_html_alts(dd, term)

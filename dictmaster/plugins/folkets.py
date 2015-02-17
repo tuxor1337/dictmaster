@@ -109,19 +109,10 @@ class Plugin(PluginThread):
         self.dictname = self.dictname % popts
         url = "http://folkets-lexikon.csc.kth.se/folkets/folkets_%s_public.xml"
         url = url % popts.lower().replace("-","_")
-        fetcher = Fetcher(self.output_directory,
-            urls=[url],
-            threadcnt=1
-        )
-        postprocessor = FolketsProcessor(self)
-        editor = Editor(
-            output_directory=self.output_directory,
-            plugin=self
-        )
         self._stages = [
-            fetcher,
-            postprocessor,
-            editor
+            Fetcher(self.output_directory, urls=[url], threadcnt=1),
+            FolketsProcessor("word", self),
+            Editor(plugin=self)
         ]
 
     def run(self):
@@ -137,9 +128,6 @@ class Plugin(PluginThread):
         PluginThread.run(self)
 
 class FolketsProcessor(HtmlContainerProcessor):
-    def __init__(self, plugin):
-        super(FolketsProcessor, self).__init__("word", plugin)
-
     def do_html_term(self, doc):
         term = doc.attr("value")
         return term

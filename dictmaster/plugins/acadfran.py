@@ -17,17 +17,11 @@ class Plugin(PluginThread):
         super(Plugin, self).__init__(popts, dirname)
         self.url_list = []
         self.dictname = "Dictionnaires de l’Académie française : 8ème édition"
-        fetcher = AcadfranFetcher(self.output_directory, urls=self.url_list)
-        postprocessor = AcadfranProcessor(self)
-        editor = Editor(
-            output_directory=self.output_directory,
-            plugin=self
-        )
         self._stages = [
             AcadfranUrlFetcher(self),
-            fetcher,
-            postprocessor,
-            editor
+            AcadfranFetcher(self.output_directory, urls=self.url_list),
+            AcadfranProcessor("tr > td > div", self, charset="windows-1252"),
+            Editor(plugin=self)
         ]
 
 class AcadfranFetcher(Fetcher):
@@ -62,9 +56,6 @@ class AcadfranUrlFetcher(UrlFetcher):
             self.plugin.url_list.append(url)
 
 class AcadfranProcessor(HtmlContainerProcessor):
-    def __init__(self, plugin):
-        super(AcadfranProcessor, self).__init__("tr > td > div", plugin, charset="windows-1252")
-
     def do_html_term(self, doc):
         term = doc("B b font[color=blue]").eq(0).text().strip().lower()
         return term

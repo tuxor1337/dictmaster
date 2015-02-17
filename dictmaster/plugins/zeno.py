@@ -45,17 +45,11 @@ class Plugin(PluginThread):
             "%s/Kategorien/T/%s?s=%%d" % (ZENO_URL, zeno_key),
             ZENO_OPTS[zeno_key]["wordcount"]
         )
-        fetcher = ZenoFetcher(self.output_directory, urls=self.url_list)
-        postprocessor = ZenoProcessor(self, ZENO_OPTS[zeno_key]["non-articles"])
-        editor = Editor(
-            output_directory=self.output_directory,
-            plugin=self
-        )
         self._stages = [
             url_fetcher,
-            fetcher,
-            postprocessor,
-            editor
+            ZenoFetcher(self.output_directory, urls=self.url_list),
+            ZenoProcessor(self, ZENO_OPTS[zeno_key]["non-articles"]),
+            Editor(plugin=self)
         ]
 
 class ZenoFetcher(Fetcher):

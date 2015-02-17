@@ -21,17 +21,11 @@ class Plugin(PluginThread):
             self.output_directory,
             urls=["https://bitbucket.org/Mytskine/xmlittre-data/get/master.zip"]
         )
-        postprocessor = XmlittreProcessor(self)
-        editor = Editor(
-            output_directory=self.output_directory,
-            plugin=self,
-            auto_synonyms=False,
-        )
         self._stages = [
             fetcher,
             XmlittreUnzipper(self.output_directory),
-            postprocessor,
-            editor
+            XmlittreProcessor("entree", self),
+            Editor(plugin=self, auto_synonyms=False)
         ]
 
     def setup_dirs(self):
@@ -54,9 +48,6 @@ class XmlittreUnzipper(Unzipper):
         shutil.rmtree(path)
 
 class XmlittreProcessor(HtmlContainerProcessor):
-    def __init__(self, plugin):
-        super(XmlittreProcessor, self).__init__("entree", plugin)
-
     def do_html_term(self, doc):
         term = doc.attr("terme").lower()
         return term

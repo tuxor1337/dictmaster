@@ -28,15 +28,11 @@ class Plugin(PluginThread):
             subsubfieldSplit=";",
             flipCols=flipCols
         )
-        editor = Editor(
-            output_directory=self.output_directory,
-            plugin=self
-        )
         self._stages = [
             fetcher,
             Unzipper(self.output_directory),
             postprocessor,
-            editor
+            Editor(plugin=self)
         ]
 
     def setup_dirs(self):

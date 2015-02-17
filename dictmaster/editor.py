@@ -16,19 +16,15 @@ class Editor(CancelableThread):
     data = []
     enumerate = True
     auto_synonyms = True
-    dictname = ""
-    output_directory = ""
     conn = None
     c = None
 
     _status = ""
 
-    def __init__(self, output_directory, plugin, enumerate=True, auto_synonyms=True):
+    def __init__(self, plugin, enumerate=True, auto_synonyms=True):
         super(Editor, self).__init__()
         self.auto_synonyms = auto_synonyms
-        self.output_directory = output_directory
         self.enumerate = enumerate
-        self.dictname = plugin.dictname
         self.plugin = plugin
 
     def progress(self):
@@ -36,7 +32,7 @@ class Editor(CancelableThread):
         else: return self._status
 
     def run(self):
-        db_file = os.path.join(self.output_directory, "db.sqlite")
+        db_file = os.path.join(self.plugin.output_directory, "db.sqlite")
         """
         Force creating a new database, since there is no use of starting from
         an existing database at the moment.
@@ -74,7 +70,7 @@ class Editor(CancelableThread):
                 print("No or corrupt sqlite database. Exiting...")
                 raise
         self.conn.commit()
-        self.write(os.path.join(self.output_directory, "stardict.ifo"))
+        self.write(os.path.join(self.plugin.output_directory, "stardict.ifo"))
         self.conn.close()
 
     def glossToDB(self):
@@ -102,7 +98,7 @@ class Editor(CancelableThread):
 
         self.c.execute("""
             INSERT INTO info(key,value) VALUES (?,?)
-        """, ("bookname", self.dictname))
+        """, ("bookname", self.plugin.dictname))
 
         self.remove_empty()
         self.dupentries_remove()

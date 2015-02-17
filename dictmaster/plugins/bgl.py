@@ -17,5 +17,5 @@ class Plugin(PluginThread):
         self.dictname = None
         self._stages = [
             BglProcessor(self, bgl_file),
-            Editor(output_directory=self.output_directory, plugin=self)
+            Editor(plugin=self)
         ]
