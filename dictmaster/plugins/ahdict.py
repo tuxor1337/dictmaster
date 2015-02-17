@@ -32,7 +32,7 @@ class Plugin(PluginThread):
         self._stages = [
             fetcher,
             postprocessor,
-            editor = Editor(plugin=self)
+            Editor(plugin=self)
         ]
 
 class AhdictFetcher(WordFetcher):
@@ -55,7 +55,7 @@ class AhdictFetcher(WordFetcher):
                 [r'<(img|a)[^>]*/>',""],
                 [r'<a[^>]*(authorName=|indoeurop.html|\.wav")[^>]*>([^<]*)</a>',r"\2"],
                 [r'<hr[^>]*><span class="copyright">[^<]*<br/>[^<]*</span>',""],
-                [r'<(a|span)[^>]*>[ \n]*</(span|a)>',""],
+                [r'<(a|span)[^>]*>([ \n]*)</(span|a)>',r"\2"],
                 [r' (name|target|title|border|cellspacing)="[^"]*"',r""],
                 [r'<table width="100%">',"<table>"],
                 [r"</?font[^>]*>",""]
@@ -77,14 +77,14 @@ class AhdictProcessor(HtmlContainerProcessor):
 
     def do_html_definition(self, html, term):
         doc = pq(html)
-        for a in html.find("a:not([href])"):
+        for a in doc("a:not([href])"):
             if doc(a).text().strip() == "":
                 doc(a).remove()
             else:
                 doc(a).replaceWith(doc(a).html())
-        for a in html.find("a"):
+        for a in doc("a"):
             if doc(a).text().strip() == "":
-                doc(a).remove()
+                doc(a).replaceWith(doc(a).text())
             elif "search.html" not in doc(a).attr("href"):
                 doc(a).replaceWith(doc(a).html())
             else:
@@ -94,18 +94,18 @@ class AhdictProcessor(HtmlContainerProcessor):
         doc("i").css("color","#940")
         doc("div.pseg > i").css("color","#900")
         doc("div.runseg > i").css("color","#900")
-        for div in html.find("div.ds-list"):
+        for div in doc("div.ds-list"):
             doc(div).replaceWith(
                 doc("<p/>").html(doc(div).html()).outerHtml()
             )
-        for div in html.find("div.sds-list"):
+        for div in doc("div.sds-list"):
             doc(div).replaceWith(
                 doc("<p/>").css("margin-left","1ex")
                     .html(doc(div).html()).outerHtml()
             )
-        html.find("*").removeAttr("class")
-        for span in html.find("span"):
+        doc("*").removeAttr("class")
+        for span in doc("span"):
             doc(span).replaceWith(doc(span).html())
 
-        return html.html().strip()
+        return doc.html().strip()
 
