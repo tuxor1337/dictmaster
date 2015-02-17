@@ -2,6 +2,7 @@
 
 import re
 import os
+import sys
 
 from pyquery import PyQuery as pq
 from lxml import etree
@@ -36,7 +37,8 @@ class Plugin(PluginThread):
             url_pattern="http://lema.rae.es/drae/srv/search?val={word}",
             word_file=word_file,
             word_codec=("utf-8", "iso-8859-1"),
-            postdata=POSTDATA
+            postdata=POSTDATA,
+            threadcnt=10
         )
         self._stages = [
             fetcher,
@@ -47,8 +49,7 @@ class Plugin(PluginThread):
 class DraeFetcher(WordFetcher):
     class FetcherThread(WordFetcher.FetcherThread):
         def filter_data(self, data):
-            if data == None or len(data) == 0:
-                return None
+            if data == None or len(data) < 2: return None
             cont = "body > div"
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(data, parser=parser))
@@ -57,7 +58,8 @@ class DraeFetcher(WordFetcher):
             elif len(doc(u"img[alt='Ver artículo enmendado']")) > 0:
                 img = doc(u"img[alt='Ver artículo enmendado']")
                 url = "http://lema.rae.es/drae/srv/%s" % img.parent().attr("href")
-                return self.fetchUrl(url)
+                data = self.download_retry(url, self.postdata)
+                return self.filter_data(data)
             else:
                 return "".join(doc(d).outerHtml().encode("utf-8") for d in doc(cont))
 
