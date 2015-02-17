@@ -23,7 +23,7 @@ class Plugin(PluginThread):
         )
         self._stages = [
             fetcher,
-            EtymonlineProcessor(("dt", "dd"), self, "iso-8859-1"),
+            EtymonlineProcessor(("dt", "dd"), self),
             Editor(plugin=self)
         ]
 
@@ -34,7 +34,7 @@ class EtymonlineFetcher(AlphanumFetcher):
                 or '<p>No matching terms found.</p>' in data: 
                 raise Exception("next_block")
             container = "div#dictionary dl"
-            parser = etree.HTMLParser(encoding="utf-8")
+            parser = etree.HTMLParser(encoding="iso-8859-1")
             doc = pq(etree.fromstring(data, parser=parser))
             if len(doc(container)) == 0: raise Exception("next_block")
             else: return doc(container).html().encode("utf-8")
