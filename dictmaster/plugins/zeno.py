@@ -54,27 +54,23 @@ class Plugin(PluginThread):
 
 class ZenoFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
-        def fetchUrl(self, url):
-            Fetcher.FetcherThread.fetchUrl(self, ZENO_URL + url)
+        def fetch_url(self, url):
+            Fetcher.FetcherThread.fetch_url(self, ZENO_URL + url)
         def filter_data(self, data):
+            if data == None or len(data) < 2: return None
             container = "div.zenoCOMain"
             encoded_str = data.decode("iso-8859-1").encode("utf-8")
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(encoded_str, parser=parser))
-            if len(doc(container)) == 0:
-                return None
-            else:
-                return doc(container).html().encode("utf-8")
+            if len(doc(container)) == 0: return None
+            else: return doc(container).html().encode("utf-8")
 
 class ZenoUrlFetcher(UrlFetcher):
-    class FetcherThread(UrlFetcher.FetcherThread):
-        def get_offset(self):
-            return UrlFetcher.FetcherThread.get_offset(self) / 20
-        
+    class FetcherThread(UrlFetcher.FetcherThread): pass
     def __init__(self, plugin, url_pattern, wordcount):
         super(ZenoUrlFetcher, self).__init__(plugin)
         self.urls = range(0,wordcount,20)
-        def fetchUrl_override(fthread, url):
+        def fetch_url_override(fthread, url):
             fthread._i += 1
             url = url_pattern % url
             d = pq(fthread.download_retry(url))
@@ -88,7 +84,7 @@ class ZenoUrlFetcher(UrlFetcher):
                 output += "%s\n" % url
             fthread.write_file(None, output)
             return output
-        self.FetcherThread.fetchUrl = fetchUrl_override
+        self.FetcherThread.fetch_url = fetch_url_override
 
 class ZenoProcessor(HtmlContainerProcessor):
     def __init__(self, plugin, nonarticles):

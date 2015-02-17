@@ -30,8 +30,9 @@ class Plugin(PluginThread):
 class EtymonlineFetcher(AlphanumFetcher):
     class FetcherThread(AlphanumFetcher.FetcherThread):
         def filter_data(self, data):
-            if '<div id="dictionary">' not in data \
-                or '<p>No matching terms found.</p>' in data: 
+            if data == None or len(data) < 2 \
+            or '<div id="dictionary">' not in data \
+            or '<p>No matching terms found.</p>' in data:
                 raise Exception("next_block")
             container = "div#dictionary dl"
             parser = etree.HTMLParser(encoding="iso-8859-1")

@@ -20,12 +20,7 @@ class FetcherThread(CancelableThread):
         super(FetcherThread, self).__init__()
         self.urls, self.postdata = urls, postdata
         self.output_directory = output_directory
-        self.offset = self.get_offset()
-        self.no,self._i = no,self.offset
-
-    def get_offset(self):
-        downloaded = sorted(glob.glob(self.output_path("%d_*"%self.no)))
-        return int(downloaded[-1][-6:]) if len(downloaded) > 0 else 0
+        self.no = no
 
     def output_path(self, basename=None, temporary=False):
         if basename == None: basename = "%d_%06d" % (self.no, self._i)
@@ -33,23 +28,25 @@ class FetcherThread(CancelableThread):
         return os.path.join(self.output_directory, basename)
 
     def filter_data(self, data): return data
+    def file_exists(self, b=None): return os.path.exists(self.output_path(b))
 
-    def fetchUrl(self, url):
+    def fetch_url(self, url):
         self._i += 1
+        if self.file_exists(): return
         data = self.download_retry(url, self.postdata)
         data = self.filter_data(data)
-        if data == None or len(data) < 2: return None
+        if data == None or len(data) < 2: data = ""
         self.write_file(None, data)
 
     def run(self):
         for url in self.urls[self.offset:]:
             if self._canceled: break
-            self.fetchUrl(url)
+            self.fetch_url(url)
 
     def progress(self):
         if self._download_status != "": return self._download_status
         if self._canceled: return ""
-        return "{}:{:.1f}%".format(self.no, 100*self._i/float(len(self.urls)))
+        return 100*self._i/float(len(self.urls))
 
     def write_file(self, basename, data):
         tmp_path = self.output_path(basename, True)
@@ -88,12 +85,15 @@ class Fetcher(CancelableThread):
             )
 
     def progress(self):
-        if self._canceled or None in self._subthreads: return "Sleeping..."
+        if None in self._subthreads: return "Initializing threads..."
+        if self._canceled: return "Fetching... quit."
         prog = "Fetching... "
         for i in range(len(self._subthreads)):
             sub_progress = self._subthreads[i].progress()
+            if type(sub_progress) == float:
+                sub_progress = "{:.1f}%".format(sub_progress)
             if sub_progress[:11] == "Downloading": prog = sub_progress; break
-            else: prog += "%s " % self._subthreads[i].progress()[:13]
+            else: prog += "{}:{} ".format(i, sub_progress[:13])
         return prog
 
     def run(self):
@@ -108,20 +108,13 @@ class Fetcher(CancelableThread):
 
 class WordFetcher(Fetcher):
     class FetcherThread(FetcherThread):
-        def get_offset(self):
-            self._curr_word = self.urls[0]
-            self._i = 0
-            for downloaded in sorted(os.listdir(self.output_directory)):
-                if downloaded not in self.urls: continue
-                downloaded_i = self.urls.index(downloaded)
-                if downloaded_i > self._i:
-                    self._i = downloaded_i
-                    self._curr_word = downloaded
-            return self._i
-
-        def write_file(self, basename, data):
+        def output_path(self, basename=None, temporary=False):
             if basename == None: basename = self._curr_word
-            FetcherThread.write_file(self, basename, data)
+            return FetcherThread.output_path(self, basename, temporary)
+
+        def run(self):
+            self._curr_word = self.urls[0]
+            return FetcherThread.run(self)
 
     def __init__(self,
         output_directory,
@@ -144,10 +137,10 @@ class WordFetcher(Fetcher):
             try: tmplist.append(urllib2.quote(w.encode(word_codec[1])))
             except: print "Codec error reading word file:", w; break
         self.urls = tmplist
-        def fetchUrl_override(fthread, url):
+        def fetch_url_override(fthread, url):
             fthread._curr_word = url
-            FetcherThread.fetchUrl(fthread, url_pattern.format(word=url))
-        self.FetcherThread.fetchUrl = fetchUrl_override
+            FetcherThread.fetch_url(fthread, url_pattern.format(word=url))
+        self.FetcherThread.fetch_url = fetch_url_override
 
 class AlphanumFetcher(Fetcher):
     class FetcherThread(FetcherThread):
@@ -155,23 +148,26 @@ class AlphanumFetcher(Fetcher):
             if self._download_status != "": return self._download_status
             if self._canceled: return ""
             if self._curr_alpha == None: return "{}:done".format(self.no)
-            return "{}:{}:{}".format(self.no, self._curr_alpha, self._curr_num)
-
-        def get_offset(self):
-            offset = self._curr_num = 0
-            self._curr_alpha = self.urls[0]
-            for a_i, a in enumerate(self.urls):
-                downloaded = sorted(glob.glob(self.output_path("%s_*"%a)))
-                if len(downloaded) > 0:
-                    offset, self._curr_alpha = a_i, a
-                    self._curr_num = int(downloaded[-1][-6:])
-                else: break
-            return offset
+            return "{}:{}".format(self._curr_alpha, self._curr_num)
 
         def write_file(self, basename, data):
             if basename == None:
                 basename = "%s_%06d" % (self._curr_alpha, self._curr_num)
             FetcherThread.write_file(self, basename, data)
+
+        def run(self):
+            self._curr_num = 0
+            self._curr_alpha = self.urls[0]
+            for a in self.urls[self.offset:]:
+                self._curr_alpha = a
+                for i in range(self._curr_num, 200):
+                    if self._canceled: return
+                    try: self.fetch_url(i, a)
+                    except Exception as e:
+                        if e.args[0] == "next_block": break
+                        else: raise
+                self._curr_num = 0
+            self._curr_alpha = None
 
     def __init__(self,
         output_directory,
@@ -187,24 +183,13 @@ class AlphanumFetcher(Fetcher):
             postdata=postdata
         )
         self.urls = alphabet
-        def run_override(fthread):
-            for a in fthread.urls[fthread.offset:]:
-                fthread._curr_alpha = a
-                for i in range(max(fthread._curr_num, startnum), 200):
-                    fthread._curr_num = i
-                    if fthread._canceled: return
-                    try:
-                        fthread.fetchUrl(url_pattern.format(
-                            alpha=a.lower(),
-                            ALPHA=a.upper(),
-                            num=i
-                        ))
-                    except Exception as e:
-                        if e.args[0] == "next_block": break
-                        else: raise
-                fthread._curr_num = 0
-            fthread._curr_alpha = None
-        self.FetcherThread.run = run_override
+        def fetch_url_override(fthread, i, a):
+            if i < startnum: return
+            fthread._curr_num = i
+            FetcherThread.fetch_url(fthread, url_pattern.format(
+                alpha=a.lower(), ALPHA=a.upper(), num=i
+            ))
+        self.FetcherThread.fetch_url = fetch_url_override
 
 class ZipFetcher(Fetcher):
     def __init__(self, output_directory, urls, postdata=None):
@@ -238,13 +223,14 @@ class Unzipper(CancelableThread):
                         with open(dest, 'w') as f: f.write(z.read(n))
 
 class UrlFetcherThread(FetcherThread):
+    def file_exists(self, basename): return False
     def output_path(self):
         return FetcherThread.output_path(self, "url_%d.txt" % self.no)
 
-    def get_offset(self):
+    def run(self):
         if os.path.exists(self.output_path()):
-            return sum(1 for line in open(self.output_path()))
-        return 0
+            self.offset = sum(1 for line in open(self.output_path()))
+        FetcherThread.run(self)
 
     def write_file(self, basename, data):
         with open(self.output_path(), mode="a") as f: f.write(data)
@@ -260,13 +246,7 @@ class UrlFetcher(Fetcher):
         self.plugin = plugin
 
     def progress(self):
-        if self._canceled or self._subthreads[0] == None: return "Sleeping..."
-        prog = "Fetching URLs... "
-        for i in range(len(self._subthreads)):
-            sub_progress = self._subthreads[i].progress()
-            if sub_progress[:11] == "Downloading": prog = sub_progress; break
-            else: prog += "%s " % self._subthreads[i].progress()[:13]
-        return prog
+        return Fetcher.progress(self).replace("Fetching","Fetching URLs")
 
     def run(self):
         Fetcher.run(self)

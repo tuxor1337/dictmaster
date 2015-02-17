@@ -26,20 +26,21 @@ class Plugin(PluginThread):
             self.output_directory,
             url_pattern="https://ahdictionary.com/word/search.html?q={word}",
             word_file=word_file,
-            word_codec=("utf-8", "utf-8")
+            word_codec=("utf-8", "utf-8"),
+            threadcnt=12
         )
-        postprocessor = AhdictProcessor("td", self)
         self._stages = [
             fetcher,
-            postprocessor,
+            AhdictProcessor("td", self),
             Editor(plugin=self)
         ]
 
 class AhdictFetcher(WordFetcher):
     class FetcherThread(WordFetcher.FetcherThread):
         def filter_data(self, data):
-            if '<div id="results">' not in data: return None
-            if '<div id="results">No word definition found</div>' in data:
+            if data == None or len(data) < 2 \
+            or '<div id="results">' not in data \
+            or '<div id="results">No word definition found</div>' in data:
                 return None
             repl = [
                 ["<!--end-->",""],

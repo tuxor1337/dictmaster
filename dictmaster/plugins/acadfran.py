@@ -26,8 +26,8 @@ class Plugin(PluginThread):
 
 class AcadfranFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
-        def fetchUrl(self, url):
-            Fetcher.FetcherThread.fetchUrl(self, BASE_URL + url)
+        def fetch_url(self, url):
+            Fetcher.FetcherThread.fetch_url(self, BASE_URL + url)
         filter_data = html_container_filter("body > table", charset="windows-1252")
 
 class AcadfranUrlFetcher(UrlFetcher):
