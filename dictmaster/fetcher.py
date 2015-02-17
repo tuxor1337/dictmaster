@@ -21,7 +21,7 @@ class FetcherThread(CancelableThread):
         self.urls, self.postdata = urls, postdata
         self.output_directory = output_directory
         self.offset = self.get_offset()
-        self.no, self._i = no, self.offset
+        self.no,self._i = no,self.offset
 
     def get_offset(self):
         downloaded = sorted(glob.glob(self.output_path("%d_*"%self.no)))
@@ -107,7 +107,22 @@ class Fetcher(CancelableThread):
         [s.cancel() for s in self._subthreads]
 
 class WordFetcher(Fetcher):
-    class FetcherThread(FetcherThread): pass
+    class FetcherThread(FetcherThread):
+        def get_offset(self):
+            self._curr_word = self.urls[0]
+            self._i = 0
+            for downloaded in sorted(os.listdir(self.output_directory)):
+                if downloaded not in self.urls: continue
+                downloaded_i = self.urls.index(downloaded)
+                if downloaded_i > self._i:
+                    self._i = downloaded_i
+                    self._curr_word = downloaded
+            return self._i
+
+        def write_file(self, basename, data):
+            if basename == None: basename = self._curr_word
+            FetcherThread.write_file(self, basename, data)
+
     def __init__(self,
         output_directory,
         url_pattern,
@@ -130,6 +145,7 @@ class WordFetcher(Fetcher):
             except: print "Codec error reading word file:", w; break
         self.urls = tmplist
         def fetchUrl_override(fthread, url):
+            fthread._curr_word = url
             FetcherThread.fetchUrl(fthread, url_pattern.format(word=url))
         self.FetcherThread.fetchUrl = fetchUrl_override
 
