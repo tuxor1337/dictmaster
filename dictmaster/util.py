@@ -37,6 +37,7 @@ def load_plugin(plugin_name, popts, dirname):
 
 def html_container_filter(container, charset="utf-8", bad_content=None):
     def tmp_func(fthread, data):
+        if data == None or len(data) < 2: return None
         encoded_str = data.decode(charset).encode("utf-8")
         parser = etree.HTMLParser(encoding="utf-8")
         doc = pq(etree.fromstring(encoded_str, parser=parser))
@@ -83,7 +84,7 @@ class CancelableThread(threading.Thread):
     def download_retry(self, url, params=None):
         if self._canceled: return None
         try:
-            response = urllib2.urlopen(url, params)
+            response = urllib2.urlopen(url, params, timeout=5)
             total_size = response.info().getheader('Content-Length')
             if total_size != None: total_size = int(total_size.strip())
             else: total_size = 0
