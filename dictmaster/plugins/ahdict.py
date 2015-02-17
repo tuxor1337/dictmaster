@@ -72,8 +72,7 @@ class AhdictProcessor(HtmlContainerProcessor):
             [r"\xb7",""], # the centered dot
             [r" ([0-9]+)$",r"(\1)"]
         ]
-        for r in regex:
-            term = re.sub(r[0], r[1], term)
+        for r in regex: term = re.sub(r[0], r[1], term)
         return term
 
     def do_html_definition(self, html, term):

@@ -138,8 +138,24 @@ class AlphanumFetcher(Fetcher):
         def progress(self):
             if self._download_status != "": return self._download_status
             if self._canceled: return ""
-            total = len(self.urls)*50
-            return "{}:{:.1f}%".format(self.no, 100*self._i/float(total))
+            if self._curr_alpha == None: return "{}:done".format(self.no)
+            return "{}:{}:{}".format(self.no, self._curr_alpha, self._curr_num)
+
+        def get_offset(self):
+            offset = self._curr_num = 0
+            self._curr_alpha = self.urls[0]
+            for a_i, a in enumerate(self.urls):
+                downloaded = sorted(glob.glob(self.output_path("%s_*"%a)))
+                if len(downloaded) > 0:
+                    offset, self._curr_alpha = a_i, a
+                    self._curr_num = int(downloaded[-1][-6:])
+                else: break
+            return offset
+
+        def write_file(self, basename, data):
+            if basename == None:
+                basename = "%s_%06d" % (self._curr_alpha, self._curr_num)
+            FetcherThread.write_file(self, basename, data)
 
     def __init__(self,
         output_directory,
@@ -156,8 +172,10 @@ class AlphanumFetcher(Fetcher):
         )
         self.urls = alphabet
         def run_override(fthread):
-            for a in fthread.urls:
-                for i in range(startnum, 200):
+            for a in fthread.urls[fthread.offset:]:
+                fthread._curr_alpha = a
+                for i in range(max(fthread._curr_num, startnum), 200):
+                    fthread._curr_num = i
                     if fthread._canceled: return
                     try:
                         fthread.fetchUrl(url_pattern.format(
@@ -168,6 +186,8 @@ class AlphanumFetcher(Fetcher):
                     except Exception as e:
                         if e.args[0] == "next_block": break
                         else: raise
+                fthread._curr_num = 0
+            fthread._curr_alpha = None
         self.FetcherThread.run = run_override
 
 class ZipFetcher(Fetcher):
