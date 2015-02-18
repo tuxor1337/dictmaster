@@ -11,3 +11,19 @@ I tried fetching all the words in UKACD17.txt from the ahdictionary.com page.
 For half of the words the download failed and in some cases, different words
 yielded the same dictionary entry. The file `ahdict.txt` contains
 roughly the words for which the download did not fail, and that's 62800.
+
+gcide.txt
+---------
+
+It is not really the best idea to download from AH with a scrabble word list,
+since lots of words will redirect to the same entry (e.g. abolish, abolishable,
+abolished, abolisher, abolishes, abolishing, abolishment) and on the other hand
+AH is not really the most comprehensive dictionary ("only" 70000 entries),
+so there are no entries for exotic terms (such as iconomy, phototropy, naik),
+certain names (such as Naja, McEwan, Lynam) or phrases (such as "Lyon King of Arms",
+"a barking dog never bites").
+
+The wordlist gcide.txt contains all the entries from the GNU Collaborative
+International Dictionary of English (GCIDE). That's almost 110000 entries.
+Still this word list seems to perform not very well for the Oxford dictionaries
+and the AH dictionary: For more than half of the entries the download fails.
