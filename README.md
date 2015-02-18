@@ -15,15 +15,16 @@ At the moment you can fetch dictionary data from any Babylon dictionary (`*.bgl`
 available on your computer.
 Furthermore `dictmaster` is able to retrieve data from the following online sources:
 
-* Online Etymology Dictionary (http://etymonline.com)
-* Georges, Pape (http://wwww.zeno.org)
-* Dictionnaire de l'Académie Française (http://atilf.atilf.fr/academie.htm),
+* Digitales Wörterbuch der deutschen Sprache (http://www.dwds.de)
+* Georges, Pape (http://www.zeno.org)
 * Folkets Lexikon (http://folkets-lexikon.csc.kth.se/folkets/)
 * XMLittré (http://www.littre.org)
-* American Heritage Dictionary (https://ahdictionary.com)
+* Dictionnaire de l'Académie Française (http://atilf.atilf.fr/academie.htm)
 * Diccionario de la lengua española (http://lema.rae.es/drae/)
-* Oxford Dictionaries Online (http://oxforddictionaries.com)
 * GNU Collaborative International Dictionary of English (http://gcide.gnu.org.ua/)
+* Online Etymology Dictionary (http://etymonline.com)
+* American Heritage Dictionary (https://ahdictionary.com)
+* Oxford Dictionaries Online (http://oxforddictionaries.com)
 * CIA World Factbook (https://www.cia.gov/library/publications/the-world-factbook/)
 * There is basic support for BEOLINGUS (http://dict.tu-chemnitz.de/) and dict.cc
 (http://www.dict.cc/), but the algorithms used in dictmaster don't perform well
