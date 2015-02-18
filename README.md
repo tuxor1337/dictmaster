@@ -69,18 +69,15 @@ you command line.
 Limitations
 -----------
 
-Even though this projects looks pretty modularized and extendible at first
-glance, let me tell you that this is unfortunately not the case - yet.
-For now, you really have to go through the code and understand what's happening
-in order to write new plugins because there is no API documentation.
-But if you still want to write a new plugin, try to start from one of the
-existing ones.
+If you want to write a new plugin, try to start from one of the existing ones.
+Of course, it is mandatory to have basic understanding of Python code and probably
+HTML (since most online dictionaries come in HTML format). But apart from that I can
+just encourage you to start fiddling around. It's not that hard. Open an issue
+or contact me directly if you run into problems.
 
 Todo list
 ---------
 
-- Extendibility: Implement some kind of standard procedure for adding new plugins or at
-least provide plugin templates that you can use if you wish to add new ones.
 - Usability: A graphical user interface that guides you through the process.
 - A way to edit existing (ready converted) dictionary data using some kind
 of user interface.
