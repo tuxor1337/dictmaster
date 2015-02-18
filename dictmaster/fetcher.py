@@ -21,6 +21,7 @@ class FetcherThread(CancelableThread):
         self.urls, self.postdata = urls, postdata
         self.output_directory = output_directory
         self.no = no
+        self._canceled = len(self.urls) == 0
 
     def output_path(self, basename=None, temporary=False):
         if basename == None: basename = "%d_%06d" % (self.no, self._i)
@@ -113,6 +114,7 @@ class WordFetcher(Fetcher):
             return FetcherThread.output_path(self, basename, temporary)
 
         def run(self):
+            if len(self.urls) == 0: return
             self._curr_word = self.urls[0]
             return FetcherThread.run(self)
 
@@ -134,7 +136,7 @@ class WordFetcher(Fetcher):
             wordlist = [w.decode(word_codec[0]).strip() for w in f.readlines()]
         tmplist = []
         for w in wordlist:
-            try: tmplist.append(urllib2.quote(w.encode(word_codec[1])))
+            try: tmplist.append(urllib2.quote(w.encode(word_codec[1]), ""))
             except: print "Codec error reading word file:", w; break
         self.urls = tmplist
         def fetch_url_override(fthread, url):
