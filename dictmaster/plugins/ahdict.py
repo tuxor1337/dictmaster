@@ -59,7 +59,9 @@ class AhdictFetcher(WordFetcher):
                 [r'<(a|span)[^>]*>([ \n]*)</(span|a)>',r"\2"],
                 [r' (name|target|title|border|cellspacing)="[^"]*"',r""],
                 [r'<table width="100%">',"<table>"],
-                [r"</?font[^>]*>",""]
+                [r"</?font[^>]*>",""],
+                [r"([^ ])<(b|i|div)",r"\1 <\2"],
+                [r"(b|i|div)>([^ ])",r"\1> \2"]
             ]
             for r in regex: data = re.sub(r[0], r[1], data)
             parser = etree.HTMLParser(encoding="utf-8")
@@ -78,14 +80,9 @@ class AhdictProcessor(HtmlContainerProcessor):
 
     def do_html_definition(self, html, term):
         doc = pq(html)
-        for a in doc("a:not([href])"):
-            if doc(a).text().strip() == "":
-                doc(a).remove()
-            else:
-                doc(a).replaceWith(doc(a).html())
+        for a in doc("a:not([href])"): doc(a).replaceWith(doc(a).html())
         for a in doc("a"):
-            if doc(a).text().strip() == "":
-                doc(a).replaceWith(doc(a).text())
+            if doc(a).text().strip() == "": doc(a).replaceWith(doc(a).text())
             elif "search.html" not in doc(a).attr("href"):
                 doc(a).replaceWith(doc(a).html())
             else:
@@ -96,17 +93,9 @@ class AhdictProcessor(HtmlContainerProcessor):
         doc("div.pseg > i").css("color","#900")
         doc("div.runseg > i").css("color","#900")
         for div in doc("div.ds-list"):
-            doc(div).replaceWith(
-                doc("<p/>").html(doc(div).html()).outerHtml()
-            )
-        for div in doc("div.sds-list"):
-            doc(div).replaceWith(
-                doc("<p/>").css("margin-left","1ex")
-                    .html(doc(div).html()).outerHtml()
-            )
+            doc(div).replaceWith(doc("<p/>").html(doc(div).html()).outerHtml())
+        for div in doc("div.sds-list"): doc(div).replaceWith(doc(div).html())
+        for span in doc("span"): doc(span).replaceWith(doc(span).html())
         doc("*").removeAttr("class")
-        for span in doc("span"):
-            doc(span).replaceWith(doc(span).html())
-
         return doc.html().strip()
 
