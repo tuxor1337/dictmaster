@@ -22,6 +22,7 @@ Furthermore `dictmaster` is able to retrieve data from the following online sour
 * XMLittré (http://www.littre.org)
 * American Heritage Dictionary (https://ahdictionary.com)
 * Diccionario de la lengua española (http://lema.rae.es/drae/)
+* Oxford Dictionaries Online (http://oxforddictionaries.com)
 * GNU Collaborative International Dictionary of English (http://gcide.gnu.org.ua/)
 * CIA World Factbook (https://www.cia.gov/library/publications/the-world-factbook/)
 * There is basic support for BEOLINGUS (http://dict.tu-chemnitz.de/) and dict.cc
