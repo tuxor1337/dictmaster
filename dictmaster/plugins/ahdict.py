@@ -2,6 +2,7 @@
 
 import re
 import os
+import sys
 
 from pyquery import PyQuery as pq
 from lxml import etree

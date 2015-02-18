@@ -84,8 +84,7 @@ class CancelableThread(threading.Thread):
     def download_retry(self, url, params=None):
         if self._canceled: return None
         try:
-            try:
-                response = urllib2.urlopen(url, params, timeout=5)
+            try: response = urllib2.urlopen(url, params, timeout=5)
             except HTTPError as e:
                 if e.code == 404: return ""
                 else: raise

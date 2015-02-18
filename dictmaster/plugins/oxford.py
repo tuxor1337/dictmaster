@@ -2,6 +2,7 @@
 
 import re
 import os
+import sys
 
 from pyquery import PyQuery as pq
 from lxml import etree
@@ -52,12 +53,6 @@ class OxfordFetcher(WordFetcher):
             return doc("div.entryPageContent").html().encode("utf-8")
 
 class OxfordProcessor(HtmlContainerProcessor):
-    def do_pre_html(self, data):
-        #data = data.replace("&#13;", "")
-        regex = [ ]
-        for r in regex: data = re.sub(r[0], r[1], data)
-        return data
-
     def do_html_term(self, doc):
         term = doc("strong.pageTitle").eq(0).text().strip()
         regex = []
@@ -70,6 +65,7 @@ class OxfordProcessor(HtmlContainerProcessor):
         doc("script").remove()
         doc("h1").remove()
         doc("div.breadcrumb").remove()
+        doc("div.etymology").remove()
         doc("div.responsive_hide_on_smartphone").remove()
         doc("div.responsive_hide_on_non_smartphone").remove()
         doc("div.audio_play_button").remove()
@@ -80,6 +76,8 @@ class OxfordProcessor(HtmlContainerProcessor):
         for h in doc("h3,strong"):
             doc(h).replaceWith("<p><b>%s</b></p>" % doc(h).html())
         for div in doc("div.moreInformation"):
+            if doc(div).text() == None or doc(div).text().strip() == "": 
+                doc(div).remove(); continue
             a = doc(div).children("a").eq(0)
             replacement = " <b>%s:</b> "%doc(a).html().strip()
             for li in doc(div).find("li"):
@@ -96,7 +94,6 @@ class OxfordProcessor(HtmlContainerProcessor):
             replacement = "".join(doc(div).html() for div in doc(d).find("div"))
             doc(d).replaceWith(replacement)
         for d in doc("dl"): doc(d).replaceWith(doc(d).html())
-        doc("div.etymology").remove()
         for div in doc("div.msDict"):
             doc(div).replaceWith("<p>%s</p>" % doc(div).html())
         for span in doc("span.iteration"):
