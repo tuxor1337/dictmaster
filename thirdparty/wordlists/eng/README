@@ -21,3 +21,9 @@ fail (cleaned from the terms that would redirect to the same page), and that's
 more than 68,000 word. Fetching and parsing these files results in a
 stardict version of the AH dictionary with almost 70,000 entries. So that's
 pretty close to the original one.
+
+oxford.txt
+----------
+
+Almost 60,000 words contained in the Oxford Online Dictionary for British and
+World English.
