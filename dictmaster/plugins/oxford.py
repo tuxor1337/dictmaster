@@ -59,6 +59,12 @@ class OxfordProcessor(HtmlContainerProcessor):
         for r in regex: term = re.sub(r[0], r[1], term)
         return term
 
+    def do_html_alts(self, doc, term):
+        alts = []
+        for h in doc("section.subEntryBlock h4"):
+            alts.append(doc(h).text().strip())
+        return alts
+
     def do_html_definition(self, html, term):
         doc = pq(html)
         doc("img").remove()
