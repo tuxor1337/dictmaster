@@ -172,6 +172,7 @@ class HtmlProcessor(Processor):
         with open(self._curr_f, "r") as html_file:
             string = html_file.read()
             encoded_str = self.do_pre_html(string)
+            if encoded_str.strip() == "": return
             parser = etree.HTMLParser(encoding=self._charset)
             doc = pq(etree.fromstring(encoded_str, parser=parser))
             self.do_html(doc)
