@@ -5,25 +5,19 @@ ahdict.txt
 ----------
 
 According to the paperback version of the 5th edition, the American Heritage
-Dictionary contains "more than 70000 entries".
+Dictionary contains "more than 70,000 entries".
 
-I tried fetching all the words in UKACD17.txt from the ahdictionary.com page.
-For half of the words the download failed and in some cases, different words
-yielded the same dictionary entry. The file `ahdict.txt` contains
-roughly the words for which the download did not fail, and that's 62800.
+I tried fetching all the words in UKACD17, ENABLE, EOWL, and GCIDE from the
+ahdictionary.com page (that's more than 330,000!). AH is not really the most
+comprehensive dictionary ("only" 70,000 entries), so there are no entries for
+exotic terms (such as iconomy, phototropy, naik), certain names (such as Naja,
+McEwan, Lynam) or phrases (such as "Lyon King of Arms", "a barking dog never
+bites"). Accordingly, for 60% of the words the download failed and lots of words
+would be redirected to the same entry (e.g. abolish, abolishable, abolished,
+abolisher, abolishes, abolishing, abolishment).
 
-gcide.txt
----------
-
-It is not really the best idea to download from AH with a scrabble word list,
-since lots of words will redirect to the same entry (e.g. abolish, abolishable,
-abolished, abolisher, abolishes, abolishing, abolishment) and on the other hand
-AH is not really the most comprehensive dictionary ("only" 70000 entries),
-so there are no entries for exotic terms (such as iconomy, phototropy, naik),
-certain names (such as Naja, McEwan, Lynam) or phrases (such as "Lyon King of Arms",
-"a barking dog never bites").
-
-The wordlist gcide.txt contains all the entries from the GNU Collaborative
-International Dictionary of English (GCIDE). That's almost 110000 entries.
-Still this word list seems to perform not very well for the Oxford dictionaries
-and the AH dictionary: For more than half of the entries the download fails.
+The file `ahdict.txt` contains roughly the words for which the download did not
+fail (cleaned from the terms that would redirect to the same page), and that's
+more than 68,000 word. Fetching and parsing these files results in a
+stardict version of the AH dictionary with almost 70,000 entries. So that's
+pretty close to the original one.
