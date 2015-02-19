@@ -1,4 +1,9 @@
 
+grandic.txt
+-----------
+
+Word list of entries from the Gran Diccionario de la Lengua Española LAROUSSE.
+
 words.txt
 ---------
 
@@ -11,9 +16,9 @@ drae.txt
 --------
 
 According to http://www.rae.es/sites/default/files/Preambulo.pdf, the DRAE
-(22th edition) contains 88431 (23rd ed: 93111) entries.
+(22th edition) contains 88,431 (23rd ed: 93,111) entries.
 
-The file `words.txt` contains 87603 words and hence seems to be a good
-approximation. But when I tried to fetch these 87603 words, for about 8000
-words the download failed. The file `drae.txt` contains roughly the words from
-`words.txt` for which the download did not fail.
+The file `words.txt` contains 87,603 words and hence seems to be a good
+approximation. But when I tried to fetch these 87,603 words, for about 8,000
+words the download failed. The file `drae.txt` contains roughly those 80,000
+words from `words.txt` and `grandic.txt` for which the download did not fail.
