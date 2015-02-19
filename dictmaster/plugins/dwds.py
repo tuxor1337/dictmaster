@@ -84,7 +84,8 @@ class DWDSProcessor(HtmlContainerProcessor):
             num = doc(div).find("div").eq(0)
             doc(num).replaceWith(
                 doc("<b/>").css("background-color","#dde")
-                    .css("padding","1px 4px")
+                    .css("padding","0px 4px")
+                    .css("border-top","1px #fff solid")
                     .html(doc(num).text()).outerHtml()
             )
             doc(div).replaceWith("<div>%s</div>"%doc(div).html())

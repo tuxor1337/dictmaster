@@ -67,8 +67,9 @@ class EtymonlineProcessor(HtmlABProcessor):
                 doc(a).attr("href")
             )
             doc(a).attr("href", new_href)
-        doc("span.foreign").css("font-style","italic").css("color","#8B4513")
-        doc("span.meaning").css("color","#4682B4")
+        for sp in doc("span.foreign"):
+            doc(sp).replaceWith("<i>%s</i>"%doc(sp).html())
+        doc("span.meaning").css("color","#47A")
         for src in doc("blockquote p.src"):
             doc(src).css("font-style","normal") \
                 .css("font-size","x-small").css("text-align","right")

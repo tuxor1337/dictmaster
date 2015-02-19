@@ -79,6 +79,13 @@ class OxfordProcessor(HtmlContainerProcessor):
         doc("div.entrySynList").remove()
         doc("div.am-default").remove()
         doc("li.dictionary_footer").remove()
+        for s in doc("strong.wordForm"):
+            doc(s).replaceWith("<b>%s</b>" % doc(s).html())
+        for s in doc("em"):
+            doc(s).replaceWith(
+                doc("<small/>").css("color","#F82")
+                .html(doc(s).html()).outerHtml()
+            )
         for h in doc("h3,strong"):
             doc(h).replaceWith("<p><b>%s</b></p>" % doc(h).html())
         for div in doc("div.moreInformation"):
@@ -88,7 +95,7 @@ class OxfordProcessor(HtmlContainerProcessor):
             replacement = " <b>%s:</b> "%doc(a).html().strip()
             for li in doc(div).find("li"):
                 replacement += "<i>\"%s\"</i>, "%doc(li).html()
-            doc(div).replaceWith(replacement.strip(" ,"))
+            doc(div).replaceWith(" "+replacement.strip(" ,"))
         for s in doc("section.etymology"):
             tmp = "".join(doc(p).html() for p in doc(s).find("p"))
             doc(s).html(tmp)

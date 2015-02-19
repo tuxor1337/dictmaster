@@ -127,10 +127,7 @@ class ZenoProcessor(HtmlContainerProcessor):
             if font_el.attr("color"):
                 replacement.css("color", font_el.attr("color"))
             doc(font_el).replaceWith(replacement.outerHtml())
-        for i_el in doc("i"):
-            doc(i_el).css("color", "#494")
-        for b_el in doc("b"):
-            doc(b_el).css("color", "#0B0")
+        doc("b").css("color", "#47A")
         self._download_res(doc)
         result = ""
         for para in doc.find("p"):

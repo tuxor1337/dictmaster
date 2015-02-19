@@ -66,13 +66,7 @@ class AcadfranProcessor(HtmlContainerProcessor):
         )
         doc = pq(html)
         heading = html.find("B b font[color=blue]").parents("b").parents("b")
-        doc(heading).replaceWith(
-            doc("<p/>").html(doc(heading).html()).outerHtml()
-        )
-        html.find("i").attr("style", "color:#3A4")
-        for b in html.find("b b"):
-            doc(b).replaceWith(
-                doc("<span/>").html(doc(b).html()).outerHtml()
-            )
+        doc(heading).replaceWith("<p>%s</p>"%doc(heading).html())
+        for b in html.find("b b"): doc(b).replaceWith(doc(b).html())
         return re.sub(r" *<br?/?> *$", "", html.html().strip())
 
