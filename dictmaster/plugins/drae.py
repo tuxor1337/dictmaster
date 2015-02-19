@@ -105,11 +105,18 @@ class DraeProcessor(HtmlContainerProcessor):
         """
         "Black/white version"
         "http://www.rae.es/sites/default/files/Articulos_de_muestra.pdf"
+        for p in doc("p.q"):
+            if not doc(p).next("p").hasClass("q") \
+            and not doc(p).prev("p").hasClass("q"):
+                if len(doc(p).children("span.k")) > 0:
+                    doc(doc(p).children("span.k").eq(0)).remove()
+                elif len(doc(p).children("span.d")) > 0:
+                    doc(doc(p).children("span.d").eq(0)).remove()
         for p in doc("p"):
             if doc(p).html() == None: doc(p).remove()
-            else: doc(p).replaceWith(u" ‖ " + doc(p).html())
+            elif doc(p).hasClass("q"): doc(p).replaceWith(doc(p).html() + u" ǁ ")
+            else: doc(p).replaceWith(doc(p).html())
         doc("span.g").remove()
-
         for span in doc("span.b,span.n"):
             if doc(span).html() == None: doc(span).remove()
             else: doc(span).replaceWith(doc(span).html())
@@ -117,5 +124,12 @@ class DraeProcessor(HtmlContainerProcessor):
             if doc(span).html() == None: doc(span).remove()
             else: doc(span).replaceWith(doc(span).html())
         doc("*").removeAttr("class").removeAttr("title")
-        return doc.html().strip()
+        result = doc.html()
+        regex = [
+            [u"ǁ □",u"□"],
+            [u"ǁ\s*<b>\s*1\."," <b>1."],
+            [u"\s*ǁ\s*$",""],
+        ]
+        for r in regex: result = re.sub(r[0], r[1], result)
+        return result.strip()
 
