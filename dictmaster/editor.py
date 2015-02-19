@@ -2,14 +2,13 @@
 
 import os
 import sqlite3
-import unicodedata
 
 import warnings
 warnings.filterwarnings('error', category=UnicodeWarning)
 
 from pyglossary.glossary import Glossary
 
-from dictmaster.util import CancelableThread
+from dictmaster.util import CancelableThread, remove_accents
 
 class Editor(CancelableThread):
     plugin = None
@@ -241,12 +240,6 @@ class Editor(CancelableThread):
             self._status = "Reading from db entry %d of %d..." % (i,no)
             data.append((row[0],row[1],{'defiFormat': defiFormat, 'alts':syn_list[row[2]]}))
         return (info, data)
-
-def remove_accents(input_str):
-    if not isinstance(input_str, unicode):
-        input_str = unicode(input_str,"utf8")
-    nfkd_form = unicodedata.normalize('NFKD', input_str)
-    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 def findSynonyms(entry):
     greek_alph = u'αιηωυεοςρτθπσδφγξκλζχψβνμ'

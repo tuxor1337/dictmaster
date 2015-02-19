@@ -11,6 +11,8 @@ import urllib2
 
 import importlib
 
+import unicodedata
+
 from pyquery import PyQuery as pq
 from lxml import etree
 
@@ -34,6 +36,12 @@ def load_plugin(plugin_name, popts, dirname):
     except ImportError as e:
         print e.args; pthread = None
     return pthread
+
+def remove_accents(input_str):
+    if not isinstance(input_str, unicode):
+        input_str = unicode(input_str,"utf8")
+    nfkd_form = unicodedata.normalize('NFKD', input_str)
+    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 def html_container_filter(container, charset="utf-8", bad_content=None):
     def tmp_func(fthread, data):
