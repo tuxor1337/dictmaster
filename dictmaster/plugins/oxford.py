@@ -78,29 +78,43 @@ class OxfordProcessor(HtmlContainerProcessor):
         doc("a.moreInformationSynonyms").remove()
         doc("div.entrySynList").remove()
         doc("div.am-default").remove()
+        doc("i.icon-top-word").remove()
+        doc("a.back-to-top").remove()
         doc("li.dictionary_footer").remove()
+        doc("strong.pageTitle").remove()
+        for div in doc("div.top1000"):
+            doc(div).replaceWith(
+                doc("<span/>").css("color","#0BE")
+                .html(doc(div).html()).outerHtml()+" "
+            )
+        for div in doc("div.headpron"):
+            doc(div).replaceWith(
+                doc("<span/>").css("color","#A00")
+                .html(doc(div).html().replace("Pronunciation:",""))
+                .outerHtml()+" "
+            )
+        for s in doc("span.headlinebreaks"):
+            doc(s).replaceWith("<b>%s</b>"%doc(s).find(".linebreaks").text())
         for s in doc("strong.wordForm"):
-            doc(s).replaceWith("<b>%s</b>" % doc(s).html())
-        for s in doc("em"):
+            doc(s).replaceWith("<b>%s</b> " % doc(s).html())
+        for s in doc("span.partOfSpeech"):
             doc(s).replaceWith(
-                doc("<small/>").css("color","#F82")
+                doc("<b/>").css("color","#777")
+                .css("text-transform","uppercase")
                 .html(doc(s).html()).outerHtml()
             )
-        for h in doc("h3,strong"):
-            doc(h).replaceWith("<p><b>%s</b></p>" % doc(h).html())
-        for div in doc("div.moreInformation"):
-            if doc(div).text() == None or doc(div).text().strip() == "": 
-                doc(div).remove(); continue
-            a = doc(div).children("a").eq(0)
-            replacement = " <b>%s:</b> "%doc(a).html().strip()
-            for li in doc(div).find("li"):
-                replacement += "<i>\"%s\"</i>, "%doc(li).html()
-            doc(div).replaceWith(" "+replacement.strip(" ,"))
-        for s in doc("section.etymology"):
-            tmp = "".join(doc(p).html() for p in doc(s).find("p"))
-            doc(s).html(tmp)
+        for s in doc("em.transivityStatement, em.languageGroup"):
+            doc(s).replaceWith(
+                doc("<span/>").css("color","#F82")
+                .html(doc(s).html()).outerHtml()
+            )
+        for h in doc("h3"):
+            doc(h).replaceWith("<br/><b>%s:</b> " % doc(h).html())
+        for h in doc("strong"):
+            doc(h).replaceWith("<b>%s</b> " % doc(h).html())
+        doc("div.moreInformation").remove()
         for d in doc("dt"):
-            replacement = "<b>%s</b><br />"%doc(d).find("h4").text()
+            replacement = "<b>%s</b> "%doc(d).find("h4").text()
             doc(d).find("div").remove()
             doc(d).replaceWith(replacement+doc(d).html())
         for d in doc("dd"):
@@ -108,7 +122,7 @@ class OxfordProcessor(HtmlContainerProcessor):
             doc(d).replaceWith(replacement)
         for d in doc("dl"): doc(d).replaceWith(doc(d).html())
         for div in doc("div.msDict"):
-            doc(div).replaceWith("<p>%s</p>" % doc(div).html())
+            doc(div).replaceWith(doc(div).html())
         for span in doc("span.iteration"):
             doc(span).replaceWith("<b>%s</b> "%doc(span).text().strip())
         for a in doc("a:not([href])"):
@@ -121,11 +135,13 @@ class OxfordProcessor(HtmlContainerProcessor):
             else:
                 href = "bword://%s" % doc(a).text().strip(". ").lower()
                 doc(a).attr("href", href)
-        for p in doc("p"):
+        for p in doc("p,section"):
             if doc(p).text().strip() == "": doc(p).remove()
         doc("i.reg").css("color","#F82")
         doc("*").removeAttr("class")
         result = doc("header").html()
-        result += "".join(doc(s).html() for s in doc("section"))
+        result = result if result != None else ""
+        result += " ".join(doc(s).html() for s in doc("section"))
+        result = re.sub(r"</?(div|p)[^>]*>"," ",result)
         return result.strip()
 
