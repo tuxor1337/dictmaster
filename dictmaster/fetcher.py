@@ -109,13 +109,13 @@ class Fetcher(CancelableThread):
 
 class WordFetcher(Fetcher):
     class FetcherThread(FetcherThread):
+        _curr_word = "a"
         def output_path(self, basename=None, temporary=False):
             if basename == None: basename = self._curr_word
             return FetcherThread.output_path(self, basename, temporary)
 
         def run(self):
             if len(self.urls) == 0: return
-            self._curr_word = self.urls[0]
             return FetcherThread.run(self)
 
     def __init__(self,
@@ -146,6 +146,8 @@ class WordFetcher(Fetcher):
 
 class AlphanumFetcher(Fetcher):
     class FetcherThread(FetcherThread):
+        _curr_alpha = "a"
+        _curr_num = 0
         def progress(self):
             if self._download_status != "": return self._download_status
             if self._canceled: return ""
@@ -158,8 +160,6 @@ class AlphanumFetcher(Fetcher):
             FetcherThread.write_file(self, basename, data)
 
         def run(self):
-            self._curr_num = 0
-            self._curr_alpha = self.urls[0]
             for a in self.urls[self.offset:]:
                 self._curr_alpha = a
                 for i in range(self._curr_num, 200):
