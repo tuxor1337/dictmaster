@@ -8,9 +8,9 @@ from urllib2 import unquote
 from pyquery import PyQuery as pq
 from lxml import etree
 
-from dictmaster.util import CancelableThread, remove_accents
+from dictmaster.util import CancelableThread, remove_accents, words_to_db
 from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import WordFetcher
+from dictmaster.fetcher import Fetcher
 from dictmaster.postprocessor import HtmlContainerProcessor
 from dictmaster.editor import Editor
 
@@ -25,27 +25,22 @@ POSTDATA = "TS014dfc77_id=3"\
 
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
-        word_file = popts
-        if not os.path.exists(word_file):
+        self.word_file = popts
+        if not os.path.exists(self.word_file):
             sys.exit("Provide full path to (existing) word list file!")
         super(Plugin, self).__init__(popts, dirname)
-        self.dictname = "Diccionario de la lengua española: 22a edición"
-        fetcher = DraeFetcher(
-            self.output_directory,
-            url_pattern="http://lema.rae.es/drae/srv/search?val={word}",
-            word_file=word_file,
-            word_codec=("utf-8", "iso-8859-1"),
-            postdata=POSTDATA,
-            threadcnt=10
-        )
+        self.dictname = u"Diccionario de la lengua española: 22a edición"
         self._stages = [
-            fetcher,
+            DraeFetcher(self, postdata=POSTDATA, threadcnt=10),
             DraeProcessor("div", self),
-            Editor(plugin=self)
+            Editor(self)
         ]
 
-class DraeFetcher(WordFetcher):
-    class FetcherThread(WordFetcher.FetcherThread):
+    def post_setup(self, cursor):
+        words_to_db(self.word_file, cursor, ("utf-8", "iso-8859-1"))
+
+class DraeFetcher(Fetcher):
+    class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data):
             if data == None or len(data) < 2: return None
             cont = "body > div"
@@ -67,11 +62,14 @@ class DraeFetcher(WordFetcher):
                 img = doc(u"img[alt='Ver artículo enmendado']")
                 url = "http://lema.rae.es/drae/srv/%s" % img.parent().attr("href")
             else:
-                return "".join(doc(d).outerHtml().encode("utf-8") for d in doc(cont))
+                return "".join(doc(d).outerHtml() for d in doc(cont))
             if url != "":
                 data = self.download_retry(url, self.postdata)
                 return self.filter_data(data)
             else: return None
+
+        def parse_uri(self, uri):
+            return "http://lema.rae.es/drae/srv/search?val=%s"%uri
 
 class DraeProcessor(HtmlContainerProcessor):
     def do_html_term(self, doc):

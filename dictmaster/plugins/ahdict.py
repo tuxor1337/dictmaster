@@ -7,9 +7,9 @@ import sys
 from pyquery import PyQuery as pq
 from lxml import etree
 
-from dictmaster.util import html_container_filter
+from dictmaster.util import html_container_filter, words_to_db
 from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import WordFetcher
+from dictmaster.fetcher import Fetcher
 from dictmaster.postprocessor import HtmlContainerProcessor
 from dictmaster.editor import Editor
 
@@ -18,26 +18,22 @@ from dictmaster.editor import Editor
 
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
-        word_file = popts
-        if not os.path.exists(word_file):
+        self.word_file = popts
+        if not os.path.exists(self.word_file):
             sys.exit("Provide full path to (existing) word list file!")
         super(Plugin, self).__init__(popts, dirname)
-        self.dictname = "The American Heritage Dictionary of the English Language, Fifth Edition"
-        fetcher = AhdictFetcher(
-            self.output_directory,
-            url_pattern="https://ahdictionary.com/word/search.html?q={word}",
-            word_file=word_file,
-            word_codec=("utf-8", "utf-8"),
-            threadcnt=12
-        )
+        self.dictname = u"The American Heritage Dictionary of the English Language, Fifth Edition"
         self._stages = [
-            fetcher,
+            AhdictFetcher(self, threadcnt=12),
             AhdictProcessor("td", self),
             Editor(plugin=self)
         ]
 
-class AhdictFetcher(WordFetcher):
-    class FetcherThread(WordFetcher.FetcherThread):
+    def post_setup(self, cursor):
+        words_to_db(self.word_file, cursor, ("utf-8", "utf-8"))
+
+class AhdictFetcher(Fetcher):
+    class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data):
             if data == None or len(data) < 2 \
             or '<div id="results">' not in data \
@@ -67,7 +63,10 @@ class AhdictFetcher(WordFetcher):
             for r in regex: data = re.sub(r[0], r[1], data)
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(data, parser=parser))
-            return doc("#results").html().encode("utf-8")
+            return doc("#results").html()
+
+        def parse_uri(self, uri):
+            return "https://ahdictionary.com/word/search.html?q=%s"%uri
 
 class AhdictProcessor(HtmlContainerProcessor):
     def do_html_term(self, doc):

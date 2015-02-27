@@ -7,36 +7,30 @@ import sys
 from pyquery import PyQuery as pq
 from lxml import etree
 
-from dictmaster.util import html_container_filter
+from dictmaster.util import html_container_filter, words_to_db
 from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import WordFetcher
+from dictmaster.fetcher import Fetcher
 from dictmaster.postprocessor import HtmlContainerProcessor
 from dictmaster.editor import Editor
 
-# TODO: get full word list
-
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
-        word_file = popts
-        if not os.path.exists(word_file):
+        self.word_file = popts
+        if not os.path.exists(self.word_file):
             sys.exit("Provide full path to (existing) word list file!")
         super(Plugin, self).__init__(popts, dirname)
-        self.dictname = "Digitales Wörterbuch der deutschen Sprache"
-        fetcher = DWDSFetcher(
-            self.output_directory,
-            url_pattern="http://m.dwds.de/loadpanel/?panel_id=32&qu={word}",
-            word_file=word_file,
-            word_codec=("utf-8", "utf-8"),
-            threadcnt=10
-        )
+        self.dictname = u"Digitales Wörterbuch der deutschen Sprache"
         self._stages = [
-            fetcher,
+            DWDSFetcher(self, threadcnt=10),
             DWDSProcessor("", self, singleton=True),
             Editor(plugin=self)
         ]
 
-class DWDSFetcher(WordFetcher):
-    class FetcherThread(WordFetcher.FetcherThread):
+    def post_setup(self, cursor):
+        words_to_db(self.word_file, cursor, ("utf-8", "utf-8"))
+
+class DWDSFetcher(Fetcher):
+    class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data):
             if data == None or len(data) < 2 \
             or '<div id="ddc_panel_32"' not in data \
@@ -53,7 +47,10 @@ class DWDSFetcher(WordFetcher):
             for r in regex: data = re.sub(r[0], r[1], data)
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(data, parser=parser))
-            return doc("div#ddc_panel_32").html().encode("utf-8")
+            return doc("div#ddc_panel_32").html()
+
+        def parse_uri(self, uri):
+            return "http://m.dwds.de/loadpanel/?panel_id=32&qu=%s"%uri
 
 class DWDSProcessor(HtmlContainerProcessor):
     def do_html_term(self, doc):

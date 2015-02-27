@@ -5,7 +5,7 @@ import sys
 
 from pyquery import PyQuery as pq
 
-from dictmaster.util import html_container_filter, mkdir_p
+from dictmaster.util import html_container_filter, FLAGS
 from dictmaster.pthread import PluginThread
 from dictmaster.fetcher import Fetcher
 from dictmaster.postprocessor import HtmlContainerProcessor
@@ -101,31 +101,35 @@ FLAG_IMG = { "sv": ['flag_18x12_sv.png', 'flag_18x12_en.png'] }
 FLAG_IMG["en"] = FLAG_IMG["sv"][::-1]
 
 class Plugin(PluginThread):
+    _folkets_lang = ""
     def __init__(self, popts, dirname):
         if popts not in ["Sv-En", "En-Sv"]:
             sys.exit("Provide lang argument, either Sv-En or En-Sv!")
-        super(Plugin, self).__init__(popts, os.path.join(dirname,popts))
-        self.dictname = "Folkets lexikon %s, ©folkets-lexikon.csc.kth.se"
-        self.dictname = self.dictname % popts
-        url = "http://folkets-lexikon.csc.kth.se/folkets/folkets_%s_public.xml"
-        url = url % popts.lower().replace("-","_")
+        super(Plugin, self).__init__(popts, os.path.join(dirname, popts))
+        self._folkets_lang = popts.decode("utf-8")
+        self.dictname = u"Folkets lexikon %s, ©folkets-lexikon.csc.kth.se"
+        self.dictname = self.dictname % self._folkets_lang
         self._stages = [
-            Fetcher(self.output_directory, urls=[url], threadcnt=1),
+            Fetcher(self),
             FolketsProcessor("word", self),
             Editor(plugin=self)
         ]
 
-    def run(self):
+    def post_setup(self, cursor):
         for flag_file in FLAG_IMG["sv"]:
             res_dirname = os.path.join(self.output_directory, "res")
             flag_path = os.path.join(res_dirname, flag_file)
-            flag_url = "http://folkets-lexikon.csc.kth.se/folkets/grafik/%s" % flag_file
+            flag_url = "http://folkets-lexikon.csc.kth.se/folkets/grafik/"+flag_file
             if not os.path.exists(flag_path):
-                mkdir_p(res_dirname)
                 data = self.download_retry(flag_url)
                 with open(flag_path, "w") as img_file:
                     img_file.write(data)
-        PluginThread.run(self)
+        url = u"http://folkets-lexikon.csc.kth.se/folkets/folkets_%s_public.xml"
+        url = url % self._folkets_lang.lower().replace("-","_")
+        cursor.execute('''
+            INSERT INTO raw (uri, flag)
+            VALUES (?,?)
+        ''', (url, FLAGS["RAW_FETCHER"]))
 
 class FolketsProcessor(HtmlContainerProcessor):
     def do_html_term(self, doc):

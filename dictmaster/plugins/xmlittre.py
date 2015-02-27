@@ -2,12 +2,11 @@
 
 import os
 import re
-import glob
-import shutil
+import sqlite3
 
 from pyquery import PyQuery as pq
 
-from dictmaster.util import html_container_filter, mkdir_p
+from dictmaster.util import html_container_filter, FLAGS
 from dictmaster.pthread import PluginThread
 from dictmaster.fetcher import ZipFetcher, Unzipper
 from dictmaster.postprocessor import HtmlContainerProcessor
@@ -16,36 +15,23 @@ from dictmaster.editor import Editor
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
-        self.dictname = "XMLittré, ©littre.org"
-        fetcher = ZipFetcher(
-            self.output_directory,
-            urls=["https://bitbucket.org/Mytskine/xmlittre-data/get/master.zip"]
-        )
+        self.dictname = u"XMLittré, ©littre.org"
         self._stages = [
-            fetcher,
-            XmlittreUnzipper(self.output_directory),
-            XmlittreProcessor("entree", self),
-            Editor(plugin=self, auto_synonyms=False)
+            ZipFetcher(self),
+            XmlittreUnzipper(self),
+            XmlittreProcessor("entree", self, auto_synonyms=False),
+            Editor(plugin=self)
         ]
 
-    def setup_dirs(self):
-        if os.path.exists(os.path.join(self.output_directory, "raw")):
-            shutil.rmtree(os.path.join(self.output_directory, "raw"))
-        PluginThread.setup_dirs(self)
-        mkdir_p(os.path.join(self.output_directory, "zip"))
+    def post_setup(self, cursor):
+        url = "https://bitbucket.org/Mytskine/xmlittre-data/get/master.zip"
+        cursor.execute('''
+            INSERT INTO raw (uri, flag)
+            VALUES (?,?)
+        ''', (url, FLAGS["ZIP_FETCHER"]))
 
 class XmlittreUnzipper(Unzipper):
-    def run(self):
-        Unzipper.run(self)
-        dirname = self.unzip_directory
-        repodir = os.listdir(dirname)[0]
-        path = os.path.join(dirname, repodir)
-        for filename in glob.glob("%s/*.xml" % path):
-            filename = os.path.basename(filename)
-            src = os.path.join(path, filename)
-            dest = os.path.join(dirname, filename)
-            os.rename(src, dest)
-        shutil.rmtree(path)
+    def zfile_filter(self, zfilename): return zfilename[-4:] == ".xml"
 
 class XmlittreProcessor(HtmlContainerProcessor):
     def do_html_term(self, doc):

@@ -7,7 +7,7 @@ import shutil
 
 from pyquery import PyQuery as pq
 
-from dictmaster.util import html_container_filter, mkdir_p
+from dictmaster.util import html_container_filter, FLAGS
 from dictmaster.pthread import PluginThread
 from dictmaster.fetcher import ZipFetcher, Unzipper
 from dictmaster.postprocessor import HtmlContainerProcessor, Processor
@@ -560,49 +560,43 @@ xlit = [
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
-        self.dictname = "GNU Collaborative International Dictionary of English"
-        fetcher = ZipFetcher(
-            self.output_directory,
-            urls=["ftp://ftp.gnu.org/gnu/gcide/gcide-0.51.zip"]
-        )
+        self.dictname = u"GNU Collaborative International Dictionary of English"
         self._stages = [
-            fetcher,
-            GcideUnzipper(self.output_directory),
+            ZipFetcher(self),
+            GcideUnzipper(self),
             GcideProcessor("p", self, charset="windows-1252"),
             Editor(plugin=self, enumerate=False)
         ]
 
-    def setup_dirs(self):
-        if os.path.exists(os.path.join(self.output_directory, "raw")):
-            shutil.rmtree(os.path.join(self.output_directory, "raw"))
-        PluginThread.setup_dirs(self)
-        mkdir_p(os.path.join(self.output_directory, "zip"))
+    def post_setup(self, cursor):
+        url = "ftp://ftp.gnu.org/gnu/gcide/gcide-0.51.zip"
+        cursor.execute('''
+            INSERT INTO raw (uri, flag)
+            VALUES (?,?)
+        ''', (url, FLAGS["ZIP_FETCHER"]))
 
 class GcideUnzipper(Unzipper):
-    def run(self):
-        Unzipper.run(self)
-        dirname = self.unzip_directory
-        repodir = os.listdir(dirname)[0]
-        path = os.path.join(dirname, repodir)
-        for filename in glob.glob("%s/CIDE.*" % path):
-            filename = os.path.basename(filename)
-            src = os.path.join(path, filename)
-            dest = os.path.join(dirname, filename)
-            os.rename(src, dest)
-        shutil.rmtree(path)
+    def zfile_filter(self, zfilename): return zfilename[-6:-1] == "CIDE."
 
 class GcideProcessor(HtmlContainerProcessor):
+    _last_container = None
     def append(self, dt, dd):
         term = self.do_html_term(dt)
         alts = self.do_html_alts(dd, term)
-        definition = ""
+        definition = self.do_html_definition(dd, term)
         if not term.strip():
-            if len(self.output) == 0:
-                return
-            term, definition, oldalts = self.output.pop()
-            alts.extend(oldalts["alts"] if oldalts["alts"] else [])
-        definition += self.do_html_definition(dd, term)
-        Processor.append(self, term, definition, alts)
+            if self._last_container == None: return
+            term, olddef, oldalts = self._last_container
+            definition = olddef+self.do_html_definition(dd, term)
+            alts.extend(oldalts)
+        elif self._last_container != None:
+            Processor.append(self, *self._last_container)
+        self._last_container = (term, definition, alts)
+
+    def process(self):
+        HtmlContainerProcessor.process(self)
+        if self._last_container != None:
+            Processor.append(self, *self._last_container)
 
     def do_html_alts(self, dd, term):
         d = pq(dd)

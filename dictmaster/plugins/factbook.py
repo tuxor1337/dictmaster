@@ -8,7 +8,7 @@ import shutil
 from pyquery import PyQuery as pq
 from lxml import etree
 
-from dictmaster.util import html_container_filter, mkdir_p
+from dictmaster.util import html_container_filter, FLAGS
 from dictmaster.pthread import PluginThread
 from dictmaster.fetcher import ZipFetcher, Unzipper
 from dictmaster.postprocessor import HtmlContainerProcessor
@@ -306,56 +306,39 @@ ctry_shorts = {
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
-        self.dictname = "The World Factbook 2014"
-        fetcher = ZipFetcher(
-            self.output_directory,
-            urls=[
-                "https://www.cia.gov/library/publications/download/download-2014/geos.zip",
-                "https://www.cia.gov/library/publications/download/download-2014/graphics.zip"
-            ]
+        self.dictname = u"The World Factbook 2014"
+        processor = FactbookProcessor(
+            "div#wfb_data > table > tr:nth-child(4) div.CollapsiblePanel",
+            self, auto_synonyms=False
         )
         self._stages = [
-            fetcher,
-            FactbookUnzipper(self.output_directory),
-            FactbookProcessor("div.CollapsiblePanel", self),
-            Editor(plugin=self, auto_synonyms=False)
+            ZipFetcher(self),
+            FactbookUnzipper(self),
+            processor,
+            Editor(self)
         ]
 
-    def setup_dirs(self):
-        PluginThread.setup_dirs(self)
-        mkdir_p(os.path.join(self.output_directory, "zip"))
+    def post_setup(self, cursor):
+        urls = [
+            "https://www.cia.gov/library/publications/download/download-2014/geos.zip",
+            "https://www.cia.gov/library/publications/download/download-2014/graphics.zip"
+        ]
+        cursor.executemany('''
+            INSERT INTO raw (uri, flag)
+            VALUES (?,?)
+        ''', [(url, FLAGS["ZIP_FETCHER"]) for url in urls])
 
 class FactbookUnzipper(Unzipper):
-    def run(self):
-        Unzipper.run(self)
-        dirname = self.unzip_directory
-        for repodir in os.listdir(dirname):
-            path = os.path.join(dirname, repodir)
-            if repodir == "geos":
-                for filename in glob.glob("%s/*.html" % path):
-                    filename = os.path.basename(filename)
-                    src = os.path.join(path, filename)
-                    dest = os.path.join(dirname, filename)
-                    out_html = ""
-                    with open(src, "r") as f:
-                        encoded_str = f.read()
-                        parser = etree.HTMLParser(encoding="utf-8")
-                        doc = pq(etree.fromstring(encoded_str, parser=parser))
-                        out_html = doc("div#wfb_data > table > tr").eq(3).html()
-                    with open(dest, "w") as f:
-                        f.write(out_html.encode("utf-8"))
-            elif repodir == "graphics":
-                res_dirname = os.path.join(dirname, "../res/")
-                mkdir_p(res_dirname)
-                file_list = glob.glob("%s/maps/*-map.gif" % path)
-                file_list += glob.glob("%s/locator/*/*_large_locator.gif" % path)
-                file_list += glob.glob("%s/flags/large/*-lgflag.gif" % path)
-                for filename in file_list:
-                    basename = os.path.basename(filename)
-                    src = filename
-                    dest = os.path.join(res_dirname, basename)
-                    os.rename(src, dest)
-            shutil.rmtree(path)
+    def zfile_filter(self, zfilename):
+        return zfilename[-5:] == ".html" and zfilename[-12:-7] == "geos/"
+
+    def zfile_resfilter(self, zfilename):
+        regex = [
+            r"graphics/maps/[^/]*-map.gif$",
+            r"graphics/locator/[^/]*/[^/]*_large_locator.gif$",
+            r"graphics/flags/large/[^/]*-lgflag.gif$"
+        ]
+        return any(re.search(r, zfilename) != None for r in regex)
 
 class FactbookProcessor(HtmlContainerProcessor):
     def do_html_alts(self, dd, term):

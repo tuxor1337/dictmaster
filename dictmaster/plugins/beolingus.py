@@ -3,7 +3,7 @@
 import os
 import shutil
 
-from dictmaster.util import mkdir_p
+from dictmaster.util import FLAGS
 from dictmaster.pthread import PluginThread
 from dictmaster.fetcher import ZipFetcher, Unzipper
 from dictmaster.postprocessor import DictfileProcessor
@@ -13,15 +13,11 @@ class Plugin(PluginThread):
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
         if popts == "de-en":
-            self.dictname = "BEOLINGUS Deutsch-Englisch"
+            self.dictname = u"BEOLINGUS Deutsch-Englisch"
             flipCols = False
         else:
-            self.dictname = "BEOLINGUS Englisch-Deutsch"
+            self.dictname = u"BEOLINGUS Englisch-Deutsch"
             flipCols = True
-        fetcher = ZipFetcher(
-            self.output_directory,
-            urls=["http://ftp.tu-chemnitz.de/pub/Local/urz/ding/de-en-devel/de-en.txt.zip"]
-        )
         postprocessor = DictfileProcessor(self,
             fieldSplit="::",
             subfieldSplit="|",
@@ -29,14 +25,16 @@ class Plugin(PluginThread):
             flipCols=flipCols
         )
         self._stages = [
-            fetcher,
-            Unzipper(self.output_directory),
+            ZipFetcher(self),
+            Unzipper(self),
             postprocessor,
-            Editor(plugin=self)
+            Editor(self)
         ]
 
-    def setup_dirs(self):
-        if os.path.exists(os.path.join(self.output_directory, "raw")):
-            shutil.rmtree(os.path.join(self.output_directory, "raw"))
-        PluginThread.setup_dirs(self)
-        mkdir_p(os.path.join(self.output_directory, "zip"))
+    def post_setup(self, cursor):
+        url = "http://ftp.tu-chemnitz.de/pub/Local/urz/ding/de-en-devel/de-en.txt.zip"
+        cursor.execute('''
+            INSERT INTO raw (uri, flag)
+            VALUES (?,?)
+        ''', (url, FLAGS["ZIP_FETCHER"]))
+

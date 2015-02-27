@@ -7,38 +7,32 @@ import sys
 from pyquery import PyQuery as pq
 from lxml import etree
 
-from dictmaster.util import html_container_filter
+from dictmaster.util import html_container_filter, words_to_db
 from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import WordFetcher
+from dictmaster.fetcher import Fetcher
 from dictmaster.postprocessor import HtmlContainerProcessor
 from dictmaster.editor import Editor
 
-# TODO: get full word list
-
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
-        word_file = popts
-        if not os.path.exists(word_file):
+        self.word_file = popts
+        if not os.path.exists(self.word_file):
             sys.exit("Provide full path to (existing) word list file!")
         super(Plugin, self).__init__(popts, dirname)
-        self.dictname = "Oxford Dictionaries Online - British & World English"
-        fetcher = OxfordFetcher(
-            self.output_directory,
-            url_pattern="http://www.oxforddictionaries.com/definition/english/{word}",
-            word_file=word_file,
-            word_codec=("utf-8", "utf-8"),
-            threadcnt=10
-        )
+        self.dictname = u"Oxford Dictionaries Online - British & World English"
         self._stages = [
-            fetcher,
-            OxfordProcessor("", self, singleton=True),
-            Editor(plugin=self)
+            OxfordFetcher(self, threadcnt=10),
+            OxfordProcessor("div.entryPageContent", self),
+            Editor(self)
         ]
 
-class OxfordFetcher(WordFetcher):
-    class FetcherThread(WordFetcher.FetcherThread):
+    def post_setup(self, cursor):
+        words_to_db(self.word_file, cursor, ("utf-8", "utf-8"),)
+
+class OxfordFetcher(Fetcher):
+    class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data):
-            if data == None or len(data) < 2 \
+            if data == None \
             or '<div class="entryPageContent">' not in data:
                 return None
             data = " ".join(data.split())
@@ -50,26 +44,30 @@ class OxfordFetcher(WordFetcher):
             for r in regex: data = re.sub(r[0], r[1], data)
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(data, parser=parser))
-            return doc("div.entryPageContent").html().encode("utf-8")
+            return doc("div.responsive_cell_center").html()
+
+        def parse_uri(self, uri):
+            return "http://www.oxforddictionaries.com/definition/english/%s"%uri
 
 class OxfordProcessor(HtmlContainerProcessor):
     def do_html_term(self, doc):
-        term = doc("strong.pageTitle").eq(0).text().strip()
-        regex = []
+        term = doc(".pageTitle").eq(0).text().strip()
+        regex = [
+            [r"\s([0-9]+)$",r"(\1)"]
+        ]
         for r in regex: term = re.sub(r[0], r[1], term)
+        print term
         return term
 
     def do_html_alts(self, doc, term):
-        alts = []
-        for h in doc("section.subEntryBlock h4"):
-            alts.append(doc(h).text().strip())
-        return alts
+        return [doc(h).text().strip() for h in doc("section.subEntryBlock h4")]
 
     def do_html_definition(self, html, term):
         doc = pq(html)
         doc("img").remove()
         doc("script").remove()
         doc("h1").remove()
+        doc("div.senses").remove()
         doc("div.breadcrumb").remove()
         doc("div.etymology").remove()
         doc("div.responsive_hide_on_smartphone").remove()
@@ -81,7 +79,7 @@ class OxfordProcessor(HtmlContainerProcessor):
         doc("i.icon-top-word").remove()
         doc("a.back-to-top").remove()
         doc("li.dictionary_footer").remove()
-        doc("strong.pageTitle").remove()
+        doc(".pageTitle").remove()
         for div in doc("div.top1000"):
             doc(div).replaceWith(
                 doc("<span/>").css("color","#0BE")

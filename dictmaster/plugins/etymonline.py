@@ -1,44 +1,66 @@
 # -*- coding: utf-8 -*-
 
-from xml.dom import Node
-from xml.dom.pulldom import SAX2DOM
-import lxml.sax, lxml.html
 
 import re
+from string import lowercase as ALPHA
 from pyquery import PyQuery as pq
 from lxml import etree
 
+from dictmaster.util import FLAGS
 from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import AlphanumFetcher
+from dictmaster.fetcher import Fetcher, UrlFetcher
 from dictmaster.postprocessor import HtmlABProcessor
 from dictmaster.editor import Editor
 
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
-        self.dictname = "Online Etymology Dictionary, ©Douglas Harper/etymonline.com"
-        fetcher = EtymonlineFetcher(
-            self.output_directory,
-            url_pattern="http://www.etymonline.com/index.php?l={alpha}&p={num}"
-        )
+        self.dictname = u"Online Etymology Dictionary, ©Douglas Harper/etymonline.com"
         self._stages = [
-            fetcher,
+            EtymonlineUrlFetcher(self),
+            EtymonlineFetcher(self),
             EtymonlineProcessor(("dt", "dd"), self),
-            Editor(plugin=self)
+            Editor(self)
         ]
 
-class EtymonlineFetcher(AlphanumFetcher):
-    class FetcherThread(AlphanumFetcher.FetcherThread):
+    def post_setup(self, cursor):
+        cursor.executemany('''
+            INSERT INTO raw (uri, flag)
+            VALUES (?,?)
+        ''', [(a, FLAGS["URL_FETCHER"]) for a in ALPHA])
+
+class EtymonlineUrlFetcher(UrlFetcher):
+    class FetcherThread(UrlFetcher.FetcherThread):
         def filter_data(self, data):
-            if data == None or len(data) < 2 \
+            d = pq(data)
+            hitlist = d("div.paging:first-child a")
+            out = []
+            for a in hitlist:
+                out.append(re.sub(
+                    "^.*(l=[a-z]&p=[0-9]+)&.*$",
+                    r"\1",
+                    d(a).attr("href")
+                ))
+            return out
+
+        def parse_uri(self,uri):
+            return "http://www.etymonline.com/index.php?l=%s"%uri
+
+class EtymonlineFetcher(Fetcher):
+    class FetcherThread(Fetcher.FetcherThread):
+        def filter_data(self, data):
+            if data == None \
             or '<div id="dictionary">' not in data \
             or '<p>No matching terms found.</p>' in data:
-                raise Exception("next_block")
+                return None
             container = "div#dictionary dl"
             parser = etree.HTMLParser(encoding="iso-8859-1")
             doc = pq(etree.fromstring(data, parser=parser))
-            if len(doc(container)) == 0: raise Exception("next_block")
-            else: return doc(container).html().encode("utf-8")
+            if len(doc(container)) == 0: return None
+            else: return doc(container).html()
+
+        def parse_uri(self, uri):
+            return "http://www.etymonline.com/index.php?%s"%uri
 
 class EtymonlineProcessor(HtmlABProcessor):
     def do_pre_html(self, data):

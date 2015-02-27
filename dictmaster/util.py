@@ -4,6 +4,7 @@ import sys
 import time
 import os
 import errno
+import sqlite3
 
 from urllib2 import URLError, HTTPError
 from httplib import BadStatusLine
@@ -17,6 +18,17 @@ from pyquery import PyQuery as pq
 from lxml import etree
 
 import threading
+
+FLAGS = {
+    "FETCHED": 1 << 0,
+    "PROCESSED": 1 << 1,
+    "RAW_FETCHER": 1 << 2,
+    "URL_FETCHER": 1 << 3,
+    "ZIP_FETCHER": 1 << 4,
+    "FILE": 1 << 5,
+    "MEMORY": 1 << 6,
+    "DUPLICATE": 1 << 7
+}
 
 def warn_nl(msg):
     sys.stdout.write("\r\n{}\n".format(msg))
@@ -37,6 +49,39 @@ def load_plugin(plugin_name, popts, dirname):
         print e.args; pthread = None
     return pthread
 
+def words_to_db(word_file, cursor, word_codec):
+    wordlist = [w.decode(word_codec[0]).strip() for w in open(word_file,"r")]
+    tmplist = []
+    for w in wordlist:
+        try: tmplist.append(urllib2.quote(w.encode(word_codec[1]), ""))
+        except: print "Codec error reading word file:", w; break
+    cursor.executemany('''
+        INSERT INTO raw (uri,flag) VALUES (?,?)
+    ''', [(w, FLAGS["RAW_FETCHER"]) for w in wordlist])
+
+def find_synonyms(term, definition, alts):
+    greek_alph = u'αιηωυεοςρτθπσδφγξκλζχψβνμ'
+    latin_alph = u'aihwueosrtqpsdfgcklzxybnm'
+
+    def add_alt(alts, a):
+        if a not in alts and a != term: alts.append(a)
+
+    def add_greek_alt(alts, a):
+        orig_a = a
+        a = remove_accents(a).lower()
+        add_alt(alts, a)
+        add_alt(alts, a.replace("-",""))
+        for x,y in zip(greek_alph,latin_alph):
+            a = a.replace(x,y)
+        add_alt(alts,a)
+        add_alt(alts,a.replace("-",""))
+
+    add_greek_alt(alts,term)
+    for delimiter in [",","#",";"]:
+        [add_greek_alt(alts,c.strip()) for c in term.split(delimiter)]
+
+    return alts
+
 def remove_accents(input_str):
     if not isinstance(input_str, unicode):
         input_str = unicode(input_str,"utf8")
@@ -52,7 +97,7 @@ def html_container_filter(container, charset="utf-8", bad_content=None):
         if len(doc(container)) == 0: return None
         elif bad_content != None and doc(container).text() == bad_content:
             return None
-        else: return doc(container).html().encode(charset)
+        else: return doc(container).html()
     return tmp_func
 
 """

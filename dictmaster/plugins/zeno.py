@@ -7,7 +7,7 @@ import os
 from pyquery import PyQuery as pq
 from lxml import etree
 
-from dictmaster.util import mkdir_p
+from dictmaster.util import FLAGS
 from dictmaster.pthread import PluginThread
 from dictmaster.fetcher import Fetcher, UrlFetcher
 from dictmaster.postprocessor import HtmlContainerProcessor
@@ -15,19 +15,19 @@ from dictmaster.editor import Editor
 
 ZENO_OPTS = {
     "Pape-1880": {
-        "dictname": "Pape: Handwörterbuch der griechischen Sprache",
+        "dictname": u"Pape: Handwörterbuch der griechischen Sprache",
         "non-articles": ["hrung","Pape"],
-        "wordcount": 100000
+        "wordcount": 98910
     },
     "Georges-1913": {
-        "dictname": "Georges: Ausführliches lateinisch-deutsches Handwörterbuch",
+        "dictname": u"Georges: Ausführliches lateinisch-deutsches Handwörterbuch",
         "non-articles": ["Verzeichnis", "Vorrede", "Ausgaben", "Georges"],
-        "wordcount": 56000
+        "wordcount": 54866
     },
     "Georges-1910": {
-        "dictname": "Georges: Kleines deutsch-lateinisches Handwörterbuch",
+        "dictname": u"Georges: Kleines deutsch-lateinisches Handwörterbuch",
         "non-articles": ["Verzeichnis", "Vorrede", "Ausgaben", "Georges", "Vorwort"],
-        "wordcount": 27000
+        "wordcount": 26634
     },
 }
 
@@ -35,62 +35,57 @@ ZENO_URL = "http://www.zeno.org"
 
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
-        zeno_key = popts
-        if zeno_key not in ZENO_OPTS:
+        self.zeno_key = popts
+        if self.zeno_key not in ZENO_OPTS:
             sys.exit("Zeno key not supported, try: {}".format(ZENO_OPTS.keys()))
-        super(Plugin, self).__init__(popts, os.path.join(dirname,zeno_key))
-        self.dictname = ZENO_OPTS[zeno_key]["dictname"]
-        self.url_list = []
+        super(Plugin, self).__init__(popts, os.path.join(dirname, popts))
+        self.dictname = ZENO_OPTS[self.zeno_key]["dictname"]
         url_fetcher = ZenoUrlFetcher(self,
-            "%s/Kategorien/T/%s?s=%%d" % (ZENO_URL, zeno_key),
-            ZENO_OPTS[zeno_key]["wordcount"]
+            "%s/Kategorien/T/%s?s=%%d" % (ZENO_URL, self.zeno_key)
         )
+        processor = ZenoProcessor("", self, singleton=True)
+        processor.nonarticles = ZENO_OPTS[self.zeno_key]["non-articles"]
         self._stages = [
             url_fetcher,
-            ZenoFetcher(self.output_directory, urls=self.url_list),
-            ZenoProcessor(self, ZENO_OPTS[zeno_key]["non-articles"]),
-            Editor(plugin=self)
+            ZenoFetcher(self),
+            processor,
+            Editor(self)
         ]
+
+    def post_setup(self, cursor):
+        wordcount = ZENO_OPTS[self.zeno_key]["wordcount"]
+        cursor.executemany('''
+            INSERT INTO raw (uri, flag)
+            VALUES (?,?)
+        ''', [(i, FLAGS["URL_FETCHER"]) for i in range(0,wordcount,20)])
+
+class ZenoUrlFetcher(UrlFetcher):
+    class FetcherThread(UrlFetcher.FetcherThread):
+        def filter_data(self, data):
+            d = pq(data)
+            hitlist = d("span.zenoSRHitTitle")
+            if len(hitlist) == 0: return []
+            return [d(hit).find("a").attr("href") for hit in hitlist]
+
+    def __init__(self, plugin, url_pattern):
+        super(ZenoUrlFetcher, self).__init__(plugin)
+        def parse_uri_override(fthread, uri): return url_pattern % int(uri)
+        self.FetcherThread.parse_uri = parse_uri_override
 
 class ZenoFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
-        def fetch_url(self, url):
-            Fetcher.FetcherThread.fetch_url(self, ZENO_URL + url)
+        def parse_uri(self, uri): return ZENO_URL + uri
         def filter_data(self, data):
-            if data == None or len(data) < 2: return None
+            if data == None: return None
             container = "div.zenoCOMain"
             encoded_str = data.decode("iso-8859-1").encode("utf-8")
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(encoded_str, parser=parser))
             if len(doc(container)) == 0: return None
-            else: return doc(container).html().encode("utf-8")
-
-class ZenoUrlFetcher(UrlFetcher):
-    class FetcherThread(UrlFetcher.FetcherThread): pass
-    def __init__(self, plugin, url_pattern, wordcount):
-        super(ZenoUrlFetcher, self).__init__(plugin)
-        self.urls = range(0,wordcount,20)
-        def fetch_url_override(fthread, url):
-            fthread._i += 1
-            url = url_pattern % url
-            d = pq(fthread.download_retry(url))
-            hitlist = d("span.zenoSRHitTitle")
-            if len(hitlist) == 0:
-                fthread._canceled = True
-                return None
-            output = ""
-            for hit in hitlist:
-                url = d(hit).find("a").attr("href")
-                output += "%s\n" % url
-            fthread.write_file(None, output)
-            return output
-        self.FetcherThread.fetch_url = fetch_url_override
+            else: return doc(container).html()
 
 class ZenoProcessor(HtmlContainerProcessor):
-    def __init__(self, plugin, nonarticles):
-        super(ZenoProcessor, self).__init__("", plugin, singleton=True)
-        self.nonarticles = nonarticles
-
+    nonarticles = []
     def do_html_term(self, html):
         doc = pq(html)
         term = doc("h2.zenoTXul").eq(0).text().strip()
@@ -141,7 +136,6 @@ class ZenoProcessor(HtmlContainerProcessor):
             basename = url.split('/')[-1]
             data = self.download_retry(url)
             res_dirname = os.path.join(self.plugin.output_directory, "res")
-            mkdir_p(res_dirname)
             with open(os.path.join(res_dirname,basename), "w") as img_file:
                 img_file.write(data)
             doc(img).attr("src", basename)
