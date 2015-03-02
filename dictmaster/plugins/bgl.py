@@ -16,9 +16,9 @@ from dictmaster.editor import Editor
 class Plugin(PluginThread):
     g_data = []
     def __init__(self, popts, dirname):
-        self.bgl_file = popts
-        if not os.path.exists(self.bgl_file):
+        if len(popts) != 1 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) BGL file!")
+        self.bgl_file = popts[0]
         super(Plugin, self).__init__(popts, dirname)
 
     def run(self):

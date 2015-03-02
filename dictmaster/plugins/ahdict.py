@@ -18,9 +18,9 @@ from dictmaster.editor import Editor
 
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
-        self.word_file = popts
-        if not os.path.exists(self.word_file):
+        if len(popts) == 0 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) word list file!")
+        self.word_file = popts[0]
         super(Plugin, self).__init__(popts, dirname)
         self.dictname = u"The American Heritage Dictionary of the English Language, Fifth Edition"
         self._stages = [

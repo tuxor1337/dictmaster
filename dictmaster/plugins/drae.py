@@ -25,9 +25,9 @@ POSTDATA = "TS014dfc77_id=3"\
 
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
-        self.word_file = popts
-        if not os.path.exists(self.word_file):
+        if len(popts) == 0 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) word list file!")
+        self.word_file = popts[0]
         super(Plugin, self).__init__(popts, dirname)
         self.dictname = u"Diccionario de la lengua española: 22a edición"
         self._stages = [

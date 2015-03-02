@@ -46,7 +46,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Download and convert dictionaries.')
     parser.add_argument('plugin', metavar='FILE', type=str, help='The plugin to use.')
-    parser.add_argument('--popts', action="store", default="", type=str,
+    parser.add_argument('--popts', action="store", nargs="+",
                     help=("Option string passed to the plugin."))
     parser.add_argument('--reset', action="store_true", default=False,
                     help=("Discard data from last time."))

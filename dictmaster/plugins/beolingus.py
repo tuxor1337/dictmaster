@@ -12,7 +12,7 @@ from dictmaster.editor import Editor
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
-        if popts == "de-en":
+        if len(popts) > 0 and popts[0] == "de-en":
             self.dictname = u"BEOLINGUS Deutsch-Englisch"
             flipCols = False
         else:

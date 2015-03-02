@@ -11,9 +11,9 @@ from dictmaster.editor import Editor
 
 class Plugin(PluginThread):
     def __init__(self, popts, dirname):
-        self.zfile = popts
-        if not os.path.exists(self.zfile):
+        if len(popts) == 0 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) dict.cc zip file!")
+        self.zfile = popts[0]
         super(Plugin, self).__init__(popts, dirname)
         self.dictname = "dict.cc %s" % os.path.basename(self.zfile)
         self._stages = [

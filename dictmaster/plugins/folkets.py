@@ -103,10 +103,10 @@ FLAG_IMG["en"] = FLAG_IMG["sv"][::-1]
 class Plugin(PluginThread):
     _folkets_lang = ""
     def __init__(self, popts, dirname):
-        if popts not in ["Sv-En", "En-Sv"]:
+        if len(popts) != 1 or popts[0] not in ["Sv-En", "En-Sv"]:
             sys.exit("Provide lang argument, either Sv-En or En-Sv!")
-        super(Plugin, self).__init__(popts, os.path.join(dirname, popts))
-        self._folkets_lang = popts.decode("utf-8")
+        self._folkets_lang = popts[0].decode("utf-8")
+        super(Plugin, self).__init__(popts, os.path.join(dirname, self._folkets_lang))
         self.dictname = u"Folkets lexikon %s, ©folkets-lexikon.csc.kth.se"
         self.dictname = self.dictname % self._folkets_lang
         self._stages = [
