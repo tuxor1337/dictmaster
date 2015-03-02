@@ -57,7 +57,7 @@ def words_to_db(word_file, cursor, word_codec):
         except: print "Codec error reading word file:", w; break
     cursor.executemany('''
         INSERT INTO raw (uri,flag) VALUES (?,?)
-    ''', [(w, FLAGS["RAW_FETCHER"]) for w in wordlist])
+    ''', [(w, FLAGS["RAW_FETCHER"]) for w in tmplist])
 
 def find_synonyms(term, definition, alts):
     greek_alph = u'αιηωυεοςρτθπσδφγξκλζχψβνμ'
