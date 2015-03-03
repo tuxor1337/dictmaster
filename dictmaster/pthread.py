@@ -4,7 +4,7 @@ import os
 import shutil
 import sqlite3
 
-from dictmaster.util import mkdir_p, CancelableThread
+from dictmaster.util import mkdir_p, CancelableThread, FLAGS
 
 class PluginThread(CancelableThread):
     _stages = []
@@ -13,6 +13,7 @@ class PluginThread(CancelableThread):
     dictname = ""
     output_directory = ""
     output_db = ""
+    force_process = False
 
     def __init__(self, popts, dirname):
         super(PluginThread, self).__init__()
@@ -83,6 +84,14 @@ class PluginThread(CancelableThread):
 
     def run(self):
         self.setup()
+        if self.force_process:
+            conn = sqlite3.connect(self.output_db)
+            c = conn.cursor()
+            c.execute("DELETE FROM dict")
+            c.execute("DELETE FROM synonyms")
+            c.execute("UPDATE raw SET flag = flag & ~?", (FLAGS["PROCESSED"],))
+            conn.commit()
+            conn.close()
         for stage in self._stages:
             stage.start()
             self._curr_stage = stage

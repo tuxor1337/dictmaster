@@ -23,10 +23,12 @@ def broadcast(msg, overwrite=False):
 def main(args):
     plugin = load_plugin(args.plugin, args.popts, args.output)
     if plugin == None: sys.exit("Plugin not found or plugin broken.")
+    plugin.force_process = args.force_process
 
     if args.reset:
         broadcast("Resetting plugin data in '{}'.".format(plugin.output_directory))
         plugin.reset()
+
 
     broadcast("Running plugin '{}'.".format(args.plugin))
     broadcast("Output will be written to '{}'.".format(plugin.output_directory))
@@ -50,6 +52,8 @@ if __name__ == "__main__":
                     help=("Option string passed to the plugin."))
     parser.add_argument('--reset', action="store_true", default=False,
                     help=("Discard data from last time."))
+    parser.add_argument('--force-process', action="store_true", default=False,
+                    help=("Discard processed data from last time (keep fetched data)."))
     parser.add_argument('-o', '--output', action="store", default="", type=str,
                     help=("Work and output directory."))
     main(parser.parse_args())
