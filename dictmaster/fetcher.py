@@ -131,6 +131,7 @@ class UrlFetcher(Fetcher):
         def fetch_uri(self, rawid, uri):
             self._i += 1
             data = self.download_retry(self.parse_uri(uri), self.postdata)
+            if self._canceled: return
             for url in self.filter_data(data):
                 self._queue.put((None, url, None, self._output_flag))
             self._queue.put((rawid, uri, None, self._flag))
