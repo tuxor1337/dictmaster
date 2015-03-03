@@ -32,7 +32,7 @@ class PluginThread(CancelableThread):
                     id INTEGER PRIMARY KEY,
                     uri TEXT,
                     data TEXT,
-                    flag INT
+                    flag INTEGER
                 )
             ''');
             c.execute('''
@@ -46,13 +46,13 @@ class PluginThread(CancelableThread):
                     id INTEGER PRIMARY KEY,
                     word TEXT,
                     def TEXT,
-                    rawid INT
+                    rawid INTEGER
                 )
             ''');
             c.execute('''
                 CREATE TABLE synonyms (
-                    id INT PRIMARY KEY,
-                    wid INT,
+                    id INTEGER PRIMARY KEY,
+                    wid INTEGER,
                     syn TEXT
                 )
             ''');
@@ -61,7 +61,7 @@ class PluginThread(CancelableThread):
             ''')
             c.execute('''
                 CREATE TABLE info (
-                    id INT PRIMARY KEY,
+                    id INTEGER PRIMARY KEY,
                     key TEXT,
                     value TEXT
                 )
