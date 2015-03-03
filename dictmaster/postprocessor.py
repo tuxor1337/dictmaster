@@ -69,6 +69,7 @@ class Processor(CancelableThread):
             if m != None: alts = [m.group(1),m.group(1).lower()]
         if self.auto_synonyms:
             alts = find_synonyms(term,definition,alts)
+        alts = [a for a in set(alts) if a != term]
         self._c.execute('''
             INSERT INTO dict(word,def,rawid)
             VALUES (?,?,?)
