@@ -5,23 +5,26 @@ import sqlite3
 from dictmaster.util import CancelableThread, FLAGS
 
 class QueueThread(CancelableThread):
-    queue = None
+    _queue = None
 
     def __init__(self):
         super(QueueThread, self).__init__()
-        self.queue = Queue.Queue()
+        self._queue = Queue.Queue()
 
     def process_item(self, item): return None
-    def put(self, item): self.queue.put(item)
+    def put(self, item): self._queue.put(item)
+
+    def progress(self):
+        return "Digesting queue... {}.".format(self._queue.qsize())
 
     def run(self):
         while True:
-            try: item = self.queue.get(timeout=1)
+            try: item = self._queue.get(timeout=1)
             except Queue.Empty:
                 if self._canceled: break
                 else: continue
             self.process_item(item)
-            self.queue.task_done()
+            self._queue.task_done()
 
 class RawDbQueue(QueueThread):
     output_db = ""
@@ -53,6 +56,9 @@ class RawDbQueue(QueueThread):
                 SET uri=?, data=?, flag=?
                 WHERE id=?
             ''', (uri, data, flag, rawid))
+
+    def progress(self):
+        return "Writing to db... {}.".format(self._queue.qsize())
 
     def run(self):
         self._conn = sqlite3.connect(self.output_db)

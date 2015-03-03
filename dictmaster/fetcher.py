@@ -84,7 +84,7 @@ class Fetcher(CancelableThread):
 
     def progress(self):
         if None in self._subthreads: return "Initializing threads..."
-        if self._canceled: return "Fetching... quit."
+        if self._canceled: return self._queue.progress()
         prog = "Fetching... "
         sub_p = [s.progress() for s in self._subthreads]
         if all(type(p) == float for p in sub_p):
