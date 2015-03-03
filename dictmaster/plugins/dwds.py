@@ -77,13 +77,25 @@ class DWDSProcessor(HtmlContainerProcessor):
 
     def do_html_term(self, doc):
         term = doc("span.wb_lzga").eq(0).text().strip()
-        regex = []
+        regex = [
+            [r" ([0-9]+)$",r"(\1)"]
+        ]
         for r in regex: term = re.sub(r[0], r[1], term)
         return term
 
     def do_html_alts_5(self, html, term):
         doc = pq(html)
-        return [doc(a).text() for a in doc("span.wb_lzga_min a")]
+        regex = [
+            [r" ([0-9]+)$",r"(\1)"],
+            [u"\xb2","(2)"],
+            [u"\xb3","(3)"]
+        ]
+        alts = [doc(a).text() for a in doc("span.wb_lzga_min a")]
+        for r in regex: alts = [re.sub(r[0],r[1],a) for a in alts]
+        for a in alts+[term]:
+            m = re.search(r"^(.*)\([0-9]+\)$", a)
+            if m != None: alts.extend([m.group(1),m.group(1).lower()])
+        return alts
 
     def do_html_alts_32(self, html, term): return []
 
