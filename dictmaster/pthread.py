@@ -38,6 +38,9 @@ class PluginThread(CancelableThread):
                 CREATE INDEX raw_uri_idx ON raw (uri)
             ''')
             c.execute('''
+                CREATE INDEX raw_data_idx ON raw (data)
+            ''')
+            c.execute('''
                 CREATE TABLE dict (
                     id INTEGER PRIMARY KEY,
                     word TEXT,
@@ -76,7 +79,6 @@ class PluginThread(CancelableThread):
 
     def progress(self):
         if self._curr_stage == None: return "Setup..."
-        if self._canceled: return "Sleeping..."
         return self._curr_stage.progress()
 
     def run(self):
