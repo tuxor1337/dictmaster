@@ -117,7 +117,7 @@ class DictfileProcessor(Processor):
                 print("Invalid unbalanced entry.")
                 print(line)
                 return
-        else: subfields = [fields[0], fields[1]]
+        else: subfields = [[fields[0]], [fields[1]]]
         for i in range(len(subfields[0])):
             subfields[0][i] = subfields[0][i].strip()
             subfields[1][i] = subfields[1][i].strip()

@@ -3,7 +3,7 @@
 import os
 import sys
 
-from dictmaster.utils import FLAGS
+from dictmaster.util import FLAGS
 from dictmaster.pthread import PluginThread
 from dictmaster.fetcher import Unzipper
 from dictmaster.postprocessor import DictfileProcessor
