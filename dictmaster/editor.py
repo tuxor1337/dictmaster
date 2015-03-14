@@ -83,32 +83,32 @@ class Editor(CancelableThread):
         self._status = "Done removing duplicate synonyms ({} entries affected).".format(self._c.rowcount)
 
     def dupidx_enumerate(self):
-        self._c.execute('''
-            SELECT word
-            FROM dict
-            GROUP BY word
-            HAVING COUNT(*) > 1
-        ''')
-        dubs = self._c.fetchall()
-        no = len(dubs)
-        for i,dbl in enumerate(dubs):
+        lines = self._c.execute('''SELECT id, word FROM dict''')
+        data = {}
+        for entry in lines:
+            if entry[1] not in data:
+                data[entry[1]] = {
+                    "id": entry[0],
+                    "dups": []
+                }
+            else: data[entry[1]]["dups"].append(entry[0])
+        no = len(data.keys())
+        for i,key in enumerate(data.keys()):
+            value = data[key]
             self._status = "Enumerating ambivalent entries %d of %d..." % (i,no)
-            self._c.execute('''SELECT id FROM dict WHERE word=?''',(dbl[0],))
-            for j,wid in enumerate(self._c.fetchall()):
-                self._c.execute('''
+            if len(value["dups"]) > 0:
+                self._c.executemany('''
                     INSERT INTO synonyms(wid,syn)
                     VALUES (?,?)
-                ''', (wid[0],dbl[0]))
-                self._c.execute('''
+                ''', [(wid,key) for wid in value["dups"]])
+                self._c.executemany('''
                     UPDATE dict
                     SET word=?
                     WHERE id=?
-                ''', ("%s(%d)" % (dbl[0],j+1),wid[0]))
+                ''', [("%s(%d)" % (key,j+1),wid) for j,wid in enumerate(value["dups"])])
 
     def dupidx_cat(self):
-        lines = self._c.execute('''
-            SELECT id, word, def FROM dict
-        ''')
+        lines = self._c.execute('''SELECT id, word, def FROM dict''')
         data = {}
         for entry in lines:
             if entry[1] not in data:
