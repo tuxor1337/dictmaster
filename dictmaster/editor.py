@@ -72,7 +72,7 @@ class Editor(CancelableThread):
             WHERE id NOT IN (SELECT MaxId FROM TempDict)
         ''')
         self._c.execute('''DROP TABLE TempDict''');
-        self._status = "Done removing duplicate entries ({} entries affected).".format(self._c.rowcount)
+        self._status = "Done removing duplicate entries ({} entries affected).".format(affected)
 
     def dupsyns_remove(self):
         self._status = "Removing duplicate synonyms..."
@@ -106,36 +106,38 @@ class Editor(CancelableThread):
                 ''', ("%s(%d)" % (dbl[0],j+1),wid[0]))
 
     def dupidx_cat(self):
-        self._c.execute('''
-            SELECT id, word, def
-            FROM dict
-            GROUP BY word
-            HAVING COUNT(*) > 1
+        lines = self._c.execute('''
+            SELECT id, word, def FROM dict
         ''')
-        critical = self._c.fetchall()
-        no = len(critical)
-        for i,entry in enumerate(critical):
+        data = {}
+        for entry in lines:
+            if entry[1] not in data:
+                data[entry[1]] = {
+                    "id": entry[0],
+                    "def": entry[2],
+                    "dups": []
+                }
+            else:
+                data[entry[1]]["dups"].append(entry[0])
+                data[entry[1]]["def"] += entry[2]
+        no = len(data.keys())
+        for i,key in enumerate(data.keys()):
+            value = data[key]
             self._status = "Concatenating ambivalent entries %d of %d..." % (i,no)
-            self._c.execute('''
-                SELECT id, def
-                FROM dict
-                WHERE word=?
-                AND id!=?
-            ''', (entry[1],entry[0]))
-            dups = self._c.fetchall()
-            self._c.executemany('''
-                DELETE FROM dict WHERE id=?
-            ''', [(d[0],) for d in dups])
-            self._c.executemany('''
-                UPDATE synonyms
-                SET wid=?
-                WHERE wid=?
-            ''', [(entry[0],d[0]) for d in dups])
-            self._c.execute('''
-                UPDATE dict
-                SET def=?
-                WHERE id=?
-            ''', (entry[2] + "".join(d[1] for d in dups),entry[0]))
+            if len(value["dups"]) > 0:
+                self._c.executemany('''
+                    DELETE FROM dict WHERE id=?
+                ''', [(d,) for d in value["dups"]])
+                self._c.executemany('''
+                    UPDATE synonyms
+                    SET wid=?
+                    WHERE wid=?
+                ''', [(value["id"],d) for d in value["dups"]])
+                self._c.execute('''
+                    UPDATE dict
+                    SET def=?
+                    WHERE id=?
+                ''', (value["def"],value["id"]))
 
     def write(self,fname):
         info, self.data = self.dictFromSqlite()
@@ -164,4 +166,3 @@ class Editor(CancelableThread):
                 {'defiFormat': defiFormat, 'alts':syn_list[row[2]]}
             ))
         return (info, data)
-
