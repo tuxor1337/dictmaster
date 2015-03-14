@@ -86,26 +86,22 @@ class Editor(CancelableThread):
         lines = self._c.execute('''SELECT id, word FROM dict''')
         data = {}
         for entry in lines:
-            if entry[1] not in data:
-                data[entry[1]] = {
-                    "id": entry[0],
-                    "dups": []
-                }
-            else: data[entry[1]]["dups"].append(entry[0])
+            if entry[1] not in data: data[entry[1]] = []
+            data[entry[1]].append(entry[0])
         no = len(data.keys())
         for i,key in enumerate(data.keys()):
-            value = data[key]
+            dups = data[key]
             self._status = "Enumerating ambivalent entries %d of %d..." % (i,no)
-            if len(value["dups"]) > 0:
+            if len(dups) > 1:
                 self._c.executemany('''
                     INSERT INTO synonyms(wid,syn)
                     VALUES (?,?)
-                ''', [(wid,key) for wid in value["dups"]])
+                ''', [(wid,key) for wid in dups])
                 self._c.executemany('''
                     UPDATE dict
                     SET word=?
                     WHERE id=?
-                ''', [("%s(%d)" % (key,j+1),wid) for j,wid in enumerate(value["dups"])])
+                ''', [("%s(%d)" % (key,j+1),wid) for j,wid in enumerate(dups)])
 
     def dupidx_cat(self):
         lines = self._c.execute('''SELECT id, word, def FROM dict''')
