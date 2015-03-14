@@ -11,7 +11,7 @@ Zipped data is also supported and there is basic support for Babylon dictionarie
 Supported dictionary sources
 ----------------------------
 
-At the moment you can fetch dictionary data from any Babylon dictionary (`*.bgl`)
+At the moment you can extract dictionary data from any Babylon dictionary (`*.bgl`)
 available on your computer.
 Furthermore `dictmaster` is able to retrieve data from the following online sources:
 
@@ -48,8 +48,8 @@ Start the tool with:
     ./dictmaster.py PLUGIN_NAME
 
 You find available plugins in the `dictmaster/plugins` directory.
-Some plugins need addition plugin-specific option string that you can provide
-with the `--popts OPTION` parameter, e.g.:
+Some plugins need additional plugin-specific option strings that you can provide
+with the `--popts OPTIONS` parameter, e.g.:
 
     ./dictmaster.py zeno --popts "Pape-1880"
 
