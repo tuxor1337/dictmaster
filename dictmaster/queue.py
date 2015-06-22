@@ -62,6 +62,7 @@ class RawDbQueue(QueueThread):
 
     def run(self):
         self._conn = sqlite3.connect(self.output_db)
+        self._conn.text_factory = str
         self._c = self._conn.cursor()
         QueueThread.run(self)
         self._conn.commit()

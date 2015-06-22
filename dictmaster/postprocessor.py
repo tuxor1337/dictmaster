@@ -31,6 +31,7 @@ class Processor(CancelableThread):
 
     def run(self):
         self._conn = sqlite3.connect(self.plugin.output_db)
+        self._conn.text_factory = str
         self._conn.row_factory = sqlite3.Row
         self._c = self._conn.cursor()
         self._i = self._c.execute("SELECT COUNT(*) FROM dict").fetchone()[0]
