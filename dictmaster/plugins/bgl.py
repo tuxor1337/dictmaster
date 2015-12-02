@@ -21,26 +21,24 @@ class Plugin(PluginThread):
         self.bgl_file = popts[0]
         super(Plugin, self).__init__(popts, dirname)
 
-    def run(self):
+    def post_setup(self, cursor):
         g = Glossary()
         res_dirname = os.path.join(self.output_directory, "res")
         g.read(self.bgl_file, verbose=0, resPath=res_dirname)
         self.g_data = g.data
         self.dictname = g.getInfo("bookname").decode("utf-8")
-        processor = BglProcessor(self)
-        processor.data = self.g_data
-        self._stages = [processor, Editor(self)]
-        PluginThread.run(self)
-
-    def post_setup(self, cursor):
         cursor.executemany('''
             INSERT INTO raw (uri, flag)
             VALUES (?,?)
         ''', [(i, FLAGS["MEMORY"]) for i in range(len(self.g_data))])
+        self._stages = [
+            BglProcessor(self),
+            Editor(self)
+        ]
 
 class BglProcessor(Processor):
     def data_from_memory(self):
-        self._curr_row["data"] = self.data[int(self._curr_row["uri"])]
+        self._curr_row["data"] = self.plugin.g_data[int(self._curr_row["uri"])]
 
     def process(self):
         term, definition, alts = self._curr_row["data"]
