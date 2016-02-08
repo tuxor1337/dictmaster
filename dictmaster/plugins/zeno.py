@@ -100,7 +100,9 @@ class ZenoProcessor(HtmlContainerProcessor):
             else:
                 print(html)
                 sys.exit()
-        term = re.sub(r" *\[([0-9]+)\] *$", r"(\1)", term.replace(";",""))
+        term = re.sub(r"\s*\[([0-9]+)\]\s*$", r"(\1)",
+            re.sub(r"\s*\[\*\]\s*$", "", term.replace(";",""))
+        )
         return term
 
     def do_html_definition(self, html, term):
