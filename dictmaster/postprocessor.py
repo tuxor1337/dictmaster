@@ -190,7 +190,7 @@ class HtmlABProcessor(HtmlProcessor):
         while len(dt) > 0:
             if self._canceled: break
             dt, dd = dt.eq(0), dt.nextAll(self.AB[1]).eq(0)
-            HtmlProcessor.append(self, doc(dt), doc(dd))
+            self.append(doc(dt), doc(dd))
             dt = dt.nextAll(self.AB[0])
 
 class HtmlContainerProcessor(HtmlProcessor):
