@@ -91,9 +91,11 @@ class Fetcher(CancelableThread):
             percentage = 100*self._fetched
             percentage += (1-self._fetched)*float(sum(sub_p))/len(sub_p)
             prog += "{:.2f}%".format(percentage)
-        elif any(p[:11] == "Downloading" for p in sub_p):
+        elif any(type(p) == str and p[:11] == "Downloading" for p in sub_p):
             for p in sub_p:
-                if p[:11] == "Downloading": prog = p; break
+                if type(p) == str and p[:11] == "Downloading":
+                    prog = p
+                    break
         else:
             for i,p in enumerate(sub_p):
                 prog += "{}:{} ".format(i, p[:13])
