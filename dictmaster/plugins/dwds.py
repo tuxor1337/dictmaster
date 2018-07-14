@@ -232,7 +232,9 @@ class DWDSProcessor(HtmlContainerProcessor):
         return html
 
     def do_html_definition_2(self, html, term):
-        doc = pq(html)("h2#etymwb > div").eq(0)
+        doc = pq(html)("h2#etymwb > div")
+        if len(doc) == 0: return ""
+        doc = doc.eq(0)
         for div in doc("div.etymwb-entry"):
             doc(div).replaceWith(
                 doc("<p/>").html(doc(div).html()).outerHtml()
