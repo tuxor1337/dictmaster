@@ -14,8 +14,8 @@ from dictmaster.postprocessor import HtmlContainerProcessor
 from dictmaster.editor import Editor
 
 DICTNAMES = {
-    "5": u"Etymologisches Wörterbuch © Dr. Wolfgang Pfeifer",
-    "32": u"Digitales Wörterbuch der deutschen Sprache",
+    "147": u"Digitales Wörterbuch der deutschen Sprache",
+    "148": u"Etymologisches Wörterbuch © Dr. Wolfgang Pfeifer",
 }
 
 def list_panel_ids():
@@ -70,7 +70,7 @@ class DWDSFetcher(Fetcher):
     def __init__(self, plugin):
         super(DWDSFetcher, self).__init__(plugin, threadcnt=10)
         self.FetcherThread.parse_uri = lambda fthread, uri: \
-            "http://eins.dwds.de/loadpanel/?panel_id=%s&qu=%s"%(plugin.panelid,uri)
+            "http://eins.dwds.de/panel/get/%s/?qu=%s"%(plugin.panelid,uri)
 
 class DWDSProcessor(HtmlContainerProcessor):
     def __init__(self, plugin):
@@ -86,7 +86,7 @@ class DWDSProcessor(HtmlContainerProcessor):
         for r in regex: term = re.sub(r[0], r[1], term)
         return term
 
-    def do_html_alts_5(self, html, term):
+    def do_html_alts_147(self, html, term):
         doc = pq(html)
         regex = [
             [r" ([0-9]+)$",r"(\1)"],
@@ -100,9 +100,9 @@ class DWDSProcessor(HtmlContainerProcessor):
             if m != None: alts.extend([m.group(1),m.group(1).lower()])
         return alts
 
-    def do_html_alts_32(self, html, term): return []
+    def do_html_alts_148(self, html, term): return []
 
-    def do_html_definition_5(self, html, term):
+    def do_html_definition_147(self, html, term):
         doc = pq(html)("div.wb_container_zone_s")
         for a in doc("a"):
             if doc(a).text().strip() == "": doc(a).replaceWith(doc(a).text())
@@ -112,7 +112,7 @@ class DWDSProcessor(HtmlContainerProcessor):
         doc("*").removeAttr("class").removeAttr("id")
         return " ".join(doc.html().strip().split())
 
-    def do_html_definition_32(self, html, term):
+    def do_html_definition_148(self, html, term):
         doc = pq(html)
         doc("img,audio,script").remove()
         doc("div.wb_zone_v").remove()
