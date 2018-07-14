@@ -5,6 +5,7 @@ import time
 import os
 import errno
 import sqlite3
+import random
 
 from urllib2 import URLError, HTTPError
 from httplib import BadStatusLine
@@ -28,6 +29,10 @@ FLAGS = {
     "FILE": 1 << 5,
     "MEMORY": 1 << 6,
     "DUPLICATE": 1 << 7
+}
+
+URL_HEADER = {
+    "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:61.0) Gecko/20100101 Firefox/61.0",
 }
 
 def warn_nl(msg):
@@ -137,7 +142,8 @@ class CancelableThread(threading.Thread):
     def download_retry(self, url, params=None):
         if self._canceled: return None
         try:
-            try: response = urllib2.urlopen(url, params, timeout=5)
+            req = urllib2.Request(url, data=params, headers=URL_HEADER)
+            try: response = urllib2.urlopen(req, timeout=20)
             except HTTPError as e:
                 if e.code == 404: return ""
                 else: raise
@@ -151,10 +157,10 @@ class CancelableThread(threading.Thread):
             return data
         except (URLError, BadStatusLine):
             warn_nl("Connection to %s failed. Retrying..." % url)
-            time.sleep(0.5)
+            time.sleep(random.uniform(1.0,3.0))
             return self.download_retry(url, params)
         except Exception as e:
             warn_nl("Error on %s: '%s'. Retrying..." % (url, e))
-            time.sleep(0.5)
+            time.sleep(random.uniform(1.0,3.0))
             return self.download_retry(url, params)
 
