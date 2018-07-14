@@ -60,11 +60,11 @@ Your dictionary data will be saved (by default) to `data/PLUGIN_NAME/stardict.*`
 in stardict format.
 (Note that for some dictionaries the directory `data/PLUGIN_NAME/res` is also needed.)
 
-Interrupting the running process with Ctrl+C should gracely cancel the process.
+Interrupting the running process with Ctrl+C should gracefully cancel the process.
 From most parts of the download stage, dictmaster is able to recover and continue
 at a later time from where it stopped last time.
 If you want to force redownloading the data add the parameter `--reset` to
-you command line.
+your command line.
 
 Limitations
 -----------
