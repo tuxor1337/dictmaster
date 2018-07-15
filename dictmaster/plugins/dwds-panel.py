@@ -86,7 +86,9 @@ class DWDSProcessor(HtmlContainerProcessor):
         for r in regex: term = re.sub(r[0], r[1], term)
         return term
 
-    def do_html_alts_147(self, html, term):
+    def do_html_alts_147(self, html, term): return []
+
+    def do_html_alts_148(self, html, term):
         doc = pq(html)
         regex = [
             [r" ([0-9]+)$",r"(\1)"],
@@ -100,22 +102,9 @@ class DWDSProcessor(HtmlContainerProcessor):
             if m != None: alts.extend([m.group(1),m.group(1).lower()])
         return alts
 
-    def do_html_alts_148(self, html, term): return []
-
     def do_html_definition_147(self, html, term):
-        doc = pq(html)("div.wb_container_zone_s")
-        for a in doc("a"):
-            if doc(a).text().strip() == "": doc(a).replaceWith(doc(a).text())
-            else:
-                href = "bword://%s" % doc(a).text().strip(". ").lower()
-                doc(a).attr("href", href)
-        doc("*").removeAttr("class").removeAttr("id")
-        return " ".join(doc.html().strip().split())
-
-    def do_html_definition_148(self, html, term):
         doc = pq(html)
-        doc("img,audio,script").remove()
-        doc("div.wb_zone_v").remove()
+        doc("img,audio,script,embed").remove()
         doc("span.wb_lzga").remove()
         doc("div[style='float:right;']").remove()
         doc("div.hidden_data_32").remove()
@@ -147,11 +136,25 @@ class DWDSProcessor(HtmlContainerProcessor):
             else:
                 href = "bword://%s" % doc(a).text().strip(". ").lower()
                 doc(a).attr("href", href)
-        for div in doc("div"):
-            if doc(div).text().strip() == "": doc(div).remove()
-        for span in doc("span"):
-            txt = doc(span).text().strip()
-            if txt in ["","Aussprache"]: doc(span).remove()
+        old_html = ""
+        while old_html != doc.html():
+            old_html = doc.html()
+            for el in doc("div,span,p"):
+                txt = doc(el).text().strip()
+                if txt in ["","Aussprache"]: doc(el).remove()
+        # Only preserve "related words" section if it's the only section
+        if doc("div.wb_zone_v").prevAll().text().strip() != "":
+            doc("div.wb_zone_v").remove()
         doc("*").removeAttr("class").removeAttr("id").removeAttr("onclick")
         return " ".join(doc("body > div").html().strip().split())
+
+    def do_html_definition_148(self, html, term):
+        doc = pq(html)("div.wb_container_zone_s")
+        for a in doc("a"):
+            if doc(a).text().strip() == "": doc(a).replaceWith(doc(a).text())
+            else:
+                href = "bword://%s" % doc(a).text().strip(". ").lower()
+                doc(a).attr("href", href)
+        doc("*").removeAttr("class").removeAttr("id")
+        return " ".join(doc.html().strip().split())
 
