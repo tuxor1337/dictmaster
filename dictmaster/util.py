@@ -23,9 +23,13 @@ import errno
 import sqlite3
 import random
 
-from urllib2 import URLError, HTTPError
-from httplib import BadStatusLine
-import urllib2
+try:
+    from urllib2 import URLError, HTTPError
+    import urllib2, httplib
+except ImportError:
+    from urllib.error import URLError, HTTPError
+    import urllib.request as urllib2
+    import http.client as httplib
 
 import importlib
 
@@ -67,7 +71,7 @@ def load_plugin(plugin_name, popts, dirname):
         plugin_module = importlib.import_module("dictmaster.plugins.%s" % plugin_name)
         pthread = plugin_module.Plugin(popts, dirname)
     except ImportError as e:
-        print e.args; pthread = None
+        print(e.args); pthread = None
     return pthread
 
 def words_to_db(word_file, cursor, word_codec):
@@ -75,7 +79,7 @@ def words_to_db(word_file, cursor, word_codec):
     tmplist = []
     for w in wordlist:
         try: tmplist.append(urllib2.quote(w.encode(word_codec[1]), ""))
-        except: print "Codec error reading word file:", w; break
+        except: print("Codec error reading word file:", w); break
     cursor.executemany('''
         INSERT INTO raw (uri,flag) VALUES (?,?)
     ''', [(w, FLAGS["RAW_FETCHER"]) for w in tmplist])
@@ -171,7 +175,7 @@ class CancelableThread(threading.Thread):
                 data = self._chunk_download(response, total_size)
             else: data = response.read()
             return data
-        except (URLError, BadStatusLine):
+        except (URLError, httplib.BadStatusLine):
             warn_nl("Connection to %s failed. Retrying..." % url)
             time.sleep(random.uniform(1.0,3.0))
             return self.download_retry(url, params)

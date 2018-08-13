@@ -1,8 +1,7 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import sys
 import signal
+import argparse
 
 from dictmaster.util import load_plugin
 
@@ -20,7 +19,19 @@ def broadcast(msg, overwrite=False):
     sys.stdout.write(msg)
     sys.stdout.flush()
 
-def main(args):
+def cli_main():
+    parser = argparse.ArgumentParser(description='Download and convert dictionaries.')
+    parser.add_argument('plugin', metavar='PLUGIN', type=str, help='The plugin to use.')
+    parser.add_argument('--popts', action="store", nargs="+", default=[],
+                    help=("Option string passed to the plugin."))
+    parser.add_argument('--reset', action="store_true", default=False,
+                    help=("Discard data from last time."))
+    parser.add_argument('--force-process', action="store_true", default=False,
+                    help=("Discard processed data from last time (keep fetched data)."))
+    parser.add_argument('-o', '--output', action="store", default="", type=str,
+                    help=("Work and output directory."))
+    args = parser.parse_args()
+
     plugin = load_plugin(args.plugin, args.popts, args.output)
     if plugin == None: sys.exit("Plugin not found or plugin broken.")
     plugin.force_process = args.force_process
@@ -28,7 +39,6 @@ def main(args):
     if args.reset:
         broadcast("Resetting plugin data in '{}'.".format(plugin.output_directory))
         plugin.reset()
-
 
     broadcast("Running plugin '{}'.".format(args.plugin))
     broadcast("Output will be written to '{}'.".format(plugin.output_directory))
@@ -43,18 +53,3 @@ def main(args):
         broadcast(plugin.progress(), True)
         plugin.join(1)
     broadcast("Plugin '{}' quit.".format(args.plugin))
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description='Download and convert dictionaries.')
-    parser.add_argument('plugin', metavar='PLUGIN', type=str, help='The plugin to use.')
-    parser.add_argument('--popts', action="store", nargs="+", default=[],
-                    help=("Option string passed to the plugin."))
-    parser.add_argument('--reset', action="store_true", default=False,
-                    help=("Discard data from last time."))
-    parser.add_argument('--force-process', action="store_true", default=False,
-                    help=("Discard processed data from last time (keep fetched data)."))
-    parser.add_argument('-o', '--output', action="store", default="", type=str,
-                    help=("Work and output directory."))
-    main(parser.parse_args())
-

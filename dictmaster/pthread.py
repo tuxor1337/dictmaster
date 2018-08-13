@@ -113,7 +113,7 @@ class PluginThread(CancelableThread):
             self._curr_stage = stage
             stage.join()
             if self._canceled: break
-            print " done."
+            print(" done.")
 
     def cancel(self):
         CancelableThread.cancel(self)

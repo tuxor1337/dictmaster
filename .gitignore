@@ -1,4 +1,6 @@
+env/
 data/
 __pycache__/
 *.py[cod]
 dictmaster/plugins/bgl_*
+*.egg-info

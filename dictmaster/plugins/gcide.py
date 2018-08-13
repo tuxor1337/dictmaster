@@ -664,7 +664,7 @@ class GcideProcessor(HtmlContainerProcessor):
             if not html.html():
                 return ""
         except:
-            print html
+            print(html)
             sys.exit()
 
         d = pq(html)

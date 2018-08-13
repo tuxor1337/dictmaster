@@ -72,7 +72,7 @@ class OxfordProcessor(HtmlContainerProcessor):
             [r"\s([0-9]+)$",r"(\1)"]
         ]
         for r in regex: term = re.sub(r[0], r[1], term)
-        print term
+        print(term)
         return term
 
     def do_html_alts(self, doc, term):

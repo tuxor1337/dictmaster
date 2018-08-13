@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import sys
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        from dictmaster.cli.main import cli_main
+        cli_main()
+    else:
+        from dictmaster.gui.main import gui_main
+        gui_main()

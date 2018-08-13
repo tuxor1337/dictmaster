@@ -43,17 +43,21 @@ to pull in the third party code with
 
     git submodule update --init
 
+and install using
+
+    pip3 install -e ./
+
 Start the tool with:
 
-    ./dictmaster.py PLUGIN_NAME
+    dictmaster PLUGIN_NAME
 
 You find available plugins in the `dictmaster/plugins` directory.
 Some plugins need additional plugin-specific option strings that you can provide
 with the `--popts OPTIONS` parameter, e.g.:
 
-    ./dictmaster.py zeno --popts "Pape-1880"
+    dictmaster zeno --popts "Pape-1880"
 
-If a plugin asks for a word list file have a look into the `thirdparty` 
+If a plugin asks for a word list file have a look into the `thirdparty`
 directory where some lists are provided.
 
 Your dictionary data will be saved (by default) to `data/PLUGIN_NAME/stardict.*`

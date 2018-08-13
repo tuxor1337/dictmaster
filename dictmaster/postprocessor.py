@@ -123,7 +123,7 @@ class DictfileProcessor(Processor):
         fields = line.split(self.fieldSplit)[:2]
         if len(fields) != 2:
             print("Invalid file structure.")
-            print line
+            print(line)
             return
         if self.flipCols: fields[0], fields[1] = fields[1], fields[0]
         subfields = [ [], [] ]

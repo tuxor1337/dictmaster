@@ -229,7 +229,7 @@ class FolketsProcessor(HtmlContainerProcessor):
 
         # check if something hasn't been processed
         if html.html() and html.html().strip():
-            print html.html().strip()
+            print(html.html().strip())
 
         return d("<div/>").html(
             d("<p/>").html(head).outerHtml() + art_html
