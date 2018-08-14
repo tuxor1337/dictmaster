@@ -22,10 +22,9 @@ import sys
 from pyquery import PyQuery as pq
 
 from dictmaster.util import html_container_filter, FLAGS
-from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import Fetcher
-from dictmaster.postprocessor import HtmlContainerProcessor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.fetcher import Fetcher
+from dictmaster.stages.processor import HtmlContainerProcessor
 
 WORD_CLASS = {
     "en": {
@@ -116,7 +115,7 @@ TAG_NAMES = {
 FLAG_IMG = { "sv": ['flag_18x12_sv.png', 'flag_18x12_en.png'] }
 FLAG_IMG["en"] = FLAG_IMG["sv"][::-1]
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
     _folkets_lang = ""
     def __init__(self, popts, dirname):
         if len(popts) != 1 or popts[0] not in ["Sv-En", "En-Sv"]:
@@ -125,11 +124,8 @@ class Plugin(PluginThread):
         super(Plugin, self).__init__(popts, os.path.join(dirname, self._folkets_lang))
         self.dictname = u"Folkets lexikon %s, ©folkets-lexikon.csc.kth.se"
         self.dictname = self.dictname % self._folkets_lang
-        self._stages = [
-            Fetcher(self),
-            FolketsProcessor("word", self),
-            Editor(plugin=self)
-        ]
+        self.stages['Fetcher'] = Fetcher(self)
+        self.stages['Processor'] = FolketsProcessor("word", self)
 
     def post_setup(self, cursor):
         for flag_file in FLAG_IMG["sv"]:

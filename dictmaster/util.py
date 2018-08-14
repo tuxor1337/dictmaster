@@ -31,6 +31,7 @@ except ImportError:
     import urllib.request as urllib2
     import http.client as httplib
 
+import pkgutil
 import importlib
 
 import unicodedata
@@ -39,6 +40,10 @@ from pyquery import PyQuery as pq
 from lxml import etree
 
 import threading
+
+import dictmaster.plugins
+pth = dictmaster.plugins.__path__
+PLUGINS = [name for _,name,_ in pkgutil.iter_modules(pth)]
 
 FLAGS = {
     "FETCHED": 1 << 0,
@@ -65,7 +70,7 @@ def mkdir_p(path):
         if exc.errno == errno.EEXIST and os.path.isdir(path): pass
         else: raise
 
-def load_plugin(plugin_name, popts, dirname):
+def load_plugin(plugin_name, popts, dirname=""):
     if dirname == "": dirname = "data/%s/" % plugin_name
     try:
         plugin_module = importlib.import_module("dictmaster.plugins.%s" % plugin_name)
@@ -108,8 +113,8 @@ def find_synonyms(term, definition, alts):
     return alts
 
 def remove_accents(input_str):
-    if not isinstance(input_str, unicode):
-        input_str = unicode(input_str,"utf8")
+    if isinstance(input_str, bytes):
+        input_str = input_str.decode("utf-8")
     nfkd_form = unicodedata.normalize('NFKD', input_str)
     return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
@@ -167,7 +172,7 @@ class CancelableThread(threading.Thread):
             except HTTPError as e:
                 if e.code == 404: return ""
                 else: raise
-            total_size = response.info().getheader('Content-Length')
+            total_size = response.info()['Content-Length']
             if total_size != None: total_size = int(total_size.strip())
             else: total_size = 0
             if total_size > 5*2**16:

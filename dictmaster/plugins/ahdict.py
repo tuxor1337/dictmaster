@@ -24,26 +24,22 @@ from pyquery import PyQuery as pq
 from lxml import etree
 
 from dictmaster.util import html_container_filter, words_to_db
-from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import Fetcher
-from dictmaster.postprocessor import HtmlContainerProcessor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.fetcher import Fetcher
+from dictmaster.stages.processor import HtmlContainerProcessor
 
 # TODO: get full word list
 # TODO: add index of indoeurop. roots: https://www.ahdictionary.com/word/indoeurop.html
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
     def __init__(self, popts, dirname):
         if len(popts) == 0 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) word list file!")
         self.word_file = popts[0]
         super(Plugin, self).__init__(popts, dirname)
         self.dictname = u"The American Heritage Dictionary of the English Language, Fifth Edition"
-        self._stages = [
-            AhdictFetcher(self, threadcnt=12),
-            AhdictProcessor("td", self),
-            Editor(plugin=self)
-        ]
+        self.stages['Fetcher'] = AhdictFetcher(self, threadcnt=12)
+        self.stages['Processor'] = AhdictProcessor("td", self)
 
     def post_setup(self, cursor):
         words_to_db(self.word_file, cursor, ("utf-8", "utf-8"))

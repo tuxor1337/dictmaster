@@ -24,10 +24,9 @@ from pyquery import PyQuery as pq
 from lxml import etree
 
 from dictmaster.util import html_container_filter, words_to_db
-from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import Fetcher
-from dictmaster.postprocessor import HtmlContainerProcessor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.fetcher import Fetcher
+from dictmaster.stages.processor import HtmlContainerProcessor
 
 DICTNAMES = {
     "1": u"Wörterbuch der deutschen Gegenwartssprache",
@@ -38,7 +37,7 @@ def list_panel_ids():
     return "Currently, the following panel IDs (resp. dictionaries) are supported:\n" \
         + "\n".join(["%s (%s)" % i for i in DICTNAMES.items()])
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
     panelid = None
 
     def __init__(self, popts, dirname):
@@ -54,11 +53,8 @@ class Plugin(PluginThread):
             ))
         super(Plugin, self).__init__(popts, os.path.join(dirname, self.panelid))
         self.dictname = DICTNAMES[self.panelid]
-        self._stages = [
-            DWDSFetcher(self),
-            DWDSProcessor(self),
-            Editor(plugin=self)
-        ]
+        self.stages['Fetcher'] = DWDSFetcher(self)
+        self.stages['Processor'] = DWDSProcessor(self)
 
     def post_setup(self, cursor):
         words_to_db(self.word_file, cursor, ("utf-8", "utf-8"))

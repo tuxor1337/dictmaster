@@ -24,10 +24,10 @@ from pyquery import PyQuery as pq
 from lxml import etree
 
 from dictmaster.util import FLAGS
-from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import Fetcher, UrlFetcher
-from dictmaster.postprocessor import HtmlContainerProcessor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.fetcher import Fetcher
+from dictmaster.stages.urlfetcher import UrlFetcher
+from dictmaster.stages.processor import HtmlContainerProcessor
 
 ZENO_OPTS = {
     "Pape-1880": {
@@ -49,7 +49,7 @@ ZENO_OPTS = {
 
 ZENO_URL = "http://www.zeno.org"
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
     def __init__(self, popts, dirname):
         if len(popts) != 1:
             sys.exit("Provide a supported Zeno key: {}".format(ZENO_OPTS.keys()))
@@ -63,12 +63,9 @@ class Plugin(PluginThread):
         )
         processor = ZenoProcessor("", self, singleton=True)
         processor.nonarticles = ZENO_OPTS[self.zeno_key]["non-articles"]
-        self._stages = [
-            url_fetcher,
-            ZenoFetcher(self),
-            processor,
-            Editor(self)
-        ]
+        self.stages['UrlFetcher'] = url_fetcher
+        self.stages['Fetcher'] = ZenoFetcher(self)
+        self.stages['Processor'] = processor
 
     def post_setup(self, cursor):
         wordcount = ZENO_OPTS[self.zeno_key]["wordcount"]

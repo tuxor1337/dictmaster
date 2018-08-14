@@ -20,12 +20,11 @@ import os
 import shutil
 
 from dictmaster.util import FLAGS
-from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import ZipFetcher, Unzipper
-from dictmaster.postprocessor import DictfileProcessor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.fetcher import ZipFetcher, Unzipper
+from dictmaster.stages.processor import DictfileProcessor
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
         if len(popts) > 0 and popts[0] == "de-en":
@@ -40,12 +39,9 @@ class Plugin(PluginThread):
             subsubfieldSplit=";",
             flipCols=flipCols
         )
-        self._stages = [
-            ZipFetcher(self),
-            Unzipper(self),
-            postprocessor,
-            Editor(self)
-        ]
+        self.stages['Fetcher'] = ZipFetcher(self)
+        self.stages['Unzipper'] = Unzipper(self)
+        self.stages['Processor'] = postprocessor
 
     def post_setup(self, cursor):
         url = "http://ftp.tu-chemnitz.de/pub/Local/urz/ding/de-en-devel/de-en.txt.zip"

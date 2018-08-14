@@ -39,6 +39,15 @@ class Processor(CancelableThread):
         self.plugin = plugin
         self.auto_synonyms = auto_synonyms
 
+    def reset(self):
+        conn = sqlite3.connect(self.plugin.output_db)
+        c = conn.cursor()
+        c.execute("DELETE FROM dict")
+        c.execute("DELETE FROM synonyms")
+        c.execute("UPDATE raw SET flag = flag & ~?", (FLAGS["PROCESSED"],))
+        conn.commit()
+        conn.close()
+
     def progress(self):
         if self._curr_row == None or self._canceled: return "Sleeping..."
         return "Processing... {}: {}".format(

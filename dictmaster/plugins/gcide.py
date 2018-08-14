@@ -24,10 +24,9 @@ import shutil
 from pyquery import PyQuery as pq
 
 from dictmaster.util import html_container_filter, FLAGS
-from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import ZipFetcher, Unzipper
-from dictmaster.postprocessor import HtmlContainerProcessor, Processor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.fetcher import ZipFetcher, Unzipper
+from dictmaster.stages.processor import HtmlContainerProcessor, Processor
 
 # webster alternatives:
 #
@@ -573,16 +572,15 @@ xlit = [
     [ u"z", u"ζ" ]
 ]
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
+    enumerate = False
+
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
         self.dictname = u"GNU Collaborative International Dictionary of English"
-        self._stages = [
-            ZipFetcher(self),
-            GcideUnzipper(self),
-            GcideProcessor("p", self, charset="windows-1252"),
-            Editor(plugin=self, enumerate=False)
-        ]
+        self.stages['Fetcher'] = ZipFetcher(self)
+        self.stages['Unzipper'] = GcideUnzipper(self)
+        self.stages['Processor'] = GcideProcessor("p", self, charset="windows-1252")
 
     def post_setup(self, cursor):
         url = "ftp://ftp.gnu.org/gnu/gcide/gcide-0.51.zip"

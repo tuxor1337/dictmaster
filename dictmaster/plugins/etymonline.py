@@ -18,26 +18,25 @@
 
 
 import re
-from string import lowercase as ALPHA
+import sqlite3
+from string import ascii_lowercase as ALPHA
 from pyquery import PyQuery as pq
 from lxml import etree
 
 from dictmaster.util import FLAGS
-from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import Fetcher, UrlFetcher
-from dictmaster.postprocessor import HtmlABProcessor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.fetcher import Fetcher
+from dictmaster.stages.urlfetcher import UrlFetcher
+from dictmaster.stages.processor import HtmlContainerProcessor
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
+    dictname = u"Online Etymology Dictionary, ©Douglas Harper/etymonline.com"
+
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
-        self.dictname = u"Online Etymology Dictionary, ©Douglas Harper/etymonline.com"
-        self._stages = [
-            EtymonlineUrlFetcher(self),
-            EtymonlineFetcher(self),
-            EtymonlineProcessor(("dt", "dd"), self),
-            Editor(self)
-        ]
+        self.stages['UrlFetcher'] = EtymonlineUrlFetcher(self)
+        self.stages['Fetcher'] = EtymonlineFetcher(self)
+        self.stages['Processor'] = EtymonlineProcessor("a.word--C9UPa > div", self)
 
     def post_setup(self, cursor):
         cursor.executemany('''
@@ -49,36 +48,32 @@ class EtymonlineUrlFetcher(UrlFetcher):
     class FetcherThread(UrlFetcher.FetcherThread):
         def filter_data(self, data):
             d = pq(data)
-            hitlist = d("div.paging:first-child a")
-            out = []
-            for a in hitlist:
-                out.append(re.sub(
-                    "^.*(l=[a-z]&p=[0-9]+)&.*$",
-                    r"\1",
-                    d(a).attr("href")
-                ))
-            return out
+            a = d("li.ant-pagination-item a")[-1]
+            new = d(a).attr("href")
+            no = int(re.sub("^.*page=([0-9]+)&q=[a-z]$", r"\1", new))
+            pattern = re.sub("^.*(page=)([0-9]+)(&q=[a-z])$", r"\1%d\3", new)
+            return [pattern % i for i in range(1,no+1)]
 
         def parse_uri(self,uri):
-            return "http://www.etymonline.com/index.php?l=%s"%uri
+            return "http://www.etymonline.com/classic/search?q=%s"%uri
 
 class EtymonlineFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data):
-            if data == None \
-            or '<div id="dictionary">' not in data \
-            or '<p>No matching terms found.</p>' in data:
+            if data == None:
                 return None
-            container = "div#dictionary dl"
-            parser = etree.HTMLParser(encoding="iso-8859-1")
-            doc = pq(etree.fromstring(data, parser=parser))
+            data = data.decode("utf-8")
+            if 'No results were found for' in data:
+                return None
+            container = "div.ant-col-xs-24 > div"
+            doc = pq(data)
             if len(doc(container)) == 0: return None
             else: return doc(container).html()
 
         def parse_uri(self, uri):
-            return "http://www.etymonline.com/index.php?%s"%uri
+            return "http://www.etymonline.com/classic/search?%s"%uri
 
-class EtymonlineProcessor(HtmlABProcessor):
+class EtymonlineProcessor(HtmlContainerProcessor):
     def do_pre_html(self, data):
         data = data.replace("&#13;", "")
         regex = [
@@ -89,7 +84,7 @@ class EtymonlineProcessor(HtmlABProcessor):
         return data
 
     def do_html_term(self, doc):
-        term = doc("a").eq(0).text().strip()
+        term = doc("p").eq(0).text().strip()
         regex = [
             [r" +\([^)]+\)$",r""]
         ]
@@ -97,7 +92,8 @@ class EtymonlineProcessor(HtmlABProcessor):
         return term
 
     def do_html_definition(self, html, term):
-        doc = pq(html)
+        doc = pq(html)("section > object")
+        doc("ins").remove()
         for a in doc("a"):
             new_href = re.sub(
                 r"^[^\?]+\?term=([^&]+)&.*$",
@@ -113,6 +109,12 @@ class EtymonlineProcessor(HtmlABProcessor):
                 .css("font-size","x-small").css("text-align","right")
             for span in doc(src).find("span.meaning"):
                 doc(span).replaceWith(doc(span).text())
+        old_html = ""
+        while old_html != doc.html():
+            old_html = doc.html()
+            for el in doc("p"):
+                txt = doc(el).text().strip()
+                if txt in [""]: doc(el).remove()
         doc("*").removeAttr("class")
         return "<dt>%s</dt><dd>%s</dd>" % (term, doc.html())
 

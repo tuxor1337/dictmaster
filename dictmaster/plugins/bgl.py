@@ -25,11 +25,10 @@ from lxml import etree
 from pyglossary.glossary import Glossary
 
 from dictmaster.util import FLAGS
-from dictmaster.pthread import PluginThread
-from dictmaster.postprocessor import Processor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.processor import Processor
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
     g_data = []
     def __init__(self, popts, dirname):
         if len(popts) != 1 or not os.path.exists(popts[0]):
@@ -47,10 +46,7 @@ class Plugin(PluginThread):
             INSERT INTO raw (uri, flag)
             VALUES (?,?)
         ''', [(i, FLAGS["MEMORY"]) for i in range(len(self.g_data))])
-        self._stages = [
-            BglProcessor(self),
-            Editor(self)
-        ]
+        self.stages['Processor'] = BglProcessor(self)
 
 class BglProcessor(Processor):
     def data_from_memory(self):

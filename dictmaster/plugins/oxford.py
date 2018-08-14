@@ -24,23 +24,19 @@ from pyquery import PyQuery as pq
 from lxml import etree
 
 from dictmaster.util import html_container_filter, words_to_db
-from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import Fetcher
-from dictmaster.postprocessor import HtmlContainerProcessor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.fetcher import Fetcher
+from dictmaster.stages.processor import HtmlContainerProcessor
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
     def __init__(self, popts, dirname):
         if len(popts) == 0 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) word list file!")
         self.word_file = popts[0]
         super(Plugin, self).__init__(popts, dirname)
         self.dictname = u"Oxford Dictionaries Online - British & World English"
-        self._stages = [
-            OxfordFetcher(self, threadcnt=10),
-            OxfordProcessor("div.entryPageContent", self),
-            Editor(self)
-        ]
+        self.stages['Fetcher'] = OxfordFetcher(self, threadcnt=10)
+        self.stages['Processor'] = OxfordProcessor("div.entryPageContent", self)
 
     def post_setup(self, cursor):
         words_to_db(self.word_file, cursor, ("utf-8", "utf-8"),)

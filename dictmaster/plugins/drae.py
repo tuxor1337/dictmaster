@@ -20,15 +20,18 @@ import re
 import os
 import sys
 
-from urllib2 import unquote
+try:
+    from urllib2 import unquote
+except ImportError:
+    from urllib.request import unquote
+
 from pyquery import PyQuery as pq
 from lxml import etree
 
 from dictmaster.util import CancelableThread, remove_accents, words_to_db
-from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import Fetcher
-from dictmaster.postprocessor import HtmlContainerProcessor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.fetcher import Fetcher
+from dictmaster.stages.processor import HtmlContainerProcessor
 
 POSTDATA = "TS014dfc77_id=3"\
     + "&TS014dfc77_cr=6df4b31271d91b172321d2080cefbee7:becd:943t352k:1270247778"\
@@ -39,18 +42,15 @@ POSTDATA = "TS014dfc77_id=3"\
     + "&TS014dfc77_ct=0"\
     + "&TS014dfc77_pd=0"
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
     def __init__(self, popts, dirname):
         if len(popts) == 0 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) word list file!")
         self.word_file = popts[0]
         super(Plugin, self).__init__(popts, dirname)
         self.dictname = u"Diccionario de la lengua española: 22a edición"
-        self._stages = [
-            DraeFetcher(self, postdata=POSTDATA, threadcnt=10),
-            DraeProcessor("div", self),
-            Editor(self)
-        ]
+        self.stages['Fetcher'] = DraeFetcher(self, postdata=POSTDATA, threadcnt=10)
+        self.stages['Processor'] = DraeProcessor("div", self)
 
     def post_setup(self, cursor):
         words_to_db(self.word_file, cursor, ("utf-8", "iso-8859-1"))

@@ -25,10 +25,9 @@ from pyquery import PyQuery as pq
 from lxml import etree
 
 from dictmaster.util import html_container_filter, FLAGS
-from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import ZipFetcher, Unzipper
-from dictmaster.postprocessor import HtmlContainerProcessor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.fetcher import ZipFetcher, Unzipper
+from dictmaster.stages.processor import HtmlContainerProcessor
 
 wfb_categories = [
     "Introduction",
@@ -319,7 +318,7 @@ ctry_shorts = {
     "Pacific Ocean": "zn"
 }
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
         self.dictname = u"The World Factbook 2014"
@@ -327,12 +326,9 @@ class Plugin(PluginThread):
             "div#wfb_data > table > tr:nth-child(4) div.CollapsiblePanel",
             self, auto_synonyms=False
         )
-        self._stages = [
-            ZipFetcher(self),
-            FactbookUnzipper(self),
-            processor,
-            Editor(self)
-        ]
+        self.stages['Fetcher'] = ZipFetcher(self)
+        self.stages['Unzipper'] = FactbookUnzipper(self)
+        self.stages['Processor'] = processor
 
     def post_setup(self, cursor):
         urls = [

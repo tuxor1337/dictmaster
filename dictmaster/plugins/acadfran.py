@@ -20,15 +20,14 @@ import re
 from pyquery import PyQuery as pq
 
 from dictmaster.util import html_container_filter, FLAGS
-from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import Fetcher
-from dictmaster.postprocessor import HtmlContainerProcessor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.fetcher import Fetcher
+from dictmaster.stages.processor import HtmlContainerProcessor
 
 BASE_URL = "http://atilf.atilf.fr/dendien/scripts/generic"
 STEP_SIZE = 100
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
     acadfran_vars = None
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
@@ -52,12 +51,9 @@ class Plugin(PluginThread):
             "cnt": wordcount
         }
         fetcher = AcadfranFetcher(self, self.acadfran_vars)
-        self._stages = [
-            fetcher,
-            AcadfranProcessor("tr > td > div", self),
-            Editor(self)
-        ]
-        PluginThread.run(self)
+        self.stages['Fetcher'] = fetcher
+        self.stages['Processor'] = AcadfranProcessor("tr > td > div", self)
+        BasePlugin.run(self)
 
     def post_setup(self, cursor):
         wordcount = self.acadfran_vars["cnt"]

@@ -20,23 +20,21 @@ import os
 import sys
 
 from dictmaster.util import FLAGS
-from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import Unzipper
-from dictmaster.postprocessor import DictfileProcessor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.fetcher import Unzipper
+from dictmaster.stages.processor import DictfileProcessor
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
+    enumerate = False
+
     def __init__(self, popts, dirname):
         if len(popts) == 0 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) dict.cc zip file!")
         self.zfile = popts[0]
         super(Plugin, self).__init__(popts, dirname)
         self.dictname = "dict.cc %s" % os.path.basename(self.zfile)
-        self._stages = [
-            Unzipper(self),
-            DictfileProcessor(self),
-            Editor(plugin=self, enumerate=False)
-        ]
+        self.stages['Unzipper'] = Unzipper(self)
+        self.stages['Processor'] = DictfileProcessor(self)
 
     def post_setup(self, cursor):
         cursor.execute('''

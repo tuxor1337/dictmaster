@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import Queue
+import queue
 import sqlite3
 
 from dictmaster.util import CancelableThread, FLAGS
@@ -25,7 +25,7 @@ class QueueThread(CancelableThread):
 
     def __init__(self):
         super(QueueThread, self).__init__()
-        self._queue = Queue.Queue()
+        self._queue = queue.Queue()
 
     def process_item(self, item): return None
     def put(self, item): self._queue.put(item)
@@ -36,7 +36,7 @@ class QueueThread(CancelableThread):
     def run(self):
         while True:
             try: item = self._queue.get(timeout=1)
-            except Queue.Empty:
+            except queue.Empty:
                 if self._canceled: break
                 else: continue
             self.process_item(item)

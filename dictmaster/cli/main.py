@@ -39,6 +39,8 @@ def cli_main():
     if args.reset:
         broadcast("Resetting plugin data in '{}'.".format(plugin.output_directory))
         plugin.reset()
+    elif args.force_process:
+        plugin.stages['Processor'].reset()
 
     broadcast("Running plugin '{}'.".format(args.plugin))
     broadcast("Output will be written to '{}'.".format(plugin.output_directory))
@@ -53,3 +55,9 @@ def cli_main():
         broadcast(plugin.progress(), True)
         plugin.join(1)
     broadcast("Plugin '{}' quit.".format(args.plugin))
+
+    if not plugin._canceled:
+        broadcast("Optimize data...")
+        plugin.optimize_data()
+        broadcast("Export as StarDict file...")
+        plugin.export()

@@ -23,21 +23,17 @@ import sqlite3
 from pyquery import PyQuery as pq
 
 from dictmaster.util import html_container_filter, FLAGS
-from dictmaster.pthread import PluginThread
-from dictmaster.fetcher import ZipFetcher, Unzipper
-from dictmaster.postprocessor import HtmlContainerProcessor
-from dictmaster.editor import Editor
+from dictmaster.plugin import BasePlugin
+from dictmaster.stages.fetcher import ZipFetcher, Unzipper
+from dictmaster.stages.processor import HtmlContainerProcessor
 
-class Plugin(PluginThread):
+class Plugin(BasePlugin):
     def __init__(self, popts, dirname):
         super(Plugin, self).__init__(popts, dirname)
         self.dictname = u"XMLittré, ©littre.org"
-        self._stages = [
-            ZipFetcher(self),
-            XmlittreUnzipper(self),
-            XmlittreProcessor("entree", self, auto_synonyms=False),
-            Editor(plugin=self)
-        ]
+        self.stages['Fetcher'] = ZipFetcher(self)
+        self.stages['Unzipper'] = XmlittreUnzipper(self)
+        self.stages['Processor'] = XmlittreProcessor("entree", self, auto_synonyms=False)
 
     def post_setup(self, cursor):
         url = "https://bitbucket.org/Mytskine/xmlittre-data/get/master.zip"
