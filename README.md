@@ -47,7 +47,8 @@ and install using
 
     pip3 install -e ./
 
-Start the tool with:
+Running `dictmaster` then starts a graphical user interface.
+However, many features are exclusively available through the command line:
 
     dictmaster PLUGIN_NAME
 
@@ -82,9 +83,8 @@ or contact me directly if you run into problems.
 Todo list
 ---------
 
-- Usability: A graphical user interface that guides you through the process.
-- A way to edit existing (ready converted) dictionary data using some kind
-of user interface.
+- GUI: Choose popts and output directory
+- GUI: Edit existing dictionary data or customize post-processing
 
 Legal issues
 ------------
