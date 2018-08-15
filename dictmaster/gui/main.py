@@ -19,10 +19,23 @@
 import os
 import sqlite3
 
+def stringify_children(node):
+    tostring = lambda x: etree.tostring(x, encoding="unicode", pretty_print=True)
+    parts = ([node.text] + list(
+                chain(*(
+                    [c.text, tostring(c), c.tail] for c in node.getchildren()
+                ))
+            ) + [node.tail])
+    # filter removes possible Nones in texts and tails
+    return ''.join(filter(None, parts))
+
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit2', '4.0')
-from gi.repository import Gtk, Gdk, WebKit2, GLib
+gi.require_version('GtkSource', '3.0')
+from gi.repository import Gtk, Gdk, WebKit2, GLib, GtkSource, GObject
+GObject.type_register(GtkSource.View)
+GObject.type_register(WebKit2.WebView)
 
 from pkg_resources import resource_filename
 
@@ -66,13 +79,22 @@ class gui_main(object):
              builder.get_object("lb_db_%s_val" % k)]
             for k in ["id","key","flag"]
         ]
+        self.db_dataview = builder.get_object("dataview")
         self.db_rawview = builder.get_object("rawview")
-        self.db_htmlview = WebKit2.WebView()
-        builder.get_object("dataview").add_with_viewport(self.db_htmlview)
+        self.db_srcview = builder.get_object("srcview")
+        self.db_srcscrolled = builder.get_object("srcscrolled")
+        self.db_htmlscrolled = builder.get_object("htmlscrolled")
+        self.db_htmlview = builder.get_object("htmlview")
+        for v in (self.db_srcview, self.db_rawview):
+            buf = v.get_buffer()
+            lm = GtkSource.LanguageManager.get_default()
+            lang = lm.guess_language(None, "text/html")
+            buf.set_language(lang)
 
         self.lb_path = builder.get_object("lb_config_path")
         self.ey_name = builder.get_object("ey_name")
         self.ck_enumerate = builder.get_object("ck_enumerate")
+        self.cb_stages = builder.get_object("cb_stages")
 
         self.cb_plugins = builder.get_object("cb_plugins")
         for i,p in enumerate(PLUGINS):
@@ -109,11 +131,9 @@ class gui_main(object):
             self.views["config"].show()
             self.db_cb_tables.emit("changed")
 
-    def cb_runstage_changed_cb(self, widget, data=None):
-        i = widget.get_active()
-        if i == 0: return
-        widget.set_active(0)
-        if i != 5:
+    def bt_runstage_clicked_cb(self, widget, data=None):
+        i = self.cb_stages.get_active()
+        if i != 0:
             if self.plugin.stages[STAGES[i-1]] is None: return
             self.plugin.curr_stage = self.plugin.stages[STAGES[i-1]]
         self.views["progress"].show()
@@ -128,14 +148,13 @@ class gui_main(object):
             self.plugin.join(0.1)
         self.cb_plugins.emit("changed")
 
-    def cb_resetstage_changed_cb(self, widget, data=None):
-        i = widget.get_active()
-        if i == 5: # reset all
+    def bt_resetstage_clicked_cb(self, widget, data=None):
+        i = self.cb_stages.get_active()
+        if i == 0: # reset all
             self.plugin.reset()
             self.cb_plugins.emit("changed")
-        elif i > 0 and self.plugin.stages[STAGES[i-1]] is not None:
+        elif self.plugin.stages[STAGES[i-1]] is not None:
             self.plugin.stages[STAGES[i-1]].reset()
-        widget.set_active(0)
 
     def bt_optimize_clicked_cb(self, widget, data=None):
         self.plugin.optimize_data(self.ck_enumerate.get_active())
@@ -165,15 +184,17 @@ class gui_main(object):
             self.db_store.append([e[0],GLib.markup_escape_text(e[1])])
         self.db_changing = False
 
-        if i == 0 or i == 2:
-            self.db_rawview.hide()
-            self.db_htmlview.hide()
+        if i == 0:
+            self.db_dataview.hide()
+            self.db_htmlscrolled.hide()
         elif i == 1:
-            self.db_rawview.show()
-            self.db_htmlview.hide()
+            self.db_dataview.show()
+            self.db_srcscrolled.hide()
+            self.db_htmlscrolled.hide()
         else:
-            self.db_rawview.show()
-            self.db_htmlview.show()
+            self.db_dataview.show()
+            self.db_srcscrolled.show()
+            self.db_htmlscrolled.show()
 
     def db_select_cb(self, sel, data=None):
         if self.db_changing: return
@@ -188,6 +209,8 @@ class gui_main(object):
             ''' % (tuple(DB_DESCR[i][1:])+(DB_DESCR[i][0],)), (id,)).fetchone()
             self.db_labels[0][1].set_text(str(id))
             self.db_labels[1][1].set_text(entry[0])
+            raw = ""
+            src = ""
             if i == 0:
                 self.db_labels[2][1].set_text(entry[1])
             elif i == 1:
@@ -196,14 +219,22 @@ class gui_main(object):
                     if flag & entry[1] > 0:
                         flags.append(name)
                 self.db_labels[2][1].set_text(", ".join(flags))
+                raw = "" if entry[2] is None else entry[2]
             else:
                 self.db_labels[2][1].set_text(str(entry[1]))
-            if entry[2] is not None:
-                self.db_rawview.get_buffer().set_text(entry[2])
-            else:
-                self.db_rawview.get_buffer().set_text("")
-            if i == 3:
-                self.db_htmlview.load_html(entry[2],"webbrowser://")
+                if i == 2:
+                    entry = curs.execute('''
+                        SELECT %s,%s,%s FROM %s WHERE id=?
+                    ''' % (tuple(DB_DESCR[3][1:])+(DB_DESCR[3][0],)),
+                    (entry[1],)).fetchone()
+                src = entry[2]
+                raw = curs.execute('''
+                    SELECT %s FROM %s WHERE id=?
+                ''' % (DB_DESCR[1][3],DB_DESCR[1][0]),
+                (entry[1],)).fetchone()[0]
+            self.db_rawview.get_buffer().set_text(raw)
+            self.db_srcview.get_buffer().set_text(src)
+            self.db_htmlview.load_html(src, "webbrowser://")
 
     def destroy_cb(self, widget, data=None):
         Gtk.main_quit()
