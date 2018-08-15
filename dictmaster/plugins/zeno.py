@@ -47,6 +47,7 @@ ZENO_OPTS = {
     },
 }
 
+ZENO_KEYS = ", ".join(ZENO_OPTS.keys())
 ZENO_URL = "http://www.zeno.org"
 
 POPTS_DEFAULT = ["Georges-1913"]
@@ -54,10 +55,10 @@ POPTS_DEFAULT = ["Georges-1913"]
 class Plugin(BasePlugin):
     def __init__(self, dirname, popts=POPTS_DEFAULT):
         if len(popts) != 1:
-            sys.exit("Provide a supported Zeno key: {}".format(ZENO_OPTS.keys()))
+            sys.exit("Provide a supported Zeno key: {}".format(ZENO_KEYS))
         self.zeno_key = popts[0]
         if self.zeno_key not in ZENO_OPTS:
-            sys.exit("Zeno key not supported, try: {}".format(ZENO_OPTS.keys()))
+            sys.exit("Zeno key not supported, try: {}".format(ZENO_KEYS))
         super(Plugin, self).__init__(os.path.join(dirname, self.zeno_key))
         self.dictname = ZENO_OPTS[self.zeno_key]["dictname"]
         url_fetcher = ZenoUrlFetcher(self,
@@ -98,8 +99,11 @@ class ZenoFetcher(Fetcher):
             encoded_str = data.decode("iso-8859-1").encode("utf-8")
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(encoded_str, parser=parser))
-            if len(doc(container)) == 0: return None
-            else: return doc(container).html()
+            if len(doc(container)) == 0:
+                return None
+            else:
+                doc("script").remove()
+                return doc(container).html()
 
 class ZenoProcessor(HtmlContainerProcessor):
     nonarticles = []
