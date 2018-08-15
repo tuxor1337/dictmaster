@@ -21,7 +21,8 @@ import shutil
 
 from dictmaster.util import FLAGS
 from dictmaster.plugin import BasePlugin
-from dictmaster.stages.fetcher import ZipFetcher, Unzipper
+from dictmaster.stages.fetcher import ZipFetcher
+from dictmaster.stages.unzipper import Unzipper
 from dictmaster.stages.processor import DictfileProcessor
 
 POPTS_DEFAULT = ["de-en"]

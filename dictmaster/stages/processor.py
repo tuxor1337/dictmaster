@@ -123,7 +123,7 @@ class DictfileProcessor(Processor):
     def process(self):
         for line in self._curr_row["data"].split("\n"):
             if self._canceled: break
-            line = line.decode("utf-8").strip().replace(u"\u2028","")
+            line = line.strip().replace(u"\u2028","")
             self.do_line(line)
 
     def do_line(self, line):

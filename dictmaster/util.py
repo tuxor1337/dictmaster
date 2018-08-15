@@ -153,7 +153,7 @@ class CancelableThread(threading.Thread):
     def cancel(self): self._canceled = True
 
     def _chunk_download(self, response, total_size):
-        data, chunk_size = "", 2**16
+        data, chunk_size = b"", 2**16
         while True:
             if self._canceled:
                 data = None
@@ -162,7 +162,7 @@ class CancelableThread(threading.Thread):
             if not chunk: break
             data += chunk
             self._download_status = "Downloading... {: 6d} of {: 6d} KB".format(
-                len(data)/1000, total_size/1000
+                int(len(data)/1000), int(total_size/1000)
             )
         self._download_status = ""
         return data

@@ -21,7 +21,7 @@ import sys
 
 from dictmaster.util import FLAGS
 from dictmaster.plugin import BasePlugin
-from dictmaster.stages.fetcher import Unzipper
+from dictmaster.stages.unzipper import Unzipper
 from dictmaster.stages.processor import DictfileProcessor
 
 class Plugin(BasePlugin):

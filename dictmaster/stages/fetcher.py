@@ -17,8 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import zipfile
-import glob
 import sqlite3
 
 try:
@@ -172,6 +170,6 @@ class ZipFetcher(Fetcher):
         def to_file(fthread, data):
             zdirname = os.path.join(self.plugin.output_directory, "zip")
             path = os.path.join(zdirname, "{}_{}".format(fthread.no, fthread._i))
-            with open(path, "w") as f: f.write(data)
+            with open(path, "wb") as f: f.write(data)
             return path
         self.FetcherThread.to_file = to_file

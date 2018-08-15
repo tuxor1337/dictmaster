@@ -25,7 +25,8 @@ from pyquery import PyQuery as pq
 
 from dictmaster.util import html_container_filter, FLAGS
 from dictmaster.plugin import BasePlugin
-from dictmaster.stages.fetcher import ZipFetcher, Unzipper
+from dictmaster.stages.fetcher import ZipFetcher
+from dictmaster.stages.unzipper import Unzipper
 from dictmaster.stages.processor import HtmlContainerProcessor, Processor
 
 # webster alternatives:

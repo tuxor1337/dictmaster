@@ -182,7 +182,8 @@ class gui_main(object):
             SELECT id, %s FROM %s
         ''' % (DB_DESCR[i][1],DB_DESCR[i][0])).fetchall()
         for e in entries:
-            self.db_store.append([e[0],GLib.markup_escape_text(e[1])])
+            self.db_store.insert_with_valuesv(-1, [0,1],
+                [e[0],GLib.markup_escape_text(e[1])])
         self.db_changing = False
 
         if i == 0:
@@ -228,11 +229,13 @@ class gui_main(object):
                         SELECT %s,%s,%s FROM %s WHERE id=?
                     ''' % (tuple(DB_DESCR[3][1:])+(DB_DESCR[3][0],)),
                     (entry[1],)).fetchone()
-                src = entry[2]
-                raw = curs.execute('''
-                    SELECT %s FROM %s WHERE id=?
-                ''' % (DB_DESCR[1][3],DB_DESCR[1][0]),
-                (entry[1],)).fetchone()[0]
+                if entry is not None:
+                    src = entry[2]
+                    raw = curs.execute('''
+                        SELECT %s FROM %s WHERE id=?
+                    ''' % (DB_DESCR[1][3],DB_DESCR[1][0]),
+                    (entry[1],)).fetchone()[0]
+                    raw = "" if raw is None else raw
             self.db_rawview.get_buffer().set_text(raw)
             self.db_srcview.get_buffer().set_text(src)
             self.db_htmlview.load_html(src, "webbrowser://")

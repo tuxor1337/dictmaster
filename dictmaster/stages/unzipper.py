@@ -18,6 +18,9 @@
 
 import os
 import shutil
+import sqlite3
+import zipfile
+import glob
 
 from dictmaster.util import mkdir_p, CancelableThread, FLAGS
 
@@ -56,7 +59,7 @@ class Unzipper(CancelableThread):
                     destdir = os.path.dirname(dest)
                     mkdir_p(destdir)
                     if not os.path.isdir(dest):
-                        with open(dest, 'w') as f: f.write(z.read(n))
+                        with open(dest, 'wb') as f: f.write(z.read(n))
                     c.execute('''
                         INSERT INTO raw (uri, flag)
                         VALUES (?,?)
