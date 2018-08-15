@@ -49,6 +49,21 @@ DB_DESCR = [
     ["dict",    "word", "rawid","def"   ]
 ]
 
+BASE_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+  img {
+    max-width: 100%;
+  }
+  </style>
+  <title>Dictionary entry</title>
+</head>
+<body>BODY</body>
+</html>
+"""
+
 class gui_main(object):
     plugin = None
 
@@ -239,7 +254,9 @@ class gui_main(object):
             raw = raw.decode("utf-8") if isinstance(raw, bytes) else raw
             self.db_rawview.get_buffer().set_text(raw)
             self.db_srcview.get_buffer().set_text(src)
-            self.db_htmlview.load_html(src, "webbrowser://")
+            resdir = os.path.join(self.plugin.output_directory, "res")
+            resdir = "file://%s/" % os.path.abspath(resdir)
+            self.db_htmlview.load_html(BASE_HTML.replace("BODY", src), resdir)
 
     def destroy_cb(self, widget, data=None):
         Gtk.main_quit()

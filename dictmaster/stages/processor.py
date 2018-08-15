@@ -51,7 +51,7 @@ class Processor(CancelableThread):
     def progress(self):
         if self._curr_row == None or self._canceled: return "Sleeping..."
         return "Processing... {}: {}".format(
-            self._curr_row["uri"][-6:], self._i
+            self._curr_row["uri"][-7:], self._i
         )
 
     def run(self):
@@ -66,7 +66,7 @@ class Processor(CancelableThread):
         for row in curs.execute("SELECT * FROM raw WHERE flag&?==0", (flag,)):
             self._curr_row = dict(row)
             if self._curr_row["flag"] & FLAGS["FILE"]:
-                with open(self._curr_row["uri"],"r") as f:
+                with open(self._curr_row["uri"],"rb") as f:
                     self._curr_row["data"] = f.read()
             elif self._curr_row["flag"] & FLAGS["MEMORY"]:
                 self.data_from_memory()
@@ -216,7 +216,7 @@ class HtmlABProcessor(HtmlProcessor):
             if self._canceled: break
             dt, dd = dt.eq(0), dt.nextAll(self.AB[1]).eq(0)
             self.append(doc(dt), doc(dd))
-            dt = dt.nextAll(self.AB[0])
+            dt = dd.nextAll(self.AB[0])
 
 class HtmlContainerProcessor(HtmlProcessor):
     container_tag = "div"

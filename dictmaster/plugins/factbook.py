@@ -28,9 +28,7 @@ from dictmaster.util import html_container_filter, FLAGS
 from dictmaster.plugin import BasePlugin
 from dictmaster.stages.fetcher import ZipFetcher
 from dictmaster.stages.unzipper import Unzipper
-from dictmaster.stages.processor import HtmlContainerProcessor
-
-# TODO: World Factbook 2015 or newer (come in a single file each)
+from dictmaster.stages.processor import HtmlABProcessor
 
 wfb_categories = [
     "Introduction",
@@ -128,6 +126,7 @@ ctry_shorts = {
     "El Salvador": "es",
     "Ethiopia": "et",
     "Czech Republic": "ez",
+    "Czechia": "ez",
     "Finland": "fi",
     "Fiji": "fj",
     "Falkland Islands (Islas Malvinas)": "fk",
@@ -320,23 +319,21 @@ ctry_shorts = {
     "Zimbabwe": "zi",
     "Pacific Ocean": "zn"
 }
+for c in list(ctry_shorts.keys()):
+    ctry_shorts[c.upper()] = ctry_shorts[c]
 
 class Plugin(BasePlugin):
     def __init__(self, dirname, popts=[]):
         super(Plugin, self).__init__(dirname)
         self.dictname = u"The World Factbook 2014"
-        processor = FactbookProcessor(
-            "div#wfb_data > table > tr:nth-child(4) div.CollapsiblePanel",
-            self, auto_synonyms=False
-        )
+        processor = FactbookProcessor(("li","li"), self, auto_synonyms=False)
         self.stages['Fetcher'] = ZipFetcher(self)
         self.stages['Unzipper'] = FactbookUnzipper(self)
         self.stages['Processor'] = processor
 
     def post_setup(self, cursor):
         urls = [
-            "https://www.cia.gov/library/publications/download/download-2014/geos.zip",
-            "https://www.cia.gov/library/publications/download/download-2014/graphics.zip"
+            "https://www.cia.gov/library/publications/download/download-2017/factbook.zip"
         ]
         cursor.executemany('''
             INSERT INTO raw (uri, flag)
@@ -355,7 +352,19 @@ class FactbookUnzipper(Unzipper):
         ]
         return any(re.search(r, zfilename) != None for r in regex)
 
-class FactbookProcessor(HtmlContainerProcessor):
+class FactbookProcessor(HtmlABProcessor):
+    def do_pre_html(self, encoded_str):
+        data = encoded_str.decode("utf-8")
+        idx = data.rfind("<!DOCTYPE html>")
+        if idx > 0:
+            end = data.find("</html>")
+            data = data[idx:end+len("</html>")]
+        return data
+
+    def do_html(self, doc):
+        doc = doc("ul.expandcollapse")
+        HtmlABProcessor.do_html(self, doc)
+
     def do_html_alts(self, dd, term):
         d = pq(dd)
         alts = []
@@ -383,7 +392,7 @@ class FactbookProcessor(HtmlContainerProcessor):
 
     def do_html_definition(self, html, term):
         d = pq(html)
-        curr = d("div.box table > tr")[0]
+        curr = d("div:first-child")[0]
         curr_cat = ""
         for cat in wfb_categories:
             if cat in term:
@@ -395,31 +404,35 @@ class FactbookProcessor(HtmlContainerProcessor):
         if curr_cat == "Geography":
             out += '<p><img src="{0}_large_locator.gif" /></p>'.format(ctry_shorts[curr_ctry])
             out += '<p><img src="{0}-map.gif" /></p>'.format(ctry_shorts[curr_ctry])
-        while True:
-            curr_title = d(curr).find("div.category").text().strip(" :")
-            curr = d(curr).nextAll("tr")[0]
-            if curr_title not in excluded_subcats:
+        end = False
+        while not end:
+            curr_title = d(curr).find("a:first-child").text().strip(" :")
+            if curr_title in excluded_subcats:
+                curr = d(curr).nextAll("div#field")
+                try: curr = curr[0]
+                except: end = True
+            else:
                 out += "<p>"
                 out += '<b style="color:#C49;">%s</b><br />' % curr_title
-                for div in d(curr).find("div"):
-                    if d(div).attr("class") == "category":
-                        dat = d(div).find("span.category_data").text().strip()
-                        d(div).find("span.category_data").remove()
-                        subcat = d(div).text()
+                curr = d(curr).nextAll("div")[0]
+                while (not end) and d(curr).attr("id") != "field":
+                    spans = d(curr).find("span.category_data")
+                    if len(spans) == 0:
+                        dat = "%s" % d(curr).text()
+                        out += "%s<br />" % dat
+                    else:
+                        dat = d(curr).find("span.category_data").text().strip()
+                        d(curr).find("span.category_data").remove()
+                        subcat = d(curr).text()
                         if "population pyramid" in subcat:
                             # TODO: include pyramid graphics
                             dat = "The pyramid graphics are not included in this"\
                                 + " version of the dictionary."
                         out += "<b>%s</b> %s<br />" % (subcat, dat)
-                    elif d(div).attr("class") == "category_data":
-                        dat = "%s" % d(div).text()
-                        out += "%s<br />" % dat
-                    else:
-                        continue
+                    curr = d(curr).nextAll("div")
+                    try: curr = curr[0]
+                    except: end = True
                 out += "</p>"
-            if len(d(curr).nextAll("tr")) < 2:
-                break
-            curr = d(curr).nextAll("tr")[1]
         if curr_cat == "Introduction":
             out += '<hr align="left" width="25%" />'
             for cat in wfb_categories[1:]:
