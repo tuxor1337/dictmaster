@@ -21,7 +21,7 @@ import sys
 
 from pyquery import PyQuery as pq
 
-from dictmaster.util import html_container_filter, FLAGS
+from dictmaster.util import FLAGS
 from dictmaster.plugin import BasePlugin
 from dictmaster.stages.fetcher import Fetcher
 from dictmaster.stages.processor import HtmlContainerProcessor

@@ -23,7 +23,7 @@ import sys
 from pyquery import PyQuery as pq
 from lxml import etree
 
-from dictmaster.util import html_container_filter, words_to_db
+from dictmaster.util import words_to_db
 from dictmaster.plugin import BasePlugin
 from dictmaster.stages.fetcher import Fetcher
 from dictmaster.stages.processor import HtmlContainerProcessor

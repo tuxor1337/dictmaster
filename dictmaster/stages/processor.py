@@ -218,6 +218,29 @@ class HtmlABProcessor(HtmlProcessor):
             self.append(doc(dt), doc(dd))
             dt = dd.nextAll(self.AB[0])
 
+class HtmlAXProcessor(HtmlProcessor):
+    def __init__(self, A, plugin, charset="utf-8", auto_synonyms=True):
+        super(HtmlAXProcessor, self).__init__(plugin, charset, auto_synonyms)
+        self.A = A
+
+    def do_html(self, doc):
+        dt = doc(self.A)
+        while len(dt) > 0:
+            if self._canceled: break
+            dt = dt.eq(0)
+            dt_html = dt.outer_html()
+            next_dt = dt.nextAll(self.A)
+            if len(next_dt) > 0:
+                dt.remove()
+                dd = next_dt.eq(0).prevAll()
+                dd_html = ''.join(doc(d).outer_html() for d in dd)
+                dd.remove()
+            else:
+                dd = dt.nextAll()
+                dd_html = ''.join(doc(d).outer_html() for d in dd)
+            self.append(pq(dt_html), pq(dd_html))
+            dt = next_dt
+
 class HtmlContainerProcessor(HtmlProcessor):
     container_tag = "div"
     singleton = False

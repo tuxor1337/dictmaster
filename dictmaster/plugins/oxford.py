@@ -23,10 +23,11 @@ import sys
 from pyquery import PyQuery as pq
 from lxml import etree
 
-from dictmaster.util import html_container_filter, words_to_db
+from dictmaster.util import words_to_db
+from dictmaster.replacer import *
 from dictmaster.plugin import BasePlugin
 from dictmaster.stages.fetcher import Fetcher
-from dictmaster.stages.processor import HtmlContainerProcessor
+from dictmaster.stages.processor import HtmlAXProcessor
 
 POPTS_DEFAULT = ["thirdparty/wordlists/eng/oxford.txt"]
 
@@ -38,7 +39,7 @@ class Plugin(BasePlugin):
         super(Plugin, self).__init__(dirname)
         self.dictname = u"Oxford Dictionaries Online - British & World English"
         self.stages['Fetcher'] = OxfordFetcher(self, threadcnt=10)
-        self.stages['Processor'] = OxfordProcessor("div.entryPageContent", self)
+        self.stages['Processor'] = OxfordProcessor(".entryHead", self)
 
     def post_setup(self, cursor):
         words_to_db(self.word_file, cursor, ("utf-8", "utf-8"),)
@@ -46,9 +47,9 @@ class Plugin(BasePlugin):
 class OxfordFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data):
-            if data == None \
-            or '<div class="entryPageContent">' not in data:
-                return None
+            if data == None: return None
+            data = data.decode("utf-8")
+            if 'class="entryHead' not in data: return None
             data = " ".join(data.split())
             repl = [ ]
             for r in repl: data = data.replace(r[0], r[1])
@@ -58,102 +59,58 @@ class OxfordFetcher(Fetcher):
             for r in regex: data = re.sub(r[0], r[1], data)
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(data, parser=parser))
-            return doc("div.responsive_cell_center").html()
+            doc = doc("div.entryWrapper")
+            doc("svg,audio").remove()
+            doc("div.socials,div.socials-mobile,div.breadcrumbs").remove()
+            return doc.html()
 
         def parse_uri(self, uri):
-            return "http://www.oxforddictionaries.com/definition/english/%s"%uri
+            return "https://www.oxforddictionaries.com/definition/english/%s"%uri
 
-class OxfordProcessor(HtmlContainerProcessor):
+class OxfordProcessor(HtmlAXProcessor):
     def do_html_term(self, doc):
-        term = doc(".pageTitle").eq(0).text().strip()
+        term = doc("h2 > span").eq(0).text().strip()
         regex = [
             [r"\s([0-9]+)$",r"(\1)"]
         ]
         for r in regex: term = re.sub(r[0], r[1], term)
-        print(term)
         return term
 
-    def do_html_alts(self, doc, term):
-        return [doc(h).text().strip() for h in doc("section.subEntryBlock h4")]
-
-    def do_html_definition(self, html, term):
-        doc = pq(html)
-        doc("img").remove()
+    def do_html_definition(self, doc, term):
         doc("script").remove()
-        doc("h1").remove()
-        doc("div.senses").remove()
-        doc("div.breadcrumb").remove()
-        doc("div.etymology").remove()
-        doc("div.responsive_hide_on_smartphone").remove()
-        doc("div.responsive_hide_on_non_smartphone").remove()
-        doc("div.audio_play_button").remove()
-        doc("a.moreInformationSynonyms").remove()
-        doc("div.entrySynList").remove()
-        doc("div.am-default").remove()
-        doc("i.icon-top-word").remove()
-        doc("a.back-to-top").remove()
-        doc("li.dictionary_footer").remove()
-        doc(".pageTitle").remove()
-        for div in doc("div.top1000"):
-            doc(div).replaceWith(
-                doc("<span/>").css("color","#0BE")
-                .html(doc(div).html()).outerHtml()+" "
-            )
-        for div in doc("div.headpron"):
-            doc(div).replaceWith(
-                doc("<span/>").css("color","#A00")
-                .html(doc(div).html().replace("Pronunciation:",""))
-                .outerHtml()+" "
-            )
-        for s in doc("span.headlinebreaks"):
-            doc(s).replaceWith("<b>%s</b>"%doc(s).find(".linebreaks").text())
-        for s in doc("strong.wordForm"):
-            doc(s).replaceWith("<b>%s</b> " % doc(s).html())
-        for s in doc("span.partOfSpeech"):
-            doc(s).replaceWith(
-                doc("<b/>").css("color","#777")
-                .css("text-transform","uppercase")
-                .html(doc(s).html()).outerHtml()
-            )
-        for s in doc("em.transivityStatement, em.languageGroup"):
-            doc(s).replaceWith(
-                doc("<span/>").css("color","#F82")
-                .html(doc(s).html()).outerHtml()
-            )
-        for h in doc("h3"):
-            doc(h).replaceWith("<br/><b>%s:</b> " % doc(h).html())
-        for h in doc("strong"):
-            doc(h).replaceWith("<b>%s</b> " % doc(h).html())
-        doc("div.moreInformation").remove()
-        for d in doc("dt"):
-            replacement = "<b>%s</b> "%doc(d).find("h4").text()
-            doc(d).find("div").remove()
-            doc(d).replaceWith(replacement+doc(d).html())
-        for d in doc("dd"):
-            replacement = "".join(doc(div).html() for div in doc(d).find("div"))
-            doc(d).replaceWith(replacement)
-        for d in doc("dl"): doc(d).replaceWith(doc(d).html())
-        for div in doc("div.msDict"):
-            doc(div).replaceWith(doc(div).html())
-        for span in doc("span.iteration"):
-            doc(span).replaceWith("<b>%s</b> "%doc(span).text().strip())
-        for a in doc("a:not([href])"):
-            replacement = doc(a).html()
-            doc(a).replaceWith("" if replacement == None else replacement)
-        for a in doc("a"):
-            if doc(a).text().strip() == "": doc(a).replaceWith(doc(a).text())
-            elif "definition/english/" not in doc(a).attr("href"):
-                doc(a).replaceWith(doc(a).html())
-            else:
-                href = "bword://%s" % doc(a).text().strip(". ").lower()
-                doc(a).attr("href", href)
-        for p in doc("p,section"):
-            if doc(p).text().strip() == "": doc(p).remove()
-        doc("i.reg").css("color","#F82")
-        doc("*").removeAttr("class")
-        result = doc("header").html()
-        result = result if result != None else ""
-        result += " ".join(doc(s).html() for s in doc("section"))
-        result = re.sub(r"</?(div|p)[^>]*>"," ",result)
-        return result.strip()
-
+        doc("div.examples").remove()
+        doc("div.synonyms").remove()
+        doc("span.pronunciations").remove()
+        doc_replace_attr_re(doc, "a", "href",
+                            [r"/definition/(.*)",r"bword://\1"])
+        doc_rewrap_els(doc, "span.sense-regions,span.sense-registers", "<i/>",
+            css=[["color","#27a058"]], textify=True,
+            prefix=" ", suffix=" ")
+        doc_rewrap_els(doc, "span.grammatical_note", "<i/>",
+            css=[["color","#27a058"]], textify=True,
+            prefix=" [", suffix="] ")
+        doc_rewrap_els(doc, "span.form-groups", "<span/>",
+            prefix=" (", suffix=") ")
+        doc_rewrap_els(doc, "span.iteration,span.subsenseIteration", "<b/>",
+            textify=True, suffix=" ")
+        doc_rewrap_els(doc, "span.pos", "<b/>",
+            css=[["text-transform","uppercase"],
+                 ["color","#f15a24"]])
+        doc_rewrap_els(doc, "span.transitivity", "<span/>",
+            css=[["color","#304E70"]], textify=True, prefix=" ", suffix=" ")
+        doc_rewrap_els(doc, "li", "<p/>")
+        naked = [
+            "div[class]",
+            "div[id]",
+            "ul",
+            "ol",
+            "section",
+            "a.ipaLink",
+            "h2",
+            "h3.pos",
+        ]
+        for query in naked: doc_strip_els(doc, query)
+        doc_rewrap_els(doc, "h3", "<p/>")
+        doc(":empty").remove()
+        doc("*").removeAttr("id").removeAttr("class")
+        return doc.html()
