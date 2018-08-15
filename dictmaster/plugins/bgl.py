@@ -30,11 +30,11 @@ from dictmaster.stages.processor import Processor
 
 class Plugin(BasePlugin):
     g_data = []
-    def __init__(self, popts, dirname):
+    def __init__(self, dirname, popts=[]):
         if len(popts) != 1 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) BGL file!")
         self.bgl_file = popts[0]
-        super(Plugin, self).__init__(popts, dirname)
+        super(Plugin, self).__init__(dirname)
 
     def post_setup(self, cursor):
         g = Glossary()

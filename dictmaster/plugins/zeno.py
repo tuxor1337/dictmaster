@@ -49,14 +49,16 @@ ZENO_OPTS = {
 
 ZENO_URL = "http://www.zeno.org"
 
+POPTS_DEFAULT = ["Georges-1913"]
+
 class Plugin(BasePlugin):
-    def __init__(self, popts, dirname):
+    def __init__(self, dirname, popts=POPTS_DEFAULT):
         if len(popts) != 1:
             sys.exit("Provide a supported Zeno key: {}".format(ZENO_OPTS.keys()))
         self.zeno_key = popts[0]
         if self.zeno_key not in ZENO_OPTS:
             sys.exit("Zeno key not supported, try: {}".format(ZENO_OPTS.keys()))
-        super(Plugin, self).__init__(popts, os.path.join(dirname, self.zeno_key))
+        super(Plugin, self).__init__(os.path.join(dirname, self.zeno_key))
         self.dictname = ZENO_OPTS[self.zeno_key]["dictname"]
         url_fetcher = ZenoUrlFetcher(self,
             "%s/Kategorien/T/%s?s=%%d" % (ZENO_URL, self.zeno_key)

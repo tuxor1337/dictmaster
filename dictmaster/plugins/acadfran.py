@@ -32,9 +32,9 @@ class Plugin(BasePlugin):
     acadfran_vars = None
     dictname = u"Dictionnaires de l’Académie française : 8ème édition"
 
-    def __init__(self, popts, dirname):
+    def __init__(self, dirname, popts=[]):
         self.setup_session()
-        super(Plugin, self).__init__(popts, dirname)
+        super(Plugin, self).__init__(dirname)
         self.stages['Fetcher'] = AcadfranFetcher(self, self.acadfran_vars)
         self.stages['Processor'] = AcadfranProcessor("tr > td > div", self)
 

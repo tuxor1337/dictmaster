@@ -70,11 +70,14 @@ def mkdir_p(path):
         if exc.errno == errno.EEXIST and os.path.isdir(path): pass
         else: raise
 
-def load_plugin(plugin_name, popts, dirname=""):
+def load_plugin(plugin_name, popts=None, dirname=""):
     if dirname == "": dirname = "data/%s/" % plugin_name
     try:
         plugin_module = importlib.import_module("dictmaster.plugins.%s" % plugin_name)
-        pthread = plugin_module.Plugin(popts, dirname)
+        if popts is None:
+            pthread = plugin_module.Plugin(dirname)
+        else:
+            pthread = plugin_module.Plugin(dirname, popts=popts)
     except ImportError as e:
         print(e.args); pthread = None
     return pthread

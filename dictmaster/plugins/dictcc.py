@@ -27,11 +27,11 @@ from dictmaster.stages.processor import DictfileProcessor
 class Plugin(BasePlugin):
     enumerate = False
 
-    def __init__(self, popts, dirname):
+    def __init__(self, dirname, popts=[]):
         if len(popts) == 0 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) dict.cc zip file!")
         self.zfile = popts[0]
-        super(Plugin, self).__init__(popts, dirname)
+        super(Plugin, self).__init__(dirname)
         self.dictname = "dict.cc %s" % os.path.basename(self.zfile)
         self.stages['Unzipper'] = Unzipper(self)
         self.stages['Processor'] = DictfileProcessor(self)

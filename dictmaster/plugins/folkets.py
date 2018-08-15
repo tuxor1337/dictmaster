@@ -115,13 +115,15 @@ TAG_NAMES = {
 FLAG_IMG = { "sv": ['flag_18x12_sv.png', 'flag_18x12_en.png'] }
 FLAG_IMG["en"] = FLAG_IMG["sv"][::-1]
 
+POPTS_DEFAULT = ["Sv-En"]
+
 class Plugin(BasePlugin):
     _folkets_lang = ""
-    def __init__(self, popts, dirname):
+    def __init__(self, dirname, popts=POPTS_DEFAULT):
         if len(popts) != 1 or popts[0] not in ["Sv-En", "En-Sv"]:
             sys.exit("Provide lang argument, either Sv-En or En-Sv!")
         self._folkets_lang = popts[0].decode("utf-8")
-        super(Plugin, self).__init__(popts, os.path.join(dirname, self._folkets_lang))
+        super(Plugin, self).__init__(os.path.join(dirname, self._folkets_lang))
         self.dictname = u"Folkets lexikon %s, ©folkets-lexikon.csc.kth.se"
         self.dictname = self.dictname % self._folkets_lang
         self.stages['Fetcher'] = Fetcher(self)

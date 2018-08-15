@@ -32,8 +32,8 @@ from dictmaster.stages.processor import HtmlContainerProcessor
 class Plugin(BasePlugin):
     dictname = u"Online Etymology Dictionary, ©Douglas Harper/etymonline.com"
 
-    def __init__(self, popts, dirname):
-        super(Plugin, self).__init__(popts, dirname)
+    def __init__(self, dirname, popts=[]):
+        super(Plugin, self).__init__(dirname)
         self.stages['UrlFetcher'] = EtymonlineUrlFetcher(self)
         self.stages['Fetcher'] = EtymonlineFetcher(self)
         self.stages['Processor'] = EtymonlineProcessor("a.word--C9UPa > div", self)

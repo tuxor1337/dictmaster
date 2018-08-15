@@ -28,12 +28,14 @@ from dictmaster.plugin import BasePlugin
 from dictmaster.stages.fetcher import Fetcher
 from dictmaster.stages.processor import HtmlContainerProcessor
 
+POPTS_DEFAULT = ["thirdparty/wordlists/eng/oxford.txt"]
+
 class Plugin(BasePlugin):
-    def __init__(self, popts, dirname):
+    def __init__(self, dirname, popts=POPTS_DEFAULT):
         if len(popts) == 0 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) word list file!")
         self.word_file = popts[0]
-        super(Plugin, self).__init__(popts, dirname)
+        super(Plugin, self).__init__(dirname)
         self.dictname = u"Oxford Dictionaries Online - British & World English"
         self.stages['Fetcher'] = OxfordFetcher(self, threadcnt=10)
         self.stages['Processor'] = OxfordProcessor("div.entryPageContent", self)

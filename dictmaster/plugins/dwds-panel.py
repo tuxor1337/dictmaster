@@ -33,6 +33,8 @@ DICTNAMES = {
     "148": u"Etymologisches Wörterbuch © Dr. Wolfgang Pfeifer",
 }
 
+POPTS_DEFAULT = ["thirdparty/wordlists/deu/dwds.txt","147"]
+
 def list_panel_ids():
     return "Currently, the following panel IDs (resp. dictionaries) are supported:\n" \
         + "\n".join(["%s (%s)" % i for i in DICTNAMES.items()])
@@ -40,7 +42,7 @@ def list_panel_ids():
 class Plugin(BasePlugin):
     panelid = None
 
-    def __init__(self, popts, dirname):
+    def __init__(self, dirname, popts=POPTS_DEFAULT):
         if len(popts) != 2:
             sys.exit("Error: The DWDS plugin expects exactly two plugin params: "
                 +"a word list file and a panel ID.\n" + list_panel_ids())
@@ -51,7 +53,7 @@ class Plugin(BasePlugin):
             sys.exit(u"Panel ID {} is not supported. {}".format(
                 self.panelid, list_panel_ids()
             ))
-        super(Plugin, self).__init__(popts, os.path.join(dirname, self.panelid))
+        super(Plugin, self).__init__(os.path.join(dirname, self.panelid))
         self.dictname = DICTNAMES[self.panelid]
         self.stages['Fetcher'] = DWDSFetcher(self)
         self.stages['Processor'] = DWDSProcessor(self)

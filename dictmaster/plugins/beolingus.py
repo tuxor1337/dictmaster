@@ -24,9 +24,11 @@ from dictmaster.plugin import BasePlugin
 from dictmaster.stages.fetcher import ZipFetcher, Unzipper
 from dictmaster.stages.processor import DictfileProcessor
 
+POPTS_DEFAULT = ["de-en"]
+
 class Plugin(BasePlugin):
-    def __init__(self, popts, dirname):
-        super(Plugin, self).__init__(popts, dirname)
+    def __init__(self, dirname, popts=POPTS_DEFAULT):
+        super(Plugin, self).__init__(dirname)
         if len(popts) > 0 and popts[0] == "de-en":
             self.dictname = u"BEOLINGUS Deutsch-Englisch"
             flipCols = False

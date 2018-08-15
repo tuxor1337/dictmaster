@@ -319,8 +319,8 @@ ctry_shorts = {
 }
 
 class Plugin(BasePlugin):
-    def __init__(self, popts, dirname):
-        super(Plugin, self).__init__(popts, dirname)
+    def __init__(self, dirname, popts=[]):
+        super(Plugin, self).__init__(dirname)
         self.dictname = u"The World Factbook 2014"
         processor = FactbookProcessor(
             "div#wfb_data > table > tr:nth-child(4) div.CollapsiblePanel",

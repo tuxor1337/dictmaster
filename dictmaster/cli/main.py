@@ -32,7 +32,7 @@ def cli_main():
                     help=("Work and output directory."))
     args = parser.parse_args()
 
-    plugin = load_plugin(args.plugin, args.popts, args.output)
+    plugin = load_plugin(args.plugin, popts=args.popts, dirname=args.output)
     if plugin == None: sys.exit("Plugin not found or plugin broken.")
     plugin.force_process = args.force_process
 

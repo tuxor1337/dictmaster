@@ -42,12 +42,14 @@ POSTDATA = "TS014dfc77_id=3"\
     + "&TS014dfc77_ct=0"\
     + "&TS014dfc77_pd=0"
 
+POPTS_DEFAULT = ["thirdparty/wordlists/esp/drae.txt"]
+
 class Plugin(BasePlugin):
-    def __init__(self, popts, dirname):
+    def __init__(self, dirname, popts=POPTS_DEFAULT):
         if len(popts) == 0 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) word list file!")
         self.word_file = popts[0]
-        super(Plugin, self).__init__(popts, dirname)
+        super(Plugin, self).__init__(dirname)
         self.dictname = u"Diccionario de la lengua española: 22a edición"
         self.stages['Fetcher'] = DraeFetcher(self, postdata=POSTDATA, threadcnt=10)
         self.stages['Processor'] = DraeProcessor("div", self)

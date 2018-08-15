@@ -123,7 +123,7 @@ class gui_main(object):
     def cb_plugins_changed_cb(self, widget, data=None):
         chosen = widget.get_active()
         if chosen > 0:
-            self.plugin = load_plugin(PLUGINS[chosen-1], "")
+            self.plugin = load_plugin(PLUGINS[chosen-1])
             self.lb_path.set_text(self.plugin.output_directory)
             self.ey_name.set_text(self.plugin.dictname)
             self.views["progress"].hide()
