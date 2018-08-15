@@ -26,23 +26,31 @@ from dictmaster.stages.processor import HtmlContainerProcessor
 
 BASE_URL = "http://atilf.atilf.fr/dendien/scripts/generic"
 STEP_SIZE = 100
+CHARSET = "iso-8859-1"
 
 class Plugin(BasePlugin):
     acadfran_vars = None
-    def __init__(self, popts, dirname):
-        super(Plugin, self).__init__(popts, dirname)
-        self.dictname = u"Dictionnaires de l’Académie française : 8ème édition"
+    dictname = u"Dictionnaires de l’Académie française : 8ème édition"
 
-    def run(self):
+    def __init__(self, popts, dirname):
+        self.setup_session()
+        super(Plugin, self).__init__(popts, dirname)
+        self.stages['Fetcher'] = AcadfranFetcher(self, self.acadfran_vars)
+        self.stages['Processor'] = AcadfranProcessor("tr > td > div", self)
+
+    def setup_session(self):
+        if self.acadfran_vars is not None:
+            return
         url = "%s/showps.exe?p=main.txt;host=interface_academie8.txt;java=no;" % BASE_URL
-        session_id = self.download_retry(url).replace("\n"," ").replace("\r","")
+        session_id = self.download_retry(url).decode(CHARSET)
+        session_id = session_id.replace("\n"," ").replace("\r","")
         session_id = re.sub(r".*;s=([0-9]*);.*", r"\1", session_id)
         url = "%s/cherche.exe?680;s=%s;;" % (BASE_URL, session_id)
-        postdata = 'var0=&var2=%2A&var3=%2A%21%21%2A&var5=%2A%21%21%2A'
+        postdata = b"var0=&var2=%2A&var3=%2A%21%21%2A&var5=%2A%21%21%2A"
         #{ "var0" : "", "var2" : "*", "var3" : "*!!*", "var5" : "*!!*" }
         wordcount, r_var = re.sub(
             r".*;t=([0-9]+);r=([0-9]+);.*", r"\1,\2",
-            self.download_retry(url,postdata)
+            self.download_retry(url, postdata).decode(CHARSET)
         ).split(",")
         wordcount, r_var = int(wordcount), int(r_var)
         self.acadfran_vars = {
@@ -50,10 +58,6 @@ class Plugin(BasePlugin):
             "sid": session_id,
             "cnt": wordcount
         }
-        fetcher = AcadfranFetcher(self, self.acadfran_vars)
-        self.stages['Fetcher'] = fetcher
-        self.stages['Processor'] = AcadfranProcessor("tr > td > div", self)
-        BasePlugin.run(self)
 
     def post_setup(self, cursor):
         wordcount = self.acadfran_vars["cnt"]
