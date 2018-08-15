@@ -122,7 +122,7 @@ class Plugin(BasePlugin):
     def __init__(self, dirname, popts=POPTS_DEFAULT):
         if len(popts) != 1 or popts[0] not in ["Sv-En", "En-Sv"]:
             sys.exit("Provide lang argument, either Sv-En or En-Sv!")
-        self._folkets_lang = popts[0].decode("utf-8")
+        self._folkets_lang = popts[0]
         super(Plugin, self).__init__(os.path.join(dirname, self._folkets_lang))
         self.dictname = u"Folkets lexikon %s, ©folkets-lexikon.csc.kth.se"
         self.dictname = self.dictname % self._folkets_lang
@@ -136,7 +136,7 @@ class Plugin(BasePlugin):
             flag_url = "http://folkets-lexikon.csc.kth.se/folkets/grafik/"+flag_file
             if not os.path.exists(flag_path):
                 data = self.download_retry(flag_url)
-                with open(flag_path, "w") as img_file:
+                with open(flag_path, "wb") as img_file:
                     img_file.write(data)
         url = u"http://folkets-lexikon.csc.kth.se/folkets/folkets_%s_public.xml"
         url = url % self._folkets_lang.lower().replace("-","_")

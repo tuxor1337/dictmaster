@@ -236,6 +236,7 @@ class gui_main(object):
                     ''' % (DB_DESCR[1][3],DB_DESCR[1][0]),
                     (entry[1],)).fetchone()[0]
                     raw = "" if raw is None else raw
+            raw = raw.decode("utf-8") if isinstance(raw, bytes) else raw
             self.db_rawview.get_buffer().set_text(raw)
             self.db_srcview.get_buffer().set_text(src)
             self.db_htmlview.load_html(src, "webbrowser://")
