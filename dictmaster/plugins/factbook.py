@@ -323,9 +323,10 @@ for c in list(ctry_shorts.keys()):
     ctry_shorts[c.upper()] = ctry_shorts[c]
 
 class Plugin(BasePlugin):
+    dictname = "The World Factbook 2017"
+
     def __init__(self, dirname, popts=[]):
         super(Plugin, self).__init__(dirname)
-        self.dictname = u"The World Factbook 2014"
         processor = FactbookProcessor(("li","li"), self, auto_synonyms=False)
         self.stages['Fetcher'] = ZipFetcher(self)
         self.stages['Unzipper'] = FactbookUnzipper(self)
