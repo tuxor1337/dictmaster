@@ -152,9 +152,9 @@ class gui_main(object):
         i = self.cb_stages.get_active()
         if i == 0: # reset all
             self.plugin.reset()
-            self.cb_plugins.emit("changed")
         elif self.plugin.stages[STAGES[i-1]] is not None:
             self.plugin.stages[STAGES[i-1]].reset()
+        self.cb_plugins.emit("changed")
 
     def bt_optimize_clicked_cb(self, widget, data=None):
         self.plugin.optimize_data(self.ck_enumerate.get_active())

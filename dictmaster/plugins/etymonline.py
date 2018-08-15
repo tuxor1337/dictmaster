@@ -116,5 +116,5 @@ class EtymonlineProcessor(HtmlContainerProcessor):
                 txt = doc(el).text().strip()
                 if txt in [""]: doc(el).remove()
         doc("*").removeAttr("class")
-        return "<dt>%s</dt><dd>%s</dd>" % (term, doc.html())
+        return "<b>%s</b>%s" % (term, doc.html())
 
