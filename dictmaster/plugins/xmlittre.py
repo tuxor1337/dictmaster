@@ -29,9 +29,10 @@ from dictmaster.stages.unzipper import Unzipper
 from dictmaster.stages.processor import HtmlContainerProcessor
 
 class Plugin(BasePlugin):
+    dictname = "XMLittré, ©littre.org"
+
     def __init__(self, dirname, popts=[]):
         super(Plugin, self).__init__(dirname)
-        self.dictname = u"XMLittré, ©littre.org"
         self.stages['Fetcher'] = ZipFetcher(self)
         self.stages['Unzipper'] = XmlittreUnzipper(self)
         self.stages['Processor'] = XmlittreProcessor("entree", self, auto_synonyms=False)
