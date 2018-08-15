@@ -30,6 +30,8 @@ from dictmaster.stages.fetcher import ZipFetcher
 from dictmaster.stages.unzipper import Unzipper
 from dictmaster.stages.processor import HtmlContainerProcessor
 
+# TODO: World Factbook 2015 or newer (come in a single file each)
+
 wfb_categories = [
     "Introduction",
     "Geography",
@@ -373,11 +375,11 @@ class FactbookProcessor(HtmlContainerProcessor):
     def do_html_term(self, doc):
         term = doc("h2").eq(0).text().strip()
         regex = [
-            [r"^(.*) :: (.*)$",r"\2 \1"]
+            [r"^(.*)\s*::\s*(.*)$",r"\2 \1"]
         ]
         for r in regex:
             term = re.sub(r[0], r[1], term)
-        return term
+        return term.strip()
 
     def do_html_definition(self, html, term):
         d = pq(html)

@@ -66,7 +66,7 @@ class Unzipper(CancelableThread):
                     ''', (dest, FLAGS["FILE"]))
                 for n in filter(self.zfile_resfilter, z.namelist()):
                     dest = os.path.join(resdirname, os.path.basename(n))
-                    with open(dest, 'w') as f: f.write(z.read(n))
+                    with open(dest, 'wb') as f: f.write(z.read(n))
             c.execute('''
                 UPDATE raw
                 SET flag=?
