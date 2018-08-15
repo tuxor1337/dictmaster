@@ -583,7 +583,7 @@ class Plugin(BasePlugin):
         self.stages['Processor'] = GcideProcessor("p", self, charset="windows-1252")
 
     def post_setup(self, cursor):
-        url = "ftp://ftp.gnu.org/gnu/gcide/gcide-0.51.zip"
+        url = "ftp://ftp.halifax.rwth-aachen.de/gnu/gcide/gcide-latest.zip"
         cursor.execute('''
             INSERT INTO raw (uri, flag)
             VALUES (?,?)
@@ -626,6 +626,7 @@ class GcideProcessor(HtmlContainerProcessor):
         return alts
 
     def do_pre_html(self, encoded_str):
+        data = encoded_str.decode("windows-1252")
         regex = [
             #[r"\x92", r"'"], # cp1252
             [r"<!",r"<!--"],
@@ -645,8 +646,8 @@ class GcideProcessor(HtmlContainerProcessor):
             [r"(?i)<ent>[^<]*</ent>", r""]
         ]
         for r in regex:
-            encoded_str = re.sub(r[0], r[1], encoded_str)
-        return encoded_str
+            data = re.sub(r[0], r[1], data)
+        return data.encode("windows-1252")
 
     def do_html_term(self, doc):
         term = doc("hw").eq(0).text().strip()
@@ -675,7 +676,7 @@ class GcideProcessor(HtmlContainerProcessor):
 
         for u in html.find("unicode"):
             val = int(d(u).text(),16)
-            replace = unichr(val)
+            replace = chr(val)
             d(u).replaceWith(replace)
 
         for g in html.find("grk"):
