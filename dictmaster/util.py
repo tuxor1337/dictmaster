@@ -83,7 +83,7 @@ def load_plugin(plugin_name, popts=None, dirname=""):
     return pthread
 
 def words_to_db(word_file, cursor, word_codec):
-    wordlist = [w.decode(word_codec[0]).strip() for w in open(word_file,"r")]
+    wordlist = [w.decode(word_codec[0]).strip() for w in open(word_file,"rb")]
     tmplist = []
     for w in wordlist:
         try: tmplist.append(urllib2.quote(w.encode(word_codec[1]), ""))

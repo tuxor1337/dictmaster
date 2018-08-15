@@ -49,8 +49,9 @@ class Plugin(BasePlugin):
 class AhdictFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data):
-            if data == None or len(data) < 2 \
-            or '<div id="results">' not in data \
+            if data == None or len(data) < 2: return None
+            data = data.decode("utf-8")
+            if '<div id="results">' not in data \
             or '<div id="results">No word definition found</div>' in data:
                 return None
             repl = [

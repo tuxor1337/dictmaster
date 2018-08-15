@@ -158,6 +158,7 @@ class gui_main(object):
 
     def bt_optimize_clicked_cb(self, widget, data=None):
         self.plugin.optimize_data(self.ck_enumerate.get_active())
+        self.cb_plugins.emit("changed")
 
     def bt_export_clicked_cb(self, widget, data=None):
         self.plugin.export()
