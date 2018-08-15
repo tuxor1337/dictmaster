@@ -121,7 +121,8 @@ class DictfileProcessor(Processor):
         self.flipCols = flipCols
 
     def process(self):
-        for line in self._curr_row["data"].split("\n"):
+        data = self._curr_row["data"].decode("utf-8")
+        for line in data.split("\n"):
             if self._canceled: break
             line = line.strip().replace(u"\u2028","")
             self.do_line(line)
