@@ -64,8 +64,9 @@ class Plugin(BasePlugin):
 class DWDSFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data):
-            if data == None or len(data) < 2 \
-            or '<div id="ddc_panel_' not in data \
+            if data == None or len(data) < 2: return None
+            data = data.decode("utf-8")
+            if '<div id="ddc_panel_' not in data \
             or '<p style="text-align: center;">Kein Eintrag vorhanden</p>' in data:
                 return None
             data = " ".join(data.split())
@@ -122,6 +123,7 @@ class DWDSProcessor(HtmlContainerProcessor):
         doc("span.wb_lzga").remove()
         doc("div[style='float:right;']").remove()
         doc("div.hidden_data_32").remove()
+        doc("*").removeAttr("style")
         doc("span.wb_gram").css("color","#800")
         for b in doc("span.wb_bp"):
             doc(b).replaceWith("<b>%s</b>"%doc(b).html())
@@ -134,14 +136,18 @@ class DWDSProcessor(HtmlContainerProcessor):
         for div in doc("div.dwdswb2_snippet"):
             doc(div).replaceWith('<p><i>%s</i></p>'%doc(div).text())
         for div in doc("div.wb_zone_s"):
-            num = doc(div).find("div").eq(0)
-            doc(num).replaceWith(
-                doc("<b/>").css("background-color","#dde")
-                    .css("padding","0px 4px")
-                    .css("border-top","1px #fff solid")
-                    .html(doc(num).text()).outerHtml()
-            )
-            doc(div).replaceWith("<div>%s</div>"%doc(div).html())
+            for p in doc(div).find("p"):
+                doc(p).replaceWith(
+                    doc("<span/>").css("background-color","#dde")
+                        .css("padding","0px 4px")
+                        .css("border-top","1px #fff solid")
+                        .html(doc(p).html()).outerHtml()
+                )
+            old_html = ""
+            while old_html != doc(div).html():
+                old_html = doc(div).html()
+                for el in doc(div).find("div"):
+                    doc(el).replaceWith(doc(el).html())
         for a in doc("a:not([href])"):
             replacement = doc(a).html()
             doc(a).replaceWith("" if replacement == None else replacement)

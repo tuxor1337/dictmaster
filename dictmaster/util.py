@@ -74,6 +74,7 @@ def load_plugin(plugin_name, popts=None, dirname=""):
     if dirname == "": dirname = "data/%s/" % plugin_name
     try:
         plugin_module = importlib.import_module("dictmaster.plugins.%s" % plugin_name)
+        importlib.reload(plugin_module)
         if popts is None:
             pthread = plugin_module.Plugin(dirname)
         else:
