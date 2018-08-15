@@ -18,6 +18,7 @@
 
 import os
 import sys
+import glob
 
 from dictmaster.util import FLAGS
 from dictmaster.plugin import BasePlugin
@@ -29,7 +30,12 @@ class Plugin(BasePlugin):
 
     def __init__(self, dirname, popts=[]):
         if len(popts) == 0 or not os.path.exists(popts[0]):
-            sys.exit("Provide full path to (existing) dict.cc zip file!")
+            dcc_files = glob.glob("dict.cc_*")
+            if len(dcc_files) > 0:
+                print("Assuming you mean %s" % dcc_files[0])
+                popts = [dcc_files[0]]
+            else:
+                sys.exit("Provide full path to (existing) dict.cc zip file!")
         self.zfile = popts[0]
         super(Plugin, self).__init__(dirname)
         self.dictname = "dict.cc %s" % os.path.basename(self.zfile)

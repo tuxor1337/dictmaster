@@ -272,5 +272,5 @@ class BasePlugin(CancelableThread):
                     row[1],
                     defiFormat=defiFormat)
             self._status = "Writing to output file..."
-            g.setInfo("bookname", info["bookname"].encode("utf-8"))
+            g.setInfo("bookname", info["bookname"])
             g.write(fname, "Stardict")

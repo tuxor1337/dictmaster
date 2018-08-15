@@ -18,13 +18,14 @@
 
 import os
 import sys
+import glob
 
 from pyquery import PyQuery as pq
 from lxml import etree
 
 from pyglossary.glossary import Glossary
 
-from dictmaster.util import FLAGS
+from dictmaster.util import FLAGS, mkdir_p
 from dictmaster.plugin import BasePlugin
 from dictmaster.stages.processor import Processor
 
@@ -32,7 +33,13 @@ class Plugin(BasePlugin):
     g_data = []
     def __init__(self, dirname, popts=[]):
         if len(popts) != 1 or not os.path.exists(popts[0]):
-            sys.exit("Provide full path to (existing) BGL file!")
+            patterns = ["*.bgl","*.BGL"]
+            bgl_files = sum(map(glob.glob, patterns), [])
+            if len(bgl_files) > 0:
+                print("Assuming you mean %s" % bgl_files[0])
+                popts = [bgl_files[0]]
+            else:
+                sys.exit("Provide full path to (existing) BGL file!")
         self.bgl_file = popts[0]
         super(Plugin, self).__init__(dirname)
 
@@ -40,8 +47,8 @@ class Plugin(BasePlugin):
         g = Glossary()
         res_dirname = os.path.join(self.output_directory, "res")
         g.read(self.bgl_file, verbose=0, resPath=res_dirname)
-        self.g_data = g.data
-        self.dictname = g.getInfo("bookname").decode("utf-8")
+        self.g_data = g._data
+        self.dictname = g.getInfo("bookname")
         cursor.executemany('''
             INSERT INTO raw (uri, flag)
             VALUES (?,?)
@@ -53,12 +60,18 @@ class BglProcessor(Processor):
         self._curr_row["data"] = self.plugin.g_data[int(self._curr_row["uri"])]
 
     def process(self):
-        term, definition, alts = self._curr_row["data"]
-        term = term.decode("utf-8")
-        if "alts" in alts: alts = [a.decode("utf-8") for a in alts["alts"]]
-        else: alts = None
-        definition = self.do_bgl_definition(definition, term)
-        self.append(term, definition, alts)
+        terms, definition, format = self._curr_row["data"]
+        if definition == "DATA":
+            res_dirname = os.path.join(self.plugin.output_directory, "res")
+            mkdir_p(res_dirname)
+            with open(os.path.join(res_dirname, terms), "wb") as f:
+                f.write(format.getData())
+        else:
+            if isinstance(terms, str): terms = [terms]
+            term = terms[0]
+            alts = terms[1:]
+            definition = self.do_bgl_definition(definition, term)
+            self.append(term, definition, alts)
 
     def do_bgl_definition(self, definition, term):
         parser = etree.HTMLParser(encoding="utf-8")
