@@ -53,7 +53,7 @@ class Plugin(BasePlugin):
             sys.exit(u"Panel ID {} is not supported. {}".format(
                 self.panelid, list_panel_ids()
             ))
-        super(Plugin, self).__init__(popts, os.path.join(dirname, self.panelid))
+        super(Plugin, self).__init__(os.path.join(dirname, self.panelid))
         self.dictname = DICTNAMES[self.panelid]
         self.stages['Fetcher'] = DWDSFetcher(self)
         self.stages['Processor'] = DWDSProcessor(self)
@@ -64,8 +64,9 @@ class Plugin(BasePlugin):
 class DWDSFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data):
-            if data == None or len(data) < 2 \
-            or '<h1 class="dwdswb-ft-lemmaansatz' not in data \
+            if data == None or len(data) < 2: return None
+            data = data.decode("utf-8")
+            if '<h1 class="dwdswb-ft-lemmaansatz' not in data \
             or 'Kein Eintrag zu <span' in data:
                 return None
             data = " ".join(data.split())
