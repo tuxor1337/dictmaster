@@ -46,13 +46,13 @@ class FetcherThread(CancelableThread):
         self._flag = flag | FLAGS["FETCHED"]
         self._canceled = len(self.uris) == 0
 
-    def filter_data(self, data): return data
+    def filter_data(self, data, uri): return data
     def parse_uri(self, uri): return uri
 
     def fetch_uri(self, rawid, uri):
         data = self.download_retry(self.parse_uri(uri), self.postdata)
         if self._canceled: return
-        data = self.filter_data(data)
+        data = self.filter_data(data, uri)
         self._queue.put((rawid, uri, data, self._flag))
         self._i += 1
 

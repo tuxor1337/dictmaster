@@ -79,7 +79,7 @@ class Plugin(BasePlugin):
 
 class ZenoUrlFetcher(UrlFetcher):
     class FetcherThread(UrlFetcher.FetcherThread):
-        def filter_data(self, data):
+        def filter_data(self, data, uri):
             d = pq(data)
             hitlist = d("span.zenoSRHitTitle")
             if len(hitlist) == 0: return []
@@ -93,7 +93,7 @@ class ZenoUrlFetcher(UrlFetcher):
 class ZenoFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
         def parse_uri(self, uri): return ZENO_URL + uri
-        def filter_data(self, data):
+        def filter_data(self, data, uri):
             if data == None: return None
             container = "div.zenoCOMain"
             encoded_str = data.decode("iso-8859-1").encode("utf-8")

@@ -46,7 +46,7 @@ class Plugin(BasePlugin):
 
 class EtymonlineUrlFetcher(UrlFetcher):
     class FetcherThread(UrlFetcher.FetcherThread):
-        def filter_data(self, data):
+        def filter_data(self, data, uri):
             d = pq(data)
             a = d("li.ant-pagination-item a")[-1]
             new = d(a).attr("href")
@@ -59,7 +59,7 @@ class EtymonlineUrlFetcher(UrlFetcher):
 
 class EtymonlineFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
-        def filter_data(self, data):
+        def filter_data(self, data, uri):
             if data == None:
                 return None
             data = data.decode("utf-8")

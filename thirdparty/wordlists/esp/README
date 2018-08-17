@@ -16,7 +16,7 @@ drae.txt
 --------
 
 According to http://www.rae.es/sites/default/files/Preambulo.pdf, the DRAE
-(22th edition) contains 88,431 (23rd ed: 93,111) entries.
+(23th edition) contains 93,111 entries.
 
 The file `words.txt` contains 87,603 words and hence seems to be a good
 approximation. When I tried to fetch these words, for about 1,000 terms the
@@ -25,3 +25,8 @@ terms (adjectives) like "travieso"/"traviesa", "acostado"/"acostada", ...
 
 The file `drae.txt` contains roughly those 87,000 words from `words.txt` and
 `grandic.txt` for which the download did not fail.
+
+drae-samples.txt
+----------------
+
+Sample articles: http://www.rae.es/sites/default/files/Articulos_de_muestra.pdf

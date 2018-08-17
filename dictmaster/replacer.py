@@ -28,7 +28,7 @@ def doc_replace_els(doc, query, fun):
         new_html = doc.html()
 
 def doc_rewrap_els(doc, query, new_el, css=[], remove_empty=True,
-                   textify=False, prefix="", suffix=""):
+                   textify=False, prefix="", suffix="", regex=[]):
     def fun(el):
         if textify:
             replacement = doc(el).text()
@@ -37,17 +37,19 @@ def doc_rewrap_els(doc, query, new_el, css=[], remove_empty=True,
         if replacement is None:
             replacement = ""
         if replacement != "" or not remove_empty:
+            for r in regex:
+                replacement = re.sub(r[0], r[1], replacement)
             replacement = doc(new_el).html(prefix + replacement + suffix)
             for s in css: replacement.css(*s)
         return replacement
     doc_replace_els(doc, query, fun)
 
-def doc_strip_els(doc, query):
+def doc_strip_els(doc, query, block=True):
     def fun(el):
         replacement = doc(el).html()
         if replacement is None:
             replacement = ""
-        else:
+        elif block:
             replacement = " " + replacement + " "
         return replacement
     doc_replace_els(doc, query, fun)

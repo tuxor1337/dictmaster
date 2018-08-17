@@ -29,122 +29,144 @@ from pyquery import PyQuery as pq
 from lxml import etree
 
 from dictmaster.util import CancelableThread, remove_accents, words_to_db
+from dictmaster.replacer import *
 from dictmaster.plugin import BasePlugin
 from dictmaster.stages.fetcher import Fetcher
 from dictmaster.stages.processor import HtmlContainerProcessor
 
-POSTDATA = "TS014dfc77_id=3"\
-    + "&TS014dfc77_cr=6df4b31271d91b172321d2080cefbee7:becd:943t352k:1270247778"\
-    + "&TS014dfc77_76=0"\
-    + "&TS014dfc77_86=0"\
-    + "&TS014dfc77_md=1"\
-    + "&TS014dfc77_rf=0"\
-    + "&TS014dfc77_ct=0"\
-    + "&TS014dfc77_pd=0"
+BASE_URL = "http://dle.rae.es/srv"
+
+POSTDATA = b"TS017111a7_id=3"\
+         + b"&TS017111a7_cr=72b68f80f16ede3d867fe79347dad43a:xzxz:3JYG8zbr:415149535"\
+         + b"&TS017111a7_76=0"\
+         + b"&TS017111a7_86=0"\
+         + b"&TS017111a7_md=1"\
+         + b"&TS017111a7_rf=0"\
+         + b"&TS017111a7_ct=0"\
+         + b"&TS017111a7_pd=0"
 
 POPTS_DEFAULT = ["thirdparty/wordlists/esp/drae.txt"]
 
 class Plugin(BasePlugin):
+    dictname = u"Diccionario de la lengua española: 23a edición"
+
     def __init__(self, dirname, popts=POPTS_DEFAULT):
         if len(popts) == 0 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) word list file!")
         self.word_file = popts[0]
         super(Plugin, self).__init__(dirname)
-        self.dictname = u"Diccionario de la lengua española: 22a edición"
         self.stages['Fetcher'] = DraeFetcher(self, postdata=POSTDATA, threadcnt=10)
-        self.stages['Processor'] = DraeProcessor("div", self)
+        self.stages['Processor'] = DraeProcessor("article", self)
 
     def post_setup(self, cursor):
-        words_to_db(self.word_file, cursor, ("utf-8", "iso-8859-1"))
+        words_to_db(self.word_file, cursor, ("utf-8", "utf-8"))
 
 class DraeFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
-        def filter_data(self, data):
+        def filter_data(self, data, curr_word):
             if data == None or len(data) < 2: return None
-            cont = "body > div"
-            repl = [ ["‖ ",""] ]
-            for r in repl: data = data.replace(r[0], r[1])
+            data = data.decode("utf-8")
+            cont = "body > div > article"
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(data, parser=parser))
             url = ""
             if len(doc(cont)) == 0:
                 if len(doc("ul")) == 0: return None
                 for a in doc("li a"):
-                    curr = remove_accents(
-                        unquote(self._curr_word).decode("iso-8859-1")
-                    ).lower()
+                    curr = remove_accents(unquote(curr_word)).lower()
                     if len(curr) > 2: curr = curr.rstrip("s")
-                    if remove_accents(curr) in remove_accents(doc(a).text().lower()):
-                        url = "http://lema.rae.es/drae/srv/%s"%doc(a).attr("href")
+                    if curr in remove_accents(doc(a).text().lower()):
+                        url = "%s/%s" % (BASE_URL, doc(a).attr("href"))
             elif len(doc(u"img[alt='Ver artículo enmendado']")) > 0:
                 img = doc(u"img[alt='Ver artículo enmendado']")
-                url = "http://lema.rae.es/drae/srv/%s" % img.parent().attr("href")
+                url = "%s/%s" % (BASE_URL, img.parent().attr("href"))
             else:
                 return "".join(doc(d).outerHtml() for d in doc(cont))
             if url != "":
                 data = self.download_retry(url, self.postdata)
-                return self.filter_data(data)
+                return self.filter_data(data, curr_word)
             else: return None
 
         def parse_uri(self, uri):
-            return "http://lema.rae.es/drae/srv/search?val=%s"%uri
+            return "%s/search?w=%s&m=form" % (BASE_URL, uri)
 
 class DraeProcessor(HtmlContainerProcessor):
     def do_html_term(self, doc):
-        term = doc("p.p span.f b").eq(0).text().strip()
+        term = doc("header.f").eq(0).text().strip(". ")
         return term
 
     def do_html_definition(self, html, term):
+        # Output is black/white and condensed as in
+        # http://www.rae.es/sites/default/files/Articulos_de_muestra.pdf
         doc = pq(html)
-        doc("p.l").remove()
-        doc("a").removeAttr("name")
-        doc("a").removeAttr("target")
-        for a in doc("a:not([href])"):
-            doc(a).replaceWith(doc(a).html())
-        for a in doc("a"):
-            if doc(a).text().strip() == "":
-                doc(a).replaceWith("")
+
+        # links to conjugation tables etc.
+        doc("a.e2").remove()
+
+        # links to related articles
+        fun = lambda el, val: "bword://%s" % doc(el).text().strip(". ")
+        doc_replace_attr(doc, "a", "href", fun)
+
+        # simple inline styles
+        doc_rewrap_els(doc, "header", "<b/>")
+        doc_rewrap_els(doc, "span.h,abbr.c", "<i/>")
+        doc_rewrap_els(doc, "span.u", "<b/>")
+        doc_rewrap_els(doc, "span.i1", "<span/>", css=[["font-variant","small-caps"]])
+
+        # lemma placeholder
+        doc_rewrap_els(doc, "u", "<b/>", regex=[[r".*","~"]])
+
+        # correct paragraph enumeration
+        for p in doc("p[class]"):
+            pclass = doc(p).attr("class")[0]
+            prevclass = doc(p).prev("p").attr("class")
+            prevclass = " " if prevclass is None else prevclass[0]
+            nextclass = doc(p).next("p").attr("class")
+            nextclass = " " if nextclass is None else nextclass[0]
+            if nextclass != pclass and prevclass != pclass:
+                p_html = re.sub(r"^(1\.)", r"", doc(p).html())
             else:
-                href = "bword://%s" % doc(a).text().strip(". ")
-                doc(a).replaceWith(
-                    doc("<a/>").attr("href", href)
-                        .html(doc(a).html()).outerHtml()
-                )
-        """
-        "Colorful version:"
-        doc("span.d,span.f").css("color", "#00f")
-        doc("span.a").css("color", "#080")
-        doc("span.g").css("color", "#AAA")
-        doc("span.j").css("color", "#F00")
-        doc("span.k").css("color", "#800")
-        doc("span.h").css("color", "#808")
-        """
-        "Black/white version"
-        "http://www.rae.es/sites/default/files/Articulos_de_muestra.pdf"
-        for p in doc("p.q"):
-            if not doc(p).next("p").hasClass("q") \
-            and not doc(p).prev("p").hasClass("q"):
-                if len(doc(p).children("span.k")) > 0:
-                    doc(doc(p).children("span.k").eq(0)).remove()
-                elif len(doc(p).children("span.d")) > 0:
-                    doc(doc(p).children("span.d").eq(0)).remove()
-        for p in doc("p"):
-            if doc(p).html() == None: doc(p).remove()
-            elif doc(p).hasClass("q"): doc(p).replaceWith(doc(p).html() + u" ǁ ")
-            else: doc(p).replaceWith(doc(p).html())
-        doc("span.g").remove()
-        for span in doc("span.b,span.n"):
-            if doc(span).html() == None: doc(span).remove()
-            else: doc(span).replaceWith(doc(span).html())
-        for span in doc("span:not([style])"):
-            if doc(span).html() == None: doc(span).remove()
-            else: doc(span).replaceWith(doc(span).html())
+                p_html = re.sub(r"^([0-9]+\.)", r"<b>\1</b>", doc(p).html())
+            doc(p).html(p_html)
+
+        # put etymology in parentheses
+        ns = doc("p.n1,p.n2,p.n3,p.n5")
+        if len(ns) > 0:
+            n0 = ns[0]
+            nl = ns[-1]
+            doc(n0).html(" (" + doc(n0).html())
+            doc(nl).html(doc(nl).html() + ") ")
+
+        # inline paragraphs with corresponding marks
+        doc_rewrap_els(doc, "p.n1", "<span/>", prefix=" ", suffix=" ")
+        doc_rewrap_els(doc, "p.n2", "<span/>", prefix=" ", suffix=" ")
+        doc_rewrap_els(doc, "p.n3", "<span/>", prefix=" ♦ ")
+        doc_rewrap_els(doc, "p.n4", "<span/>", prefix=" ", suffix=" ")
+        doc_rewrap_els(doc, "p.n5", "<span/>", prefix=" ♦ ")
+        doc_rewrap_els(doc, "p.j", "<span/>", prefix=" ǁ ")
+        doc_rewrap_els(doc, "p.j1", "<span/>", prefix=" ● ")
+        doc_rewrap_els(doc, "p.j2", "<span/>", prefix=" ○ ")
+        doc_rewrap_els(doc, "p.k5", "<b/>", prefix=" ■ ")
+        doc_rewrap_els(doc, "p.k6 span.k1", "<span/>", css=[["font-weight","normal"]])
+        doc_rewrap_els(doc, "p.k6", "<b/>", prefix=" □ ")
+        doc_rewrap_els(doc, "p.k", "<b/>", prefix=" ǁ ")
+        doc_rewrap_els(doc, "p.b", "<span/>", prefix="▶ ")
+        doc_rewrap_els(doc, "p.l", "<b/>", prefix=", ")
+        doc_rewrap_els(doc, "p.l2", "<span/>", prefix=" ")
+        doc_rewrap_els(doc, "p.l3", "<b/>", prefix="<br />▶ ")
+        doc_rewrap_els(doc, "p.m", "<span/>", prefix=" ")
+
+        # clean up unnecessary stuff
+        doc_strip_els(doc, "mark", block=False)
+        doc_strip_els(doc, "abbr", block=False)
+        doc_strip_els(doc, "span:not([style])", block=False)
         doc("*").removeAttr("class").removeAttr("title")
         result = doc.html()
         regex = [
-            [u"ǁ □",u"□"],
-            [u"ǁ\s*<b>\s*1\."," <b>1."],
-            [u"\s*ǁ\s*$",""],
+            [r"ǁ\s*([^<\s])",r"\1"],
+            [r"ǁ\s*<b>\s*1\.",r" <b>1."],
+            [r"<b>\s*ǁ",r" ǁ <b>"],
+            [r"\s*ǁ\s*$",r""],
         ]
         for r in regex: result = re.sub(r[0], r[1], result)
         return result.strip()

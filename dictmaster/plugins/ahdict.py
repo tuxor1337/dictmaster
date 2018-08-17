@@ -48,7 +48,7 @@ class Plugin(BasePlugin):
 
 class AhdictFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
-        def filter_data(self, data):
+        def filter_data(self, data, uri):
             if data == None or len(data) < 2: return None
             data = data.decode("utf-8")
             if '<div id="results">' not in data \

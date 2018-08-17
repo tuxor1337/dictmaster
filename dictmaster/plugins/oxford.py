@@ -46,7 +46,7 @@ class Plugin(BasePlugin):
 
 class OxfordFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
-        def filter_data(self, data):
+        def filter_data(self, data, uri):
             if data == None: return None
             data = data.decode("utf-8")
             if 'class="entryHead' not in data: return None
