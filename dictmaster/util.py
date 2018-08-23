@@ -123,7 +123,7 @@ def remove_accents(input_str):
     return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 def html_container_filter(container, charset="utf-8", bad_content=None):
-    def tmp_func(fthread, data):
+    def tmp_func(fthread, data, uri):
         if data == None or len(data) < 2: return None
         encoded_str = data.decode(charset).encode("utf-8")
         parser = etree.HTMLParser(encoding="utf-8")
@@ -172,9 +172,9 @@ class CancelableThread(threading.Thread):
         if self._canceled: return None
         try:
             req = urllib2.Request(url, data=params, headers=URL_HEADER)
-            try: response = urllib2.urlopen(req, timeout=20)
+            try: response = urllib2.urlopen(req, timeout=60)
             except HTTPError as e:
-                if e.code == 404: return ""
+                if e.code in [403,404]: return ""
                 else: raise
             total_size = response.info()['Content-Length']
             if total_size != None: total_size = int(total_size.strip())
