@@ -24,6 +24,7 @@ from pyquery import PyQuery as pq
 from lxml import etree
 
 from dictmaster.util import words_to_db
+from dictmaster.replacer import *
 from dictmaster.plugin import BasePlugin
 from dictmaster.stages.fetcher import Fetcher
 from dictmaster.stages.processor import HtmlContainerProcessor
@@ -125,48 +126,41 @@ class DWDSProcessor(HtmlContainerProcessor):
         doc("div.hidden_data_32").remove()
         doc("*").removeAttr("style")
         doc("span.wb_gram").css("color","#800")
-        for b in doc("span.wb_bp"):
-            doc(b).replaceWith("<b>%s</b>"%doc(b).html())
-        for div in doc("div.base_panel_header"):
-            for d in doc(div).find("div"):
-                doc(d).replaceWith(doc(d).html())
-            doc(div).replaceWith("<p>%s</p>"%doc(div).html())
-        for div in doc("div.wb_container_zone_s"): doc(div).replaceWith(doc(div).html())
-        for div in doc("div.shown_data_32"): doc(div).replaceWith(doc(div).html())
-        for div in doc("div.dwdswb2_snippet"):
-            doc(div).replaceWith('<p><i>%s</i></p>'%doc(div).text())
-        for div in doc("div.wb_zone_s"):
-            for p in doc(div).find("p"):
-                doc(p).replaceWith(
-                    doc("<span/>").css("background-color","#dde")
-                        .css("padding","0px 4px")
-                        .css("border-top","1px #fff solid")
-                        .html(doc(p).html()).outerHtml()
-                )
-            old_html = ""
-            while old_html != doc(div).html():
-                old_html = doc(div).html()
-                for el in doc(div).find("div"):
-                    doc(el).replaceWith(doc(el).html())
-        for a in doc("a:not([href])"):
-            replacement = doc(a).html()
-            doc(a).replaceWith("" if replacement == None else replacement)
-        for a in doc("a"):
-            if doc(a).text().strip() == "": doc(a).replaceWith(doc(a).text())
-            else:
-                href = "bword://%s" % doc(a).text().strip(". ").lower()
-                doc(a).attr("href", href)
+
+        doc_rewrap_els(doc, "span.wb_bp", "<b/>")
+        doc_strip_els(doc, "div.base_panel_header div")
+        doc_rewrap_els(doc, "div.base_panel_header", "<p/>")
+        doc_strip_els(doc, "div.wb_container_zone_s")
+        doc_strip_els(doc, "div.shown_data_32")
+        doc_rewrap_els(doc, "div.dwdswb2_snippet", "<p/>",
+                       prefix="<i>", suffix="</i>", textify=True)
+        doc_rewrap_els(doc, "div.wb_zone_s p", "<span/>",
+                       css=[["background-color", "#dde"          ],
+                            ["padding",          "0px 4px"       ],
+                            ["border-top",       "1px #fff solid"]])
+        doc_strip_els(doc, "div.wb_zone_s div")
+
+        # links to related articles
+        doc_strip_els(doc, "a:not([href])")
+        doc_strip_els(doc, "a:empty")
+        fun = lambda el, val: "bword://%s" % doc(el).text().strip(". ").lower()
+        doc_replace_attr(doc, "a", "href", fun)
+
         old_html = ""
         while old_html != doc.html():
             old_html = doc.html()
             for el in doc("div,span,p"):
                 txt = doc(el).text().strip()
                 if txt in ["","Aussprache"]: doc(el).remove()
+
         # Only preserve "related words" section if it's the only section
         if doc("div.wb_zone_v").prevAll().text().strip() != "":
             doc("div.wb_zone_v").remove()
+
         doc("*").removeAttr("class").removeAttr("id").removeAttr("onclick")
-        return " ".join(doc("body > div").html().strip().split())
+        html = doc("body > div").html()
+        html = "" if html is None else html
+        return " ".join(html.strip().split())
 
     def do_html_definition_148(self, html, term):
         doc = pq(html)("div.wb_container_zone_s")
