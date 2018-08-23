@@ -44,13 +44,17 @@ def doc_rewrap_els(doc, query, new_el, css=[], remove_empty=True,
         return replacement
     doc_replace_els(doc, query, fun)
 
-def doc_strip_els(doc, query, block=True):
+def doc_strip_els(doc, query, block=True, prefix=None, suffix=None):
+    if prefix is None:
+        prefix = " " if block else ""
+    if suffix is None:
+        suffix = " " if block else ""
     def fun(el):
         replacement = doc(el).html()
         if replacement is None:
             replacement = ""
-        elif block:
-            replacement = " " + replacement + " "
+        else:
+            replacement = prefix + replacement + suffix
         return replacement
     doc_replace_els(doc, query, fun)
 
