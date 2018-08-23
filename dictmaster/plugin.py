@@ -154,9 +154,11 @@ class BasePlugin(CancelableThread):
         self._conn.close()
 
     def remove_empty(self):
+        """ Remove empty synonyms """
         self._c.execute('''DELETE FROM synonyms WHERE syn="" OR syn=" "''')
 
     def dupentries_remove(self):
+        """ Remove dict entries where both word and definition agree """
         self._status = "Removing duplicate entries..."
         self._c.execute('''
             CREATE TEMP TABLE TempDict
@@ -190,6 +192,7 @@ class BasePlugin(CancelableThread):
         self._status = "Done removing duplicate entries ({} entries affected).".format(affected)
 
     def dupsyns_remove(self):
+        """ Remove synonym entries where both synonym and wid agree """
         self._status = "Removing duplicate synonyms..."
         dubs = self._c.execute('''
             DELETE FROM synonyms
@@ -198,6 +201,7 @@ class BasePlugin(CancelableThread):
         self._status = "Done removing duplicate synonyms ({} entries affected).".format(self._c.rowcount)
 
     def dupidx_enumerate(self):
+        """ Enumerate all dict entries for each term """
         lines = self._c.execute('''SELECT id, word FROM dict''')
         data = {}
         for entry in lines:
@@ -219,6 +223,7 @@ class BasePlugin(CancelableThread):
                 ''', [("%s(%d)" % (key,j+1),wid) for j,wid in enumerate(dups)])
 
     def dupidx_cat(self):
+        """ Concatenate all dict entries for each term """
         lines = self._c.execute('''SELECT id, word, def FROM dict''')
         data = {}
         for entry in lines:
