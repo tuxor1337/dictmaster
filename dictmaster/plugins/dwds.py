@@ -24,6 +24,7 @@ from pyquery import PyQuery as pq
 from lxml import etree
 
 from dictmaster.util import words_to_db
+from dictmaster.replacer import *
 from dictmaster.plugin import BasePlugin
 from dictmaster.stages.fetcher import Fetcher
 from dictmaster.stages.processor import HtmlContainerProcessor
@@ -113,12 +114,15 @@ class DWDSProcessor(HtmlContainerProcessor):
     def do_html_definition_1(self, html, term):
         doc = pq(html)
         doc("button,img,audio,script,nav,ul.nav,h2").remove()
-        doc("div.dwdswb-quelle").remove()
+        doc("div.dwdswb-quelle,div.gb-quelle").remove()
+        doc("div.dwds-gb-list").remove()
+        doc("div.citation-help").remove()
         doc("span.automatic-trennung").remove()
         doc("span.hyphinput").remove()
         doc("div.etymwb-quelle").remove()
-        for div in doc("div.glyphicon"):
-            doc(div).replaceWith("&gt;")
+
+        doc_replace_els(doc, "div.glyphicon", lambda el: "&gt;")
+
         for div in doc("div.dwdswb-ft-blocks"):
             for d in doc(div).find("div.dwdswb-ft-block"):
                 replacement = doc(d).html()
@@ -132,77 +136,40 @@ class DWDSProcessor(HtmlContainerProcessor):
                 doc(d).replaceWith("" if replacement == None else replacement)
             doc(div).replaceWith(doc(div).html())
         doc("span.dwdswb-ft-blocklabel").remove()
-        for div in doc("div.dwdswb-block-label,span.dwdswb-fundstelle-autor"):
-            doc(div).replaceWith(
-                doc("<span/>").css("font-variant","small-caps")
-                    .html(doc(div).html()).outerHtml()
-            )
-        for div in doc("div.dwdswb-kompetenzbeispiel,div.dwdswb-beleg"):
-            doc(div).replaceWith(doc(div).html() + "; ")
-        for span in doc("span.dwdswb-stichwort,h1"):
-            doc(span).replaceWith(
-                doc("<b/>").html(doc(span).html()).outerHtml()
-            )
-        for span in doc("span.dwdswb-paraphrase"):
-            doc(span).replaceWith(
-                doc("<i/>").html(doc(span).html()).outerHtml()
-            )
-        for span in doc("span.dwdswb-einschraenkung"):
-            doc(span).replaceWith(
-                doc("<i/>").css("color","#0087C2")
-                    .html(doc(span).html()).outerHtml()
-                    .replace(u"»",'<b style="font-style:normal;">')
-                    .replace(u"«",'</b>')
-            )
-        for span in doc("div.dwdswb-lesart-n"):
-            doc(span).replaceWith(
-                doc("<b/>").css("color","#0087C2")
-                    .html(doc(span).html()).outerHtml()
-            )
-        for span in doc("span.dwdswb-definition"):
-            doc(span).replaceWith(
-                doc("<span/>").css("color","#0087C2")
-                    .html(doc(span).html()).outerHtml()
-            )
-        for span in doc("span.dwdswb-bedeutungsebene,span.dwdswb-fachgebiet,"\
-                       +"span.dwdswb-stilebene,span.dwdswb-stilfaerbung"):
-            doc(span).replaceWith(
-                doc("<b/>").css("color","#595")
-                    .html(doc(span).html()).outerHtml()
-            )
-        for span in doc("span.dwdswb-fundstelle"):
-            doc(span).replaceWith(
-                doc("<b/>").css("color","#777")
-                    .html(doc(span).html()).outerHtml()
-            )
-        for span in doc("span.dwdswb-fundstelle-titel"):
-            doc(span).replaceWith(
-                ", " + doc("<i/>").html(doc(span).html()).outerHtml()
-            )
-        for span in doc("span.dwdswb-fundstelle-stelle"):
-            doc(span).replaceWith(", " + doc(span).html())
-        for span in doc("span.dwdswb-grammatik"):
-            doc(span).replaceWith(
-                doc("<span/>").css("color","#800")
-                    .html(doc(span).html()).outerHtml()
-            )
-        for span in doc("span.dwdswb-definition-spezifizierung"):
-            doc(span).replaceWith(
-                doc("<b/>").css("color","#800")
-                    .html(doc(span).html()).outerHtml()
-            )
-        for a in doc("a:not([href])"):
-            replacement = doc(a).html()
-            doc(a).replaceWith("" if replacement == None else replacement)
-        for a in doc("a"):
-            if doc(a).text().strip() == "": doc(a).replaceWith(doc(a).text())
-            else:
-                href = "bword://%s" % doc(a).text().strip(". ").lower()
-                doc(a).attr("href", href)
-        for div in doc("div[role=tabpanel]"):
-            doc(div).replaceWith(
-                doc("<p/>").html(doc(div).html()).outerHtml()
-            )
+
+        doc_rewrap_els(doc, "div.dwdswb-block-label,span.dwdswb-fundstelle-autor",
+                       "<span/>", css=[["font-variant","small-caps"]])
+        doc_strip_els(doc, "div.dwdswb-kompetenzbeispiel,div.dwdswb-beleg",
+                      suffix="; ")
+        doc_rewrap_els(doc, "span.dwdswb-stichwort,h1", "<b/>")
+        doc_rewrap_els(doc, "span.dwdswb-paraphrase", "<i/>")
+        doc_rewrap_els(doc, "span.dwdswb-einschraenkung", "<i/>",
+                       css=[["color","#0087C2"]],
+                       regex=[["»",'<b style="font-style:normal;">'],
+                              ["«",'</b>']])
+        doc_rewrap_els(doc, "div.dwdswb-lesart-n", "<b/>",
+                       css=[["color","#0087C2"]])
+        doc_rewrap_els(doc, "span.dwdswb-definition", "<span/>",
+                       css=[["color","#0087C2"]])
+        doc_rewrap_els(doc, "span.dwdswb-bedeutungsebene,span.dwdswb-fachgebiet,"\
+                            +"span.dwdswb-stilebene,span.dwdswb-stilfaerbung",
+                       "<b/>", css=[["color","#595"]])
+        doc_rewrap_els(doc, "span.dwdswb-fundstelle", "<b/>",
+                       css=[["color","#777"]])
+        doc_rewrap_els(doc, "span.dwdswb-fundstelle-titel", "<i/>", prefix=", ")
+        doc_strip_els(doc, "span.dwdswb-fundstelle-stelle", prefix=", ", block=False)
+        doc_rewrap_els(doc, "span.dwdswb-grammatik", "<span/>",
+                       css=[["color","#800"]])
+        doc_rewrap_els(doc, "span.dwdswb-definition-spezifizierung", "<b/>",
+                       css=[["color","#800"]])
+
+        # links to related articles
+        doc_strip_els(doc, "a:not([href])")
+        doc_strip_els(doc, "a:empty")
+        fun = lambda el, val: "bword://%s" % doc(el).text().strip(". ").lower()
+        doc_replace_attr(doc, "a", "href", fun)
+
+        doc_rewrap_els(doc, "div[role=tabpanel]", "<p/>")
         naked = [
             "span.dwdswb-ft-blocktext",
             "span.hyphenation",
@@ -223,21 +190,18 @@ class DWDSProcessor(HtmlContainerProcessor):
             "div.more-block",
             "div.tab-content",
         ]
-        for lbl in naked:
-            old_html = ""
-            while old_html != doc.html():
-                old_html = doc.html()
-                el = doc(lbl).eq(0)
-                replacement = doc(el).html()
-                doc(el).replaceWith("" if replacement == None else " " + replacement)
+        for lbl in naked: doc_strip_els(doc, lbl)
+
         old_html = ""
         while old_html != doc.html():
             old_html = doc.html()
             for el in doc("div,span"):
                 txt = doc(el).text().strip()
                 if txt in ["","Aussprache"]: doc(el).remove()
+
         doc("*").removeAttr("class").removeAttr("id") \
-            .removeAttr("onclick").removeAttr("data-id")
+                .removeAttr("onclick").removeAttr("data-id")
+
         html = " ".join(doc("body").html().strip().split())
         regex = [
             [u"↗",r""],
@@ -250,36 +214,22 @@ class DWDSProcessor(HtmlContainerProcessor):
         doc = pq(html)("h2#etymwb > div")
         if len(doc) == 0: return ""
         doc = doc.eq(0)
-        for div in doc("div.etymwb-entry"):
-            doc(div).replaceWith(
-                doc("<p/>").html(doc(div).html()).outerHtml()
-            )
+        doc_rewrap_els(doc, "div.etymwb-entry", "<p/>")
         doc("div").remove()
         doc("hr").remove()
-        for span in doc("span.etymwb-mentioned"):
-            doc(span).replaceWith(
-                doc("<i/>").html(doc(span).text()).outerHtml()
-            )
-        for span in doc("span.etymwb-gramgrp"):
-            doc(span).replaceWith(
-                doc("<i/>").html(doc(span).text()).outerHtml()
-            )
-        for span in doc("span.etymwb-author"):
-            doc(span).replaceWith(
-                doc("<span/>").css("font-variant","small-caps")
-                    .html(doc(span).text()).outerHtml()
-            )
-        for span in doc("span.etymwb-orth"):
-            doc(span).replaceWith(
-                doc("<b/>").html(doc(span).html()).outerHtml()
-            )
-        for span in doc("span.etymwb-bibl,span.etymwb-headword"):
-            doc(span).replaceWith(doc(span).html())
-        for a in doc("a"):
-            if doc(a).text().strip() == "": doc(a).replaceWith(doc(a).text())
-            else:
-                href = "bword://%s" % doc(a).text().strip(". ").lower()
-                doc(a).attr("href", href)
+        doc_rewrap_els(doc, "span.etymwb-mentioned", "<i/>")
+        doc_rewrap_els(doc, "span.etymwb-gramgrp", "<i/>")
+        doc_rewrap_els(doc, "span.etymwb-author", "<span/>",
+                       css=[["font-variant","small-caps"]], textify=True)
+        doc_rewrap_els(doc, "span.etymwb-orth", "<b/>")
+        doc_strip_els(doc, "span.etymwb-bibl,span.etymwb-headword", block=False)
+
+        # links to related articles
+        doc_strip_els(doc, "a:not([href])")
+        doc_strip_els(doc, "a:empty")
+        fun = lambda el, val: "bword://%s" % doc(el).text().strip(". ").lower()
+        doc_replace_attr(doc, "a", "href", fun)
+
         doc("*").removeAttr("class").removeAttr("id")
         html = " ".join(doc.html().strip().split())
         repl = [
