@@ -114,7 +114,10 @@ class DWDSProcessor(HtmlContainerProcessor):
     def do_html_definition_1(self, html, term):
         doc = pq(html)
         doc("button,img,audio,script,nav,ul.nav,h2").remove()
-        doc("div.dwdswb-quelle,div.gb-quelle").remove()
+        doc("div.dwdswb-quelle,div.gb-quelle,div.wp-quelle").remove()
+        doc("div.dwdswb-illustration").remove()
+        doc("div.modal").remove()
+        doc("p.bg-warning").remove()
         doc("div.dwds-gb-list").remove()
         doc("div.citation-help").remove()
         doc("span.automatic-trennung").remove()
@@ -206,6 +209,8 @@ class DWDSProcessor(HtmlContainerProcessor):
         regex = [
             [u"↗",r""],
             [r" +",r" "],
+            [r"\s*;\s*$",r""],
+            [r"\s+;\s+",r"; "],
         ]
         for r in regex: html = re.sub(r[0],r[1],html)
         return html

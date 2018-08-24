@@ -44,7 +44,9 @@ class Processor(CancelableThread):
         c = conn.cursor()
         c.execute("DELETE FROM dict")
         c.execute("DELETE FROM synonyms")
-        c.execute("UPDATE raw SET flag = flag & ~?", (FLAGS["PROCESSED"],))
+        c.execute("""UPDATE raw
+                     SET flag = flag & ~?
+                     WHERE flag & ? > 0""", (FLAGS["PROCESSED"],FLAGS["PROCESSED"]))
         conn.commit()
         conn.close()
 
