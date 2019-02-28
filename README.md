@@ -37,8 +37,14 @@ listed in the following blog post: http://tovotu.de/blog/536-Kostenlose-Wrterbch
 How to get started
 ------------------
 
+First, clone this repository and make sure you execute the following
+commands from the root directory of the repository:
+
+    git clone https://framagit.org/tuxor1337/dictmaster
+    cd ./dictmaster
+
 All the conversion to stardict is done with the help of pyglossary
-(https://github.com/ilius/pyglossary). Before you start you have
+(https://github.com/ilius/pyglossary). Therefore, before you start you have
 to pull in the third party code with
 
     git submodule update --init
