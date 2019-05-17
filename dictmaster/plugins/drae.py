@@ -34,10 +34,10 @@ from dictmaster.plugin import BasePlugin
 from dictmaster.stages.fetcher import Fetcher
 from dictmaster.stages.processor import HtmlContainerProcessor
 
-BASE_URL = "http://dle.rae.es/srv"
+BASE_URL = "https://dle.rae.es/srv"
 
 POSTDATA = b"TS017111a7_id=3"\
-         + b"&TS017111a7_cr=72b68f80f16ede3d867fe79347dad43a:xzxz:3JYG8zbr:415149535"\
+         + b"&TS017111a7_cr=d537139570e4db3599d3d9b1c5baadaf:qrpr:kvYkKLVF:280794873"\
          + b"&TS017111a7_76=0"\
          + b"&TS017111a7_86=0"\
          + b"&TS017111a7_md=1"\
@@ -66,7 +66,7 @@ class DraeFetcher(Fetcher):
         def filter_data(self, data, curr_word):
             if data == None or len(data) < 2: return None
             data = data.decode("utf-8")
-            cont = "body > div > article"
+            cont = "div#a0 > article"
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(data, parser=parser))
             url = ""
