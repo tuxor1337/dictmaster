@@ -25,6 +25,7 @@ Furthermore `dictmaster` is able to retrieve data from the following online sour
 * Online Etymology Dictionary (http://etymonline.com)
 * American Heritage Dictionary (https://ahdictionary.com)
 * Oxford Dictionaries Online (http://oxforddictionaries.com)
+* Ó Dónaill’s Irish-English Dictionary (https://www.teanglann.ie/en/fgb/)
 * CIA World Factbook (https://www.cia.gov/library/publications/the-world-factbook/)
 * There is basic support for BEOLINGUS (http://dict.tu-chemnitz.de/) and dict.cc
 (http://www.dict.cc/), but the algorithms used in dictmaster don't perform well
