@@ -28,7 +28,8 @@ def doc_replace_els(doc, query, fun):
         new_html = doc.html()
 
 def doc_rewrap_els(doc, query, new_el, css=[], remove_empty=True,
-                   textify=False, prefix="", suffix="", regex=[]):
+                   textify=False, prefix="", suffix="", regex=[],
+                   transfer_attr=[]):
     def fun(el):
         if textify:
             replacement = doc(el).text()
@@ -41,6 +42,8 @@ def doc_rewrap_els(doc, query, new_el, css=[], remove_empty=True,
                 replacement = re.sub(r[0], r[1], replacement)
             replacement = doc(new_el).html(prefix + replacement + suffix)
             for s in css: replacement.css(*s)
+            for a in transfer_attr:
+                replacement.attr(a[1], doc(el).attr(a[0]))
         return replacement
     doc_replace_els(doc, query, fun)
 
@@ -58,13 +61,14 @@ def doc_strip_els(doc, query, block=True, prefix=None, suffix=None):
         return replacement
     doc_replace_els(doc, query, fun)
 
-def doc_replace_attr(doc, query, attr, fun):
+def doc_replace_attr(doc, query, attr, fun, new_attr=None, force=False):
+    new_attr = attr if new_attr is None else new_attr
     for el in doc(query):
         val = doc(el).attr(attr)
-        if val is not None:
-            doc(el).attr(attr, fun(el, val))
+        if val is not None or force:
+            doc(el).attr(new_attr, fun(el, val))
 
-def doc_replace_attr_re(doc, query, attr, regex):
+def doc_replace_attr_re(doc, query, attr, regex, new_attr=None):
     def regex_fun(el, val):
         return re.sub(regex[0], regex[1], val)
-    doc_replace_attr(doc, query, attr, regex_fun)
+    doc_replace_attr(doc, query, attr, regex_fun, new_attr=new_attr)

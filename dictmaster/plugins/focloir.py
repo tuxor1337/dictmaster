@@ -23,6 +23,11 @@ from string import ascii_lowercase as ALPHA
 from pyquery import PyQuery as pq
 from lxml import etree
 
+try:
+    import urllib2
+except ImportError:
+    import urllib.request as urllib2
+
 from dictmaster.util import FLAGS
 from dictmaster.replacer import *
 from dictmaster.plugin import BasePlugin
@@ -31,13 +36,13 @@ from dictmaster.stages.urlfetcher import UrlFetcher
 from dictmaster.stages.processor import HtmlContainerProcessor
 
 class Plugin(BasePlugin):
-    dictname = u"Online Etymology Dictionary, ©Douglas Harper/etymonline.com"
+    dictname = u"Foclóir Gaeilge-Béarla (Ó Dónaill, 1977)"
 
     def __init__(self, dirname, popts=[]):
         super(Plugin, self).__init__(dirname)
-        self.stages['UrlFetcher'] = EtymonlineUrlFetcher(self)
-        self.stages['Fetcher'] = EtymonlineFetcher(self)
-        self.stages['Processor'] = EtymonlineProcessor("div.word--C9UPa", self)
+        self.stages['UrlFetcher'] = FocloirUrlFetcher(self)
+        self.stages['Fetcher'] = FocloirFetcher(self)
+        self.stages['Processor'] = FocloirProcessor("div.entry", self)
 
     def post_setup(self, cursor):
         cursor.executemany('''
@@ -45,75 +50,70 @@ class Plugin(BasePlugin):
             VALUES (?,?)
         ''', [(a, FLAGS["URL_FETCHER"]) for a in ALPHA])
 
-class EtymonlineUrlFetcher(UrlFetcher):
+class FocloirUrlFetcher(UrlFetcher):
     class FetcherThread(UrlFetcher.FetcherThread):
         def filter_data(self, data, uri):
+            data = data.decode("utf-8")
             d = pq(data)
-            a = d("li.ant-pagination-item a")[-1]
-            new = d(a).attr("href")
-            no = int(re.sub("^.*page=([0-9]+)&q=[a-z]$", r"\1", new))
-            pattern = re.sub("^.*(page=)([0-9]+)(&q=[a-z])$", r"\1%d\3", new)
-            return [pattern % i for i in range(1,no+1)]
+            return [urllib2.quote(d(a).text()) for a in d("span.abcItem > a")]
 
         def parse_uri(self,uri):
-            return "http://www.etymonline.com/classic/search?q=%s"%uri
+            return "https://www.teanglann.ie/en/fgb/_%s"%uri
 
-class EtymonlineFetcher(Fetcher):
+class FocloirFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data, uri):
             if data == None:
                 return None
             data = data.decode("utf-8")
-            if 'No results were found for' in data:
+            if 'No matches found.' in data:
                 return None
-            container = "div.ant-col-xs-24"
+            container = "div.exacts"
             doc = pq(data)
             if len(doc(container)) == 0: return None
             else: return doc(container).html()
 
         def parse_uri(self, uri):
-            return "http://www.etymonline.com/classic/search?%s"%uri
+            return "https://www.teanglann.ie/en/fgb/%s"%uri
 
-class EtymonlineProcessor(HtmlContainerProcessor):
+class FocloirProcessor(HtmlContainerProcessor):
     def do_pre_html(self, data):
-        data = data.replace("&#13;", "")
         regex = [
-            [r'\[([^\]]+)\]\n</blockquote>', r'<p class="src">[\1]</p></blockquote>'],
-            [r'([^=])"([^> ][^"]*[^ ])"', r'\1<span class="meaning">"\2"</span>']
+            [r'[\s]*:([^\s])', r': \1']
         ]
         for r in regex: data = re.sub(r[0], r[1], data)
         return data
 
     def do_html_term(self, doc):
-        term = doc("a.word__name--TTbAA").eq(0).text().strip()
+        term = doc("span.title").eq(0).text().strip()
+        no = doc("span.title + span.x")
+        if len(no) > 0:
+            term = "%s (%s)" % (term, no.eq(0).text().strip())
         regex = [
-            [r" +\([^)]+\)$",r""]
+            [r", *$",r""]
         ]
         for r in regex: term = re.sub(r[0], r[1], term)
         return term
 
     def do_html_definition(self, html, term):
-        doc = pq(html)("object > section")
-        doc("ins").remove()
+        doc = pq(html)
 
         # links to related articles
-        regex = (r"^[^\?]+\?term=([^&]+)&.*$", r"bword://\1")
-        doc_replace_attr_re(doc, "a", "href", regex)
+        fun = lambda el, val: "bword://%s" % doc(el).text().strip(". ")
+        doc_replace_attr(doc, "span.clickable", "onclick", fun, force=True)
+        doc_rewrap_els(doc, "span.s.clickable", "<a/>", transfer_attr=[("onclick","href")])
 
         # simple inline styles
-        doc_rewrap_els(doc, "span.foreign", "<i/>")
-        doc_rewrap_els(doc, "span.meaning", "<span/>", css=[("color","#47A")])
-
-        # blockquotes
-        doc_rewrap_els(doc, "blockquote p.src", "<p/>",
-            css=[("font-style","normal"),
-                 ("font-size","x-small"),
-                 ("text-align","right"),])
-        doc_strip_els(doc, "blockquote p.src span.meaning", block=False)
+        doc_rewrap_els(doc, "span.title", "<b/>", css=[("color", "#930")])
+        doc_rewrap_els(doc, "span.x", "<sup/>")
+        doc_rewrap_els(doc, "span.b", "<b/>")
+        doc_rewrap_els(doc, "span.i", "<i/>")
+        doc_rewrap_els(doc, "span.l", "<i/>")
+        doc_rewrap_els(doc, "span.g", "<i/>", css=[("color","#060")])
 
         # cleanup
-        doc_rewrap_els(doc, "p", "<p/>", remove_empty=True)
+        doc_strip_els(doc, "span:not([style])", block=False)
         doc("*").removeAttr("class")
 
-        return "<b>%s</b> %s" % (term, doc.html())
+        return doc.html()
 
