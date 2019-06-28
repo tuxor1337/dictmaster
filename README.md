@@ -43,16 +43,8 @@ commands from the root directory of the repository:
 
     git clone https://framagit.org/tuxor1337/dictmaster
     cd ./dictmaster
-
-All the conversion to stardict is done with the help of pyglossary
-(https://github.com/ilius/pyglossary). Therefore, before you start you have
-to pull in the third party code with
-
-    git submodule update --init
-
-and install using
-
-    pip3 install -e ./
+    pip3 install --user wheel
+    pip3 install --user -e ./
 
 Running `dictmaster` then starts a graphical user interface.
 However, many features are exclusively available through the command line:
