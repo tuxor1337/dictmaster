@@ -24,7 +24,7 @@ Furthermore `dictmaster` is able to retrieve data from the following online sour
 * GNU Collaborative International Dictionary of English (http://gcide.gnu.org.ua/)
 * Online Etymology Dictionary (http://etymonline.com)
 * American Heritage Dictionary (https://ahdictionary.com)
-* Oxford Dictionaries Online (http://oxforddictionaries.com)
+* Oxford Dictionaries Online (http://oxforddictionaries.com, **plugin broken**)
 * Ó Dónaill’s Irish-English Dictionary (https://www.teanglann.ie/en/fgb/)
 * CIA World Factbook (https://www.cia.gov/library/publications/the-world-factbook/)
 * There is basic support for BEOLINGUS (http://dict.tu-chemnitz.de/) and dict.cc
@@ -69,6 +69,25 @@ From most parts of the download stage, dictmaster is able to recover and continu
 at a later time from where it stopped last time.
 If you want to force redownloading the data add the parameter `--reset` to
 your command line.
+
+Troubleshooting
+---------------
+
+### In the console, there is output `Invalid plugin directory: ...`
+
+This is not an error message, but verbose debugging output by the module
+PyGlossary that we cannot suppress. Please ignore this.
+
+### The plugin XY doesn't work (returns empty result or gibberish).
+
+Since downloading of the dictionary data is discouraged by most dictionary
+services, they change their format from time to time and we can't keep track
+of all the changes. That's why many of dictmaster's plugins are defunct by now.
+
+We don't remove broken plugins from the repository because, in many cases,
+functionality can be easily restored with minor changes to the code.
+
+Plugins that are known to be broken: `dwds` (please use `dwds-panel` instead), `oxford`
 
 Limitations
 -----------
