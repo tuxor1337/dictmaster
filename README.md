@@ -73,6 +73,15 @@ your command line.
 Troubleshooting
 ---------------
 
+### Setup fails with `Not Found for url: https://pypi.org/simple/pyglossary/`
+
+Please make sure you use the most recent version of `pip3`, e.g., by running
+
+    sudo pip3 install --upgrade pip
+    hash -r
+    
+Then, follow the setup instructions given above.
+
 ### In the console, there is output `Invalid plugin directory: ...`
 
 This is not an error message, but verbose debugging output by the module
