@@ -56,7 +56,7 @@ class EtymonlineUrlFetcher(UrlFetcher):
             return [pattern % i for i in range(1,no+1)]
 
         def parse_uri(self,uri):
-            return "http://www.etymonline.com/classic/search?q=%s"%uri
+            return "http://www.etymonline.com/search?q=%s"%uri
 
 class EtymonlineFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
@@ -72,11 +72,12 @@ class EtymonlineFetcher(Fetcher):
             else: return doc(container).html()
 
         def parse_uri(self, uri):
-            return "http://www.etymonline.com/classic/search?%s"%uri
+            return "http://www.etymonline.com/search?%s"%uri
 
 class EtymonlineProcessor(HtmlContainerProcessor):
     def do_pre_html(self, data):
         data = data.replace("&#13;", "")
+        data = data.replace("\xa0", " ")
         regex = [
             [r'\[([^\]]+)\]\n</blockquote>', r'<p class="src">[\1]</p></blockquote>'],
             [r'([^=])"([^> ][^"]*[^ ])"', r'\1<span class="meaning">"\2"</span>']
@@ -87,9 +88,11 @@ class EtymonlineProcessor(HtmlContainerProcessor):
     def do_html_term(self, doc):
         term = doc("a.word__name--TTbAA").eq(0).text().strip()
         regex = [
-            [r" +\([^)]+\)$",r""]
+            [r"\"/>",r""],
+            [r" +\([^\)]+\)$",r""],
         ]
-        for r in regex: term = re.sub(r[0], r[1], term)
+        for r in regex:
+            term = re.sub(r[0], r[1], term)
         return term
 
     def do_html_definition(self, html, term):
