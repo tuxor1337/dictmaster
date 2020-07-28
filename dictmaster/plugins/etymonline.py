@@ -79,8 +79,10 @@ class EtymonlineProcessor(HtmlContainerProcessor):
         data = data.replace("&#13;", "")
         data = data.replace("\xa0", " ")
         regex = [
-            [r'\[([^\]]+)\]\n</blockquote>', r'<p class="src">[\1]</p></blockquote>'],
-            [r'([^=])"([^> ][^"]*[^ ])"', r'\1<span class="meaning">"\2"</span>']
+            [r'\[([^\]]+)\]\n</blockquote>',
+             r'<p class="src">[\1]</p></blockquote>'],
+            [r'([^=])"([^> ][^"]*[^= ])"([^>])',
+             r'\1<span class="meaning">"\2"</span>\3']
         ]
         for r in regex: data = re.sub(r[0], r[1], data)
         return data
