@@ -38,6 +38,14 @@ listed in the following blog post: http://tovotu.de/blog/536-Kostenlose-Wrterbch
 How to get started
 ------------------
 
+`dictmaster` requires the library `gobject-introspection` (with developer package). Depending on your
+operating system and package manager, one of these commands might work for you:
+
+    # on RPM-based systems (CentOS, Fedora etc.)
+    sudo dnf install gobject-introspection gobject-introspection-devel
+    # on DEB-based systems (Ubuntu, Debian etc.)
+    sudo apt install libgirepository1.0 libgirepository1.0-dev
+
 First, clone this repository and make sure you execute the following
 commands from the root directory of the repository:
 
@@ -79,7 +87,7 @@ Please make sure you use the most recent version of `pip3`, e.g., by running
 
     sudo pip3 install --upgrade pip
     hash -r
-    
+
 Then, follow the setup instructions given above.
 
 ### In the console, there is output `Invalid plugin directory: ...`
