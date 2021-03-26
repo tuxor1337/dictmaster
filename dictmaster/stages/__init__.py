@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of dictmaster
 # Copyright (C) 2018  Thomas Vogt
 #

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of dictmaster
 # Copyright (C) 2018  Thomas Vogt
 #
@@ -15,7 +13,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 
 import re
 import sqlite3

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of dictmaster
 # Copyright (C) 2018  Thomas Vogt
 #
@@ -50,7 +48,7 @@ class DwdsUrlFetcher(UrlFetcher):
 
         def parse_uri(self,uri):
             return "https://www.dwds.de/backlist?p=%s"%uri
-            
+
     def run(self):
         UrlFetcher.run(self)
         conn = sqlite3.connect(self.plugin.output_db)
@@ -63,4 +61,4 @@ class DwdsUrlFetcher(UrlFetcher):
         path = os.path.join(self.plugin.output_directory, "wordlist.txt")
         with open(path,"w") as f:
             f.write("\n".join([unquote(u[0]) for u in uris]))
-            
+
