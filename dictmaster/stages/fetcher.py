@@ -15,7 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import random
 import sqlite3
+import time
 
 try:
     import urllib2
@@ -36,11 +38,12 @@ class FetcherThread(CancelableThread):
     _flag = 0
     _queue = None
 
-    def __init__(self, no, uris, queue, flag, postdata=None, sleep=(1.0, 3.0)):
-        super(FetcherThread, self).__init__()
+    def __init__(self, no, uris, queue, flag, postdata=None,
+                 pause=None, **kwargs):
+        super(FetcherThread, self).__init__(**kwargs)
         self.uris, self.postdata = uris, postdata
         self.no = no
-        self.sleep = sleep
+        self.pause = pause
         self._queue = queue
         self._flag = flag | FLAGS["FETCHED"]
         self._canceled = len(self.uris) == 0
@@ -49,8 +52,7 @@ class FetcherThread(CancelableThread):
     def parse_uri(self, uri): return uri
 
     def fetch_uri(self, rawid, uri):
-        data = self.download_retry(self.parse_uri(uri), self.postdata,
-                                   sleep=self.sleep)
+        data = self.download_retry(self.parse_uri(uri), self.postdata)
         if self._canceled: return
         data = self.filter_data(data, uri)
         self._queue.put((rawid, uri, data, self._flag))
@@ -58,8 +60,16 @@ class FetcherThread(CancelableThread):
 
     def run(self):
         for rawid, uri in self.uris:
-            if self._canceled: break
+            if self._canceled:
+                break
             self.fetch_uri(rawid, uri)
+            if self.pause is not None:
+                sleep_time = random.uniform(*self.pause)
+                while sleep_time > 0:
+                    if self._canceled:
+                        break
+                    time.sleep(min(sleep_time, 1))
+                    sleep_time -= 1
 
     def progress(self):
         if self._download_status != "": return self._download_status
@@ -81,14 +91,15 @@ class Fetcher(CancelableThread):
         plugin,
         threadcnt=DEFAULT_THREADCNT,
         postdata=None,
-        sleep=(1.0, 3.0)
+        pause=None,
+        **kwargs
     ):
-        super(Fetcher, self).__init__()
+        super(Fetcher, self).__init__(**kwargs)
         self._subthreads = [None]*threadcnt
         self._queue = RawDbQueue(plugin.output_db)
+        self.pause = pause
         self.plugin = plugin
         self.postdata = postdata
-        self.sleep = sleep
 
     def init_subthreads(self, uris):
         self._subthreads = self._subthreads[:len(uris)]
@@ -100,6 +111,7 @@ class Fetcher(CancelableThread):
                 queue=self._queue,
                 flag=self._flag,
                 postdata=self.postdata,
+                pause=self.pause,
                 sleep=self.sleep
             )
 

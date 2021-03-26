@@ -24,8 +24,7 @@ class UrlFetcher(Fetcher):
         _output_flag = FLAGS["RAW_FETCHER"]
         def fetch_uri(self, rawid, uri):
             self._i += 1
-            data = self.download_retry(self.parse_uri(uri), self.postdata,
-                                       sleep=self.sleep)
+            data = self.download_retry(self.parse_uri(uri), self.postdata)
             if self._canceled: return
             for url in self.filter_data(data, uri):
                 self._queue.put((None, url, None, self._output_flag))

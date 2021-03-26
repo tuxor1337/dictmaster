@@ -141,8 +141,9 @@ class CancelableThread(threading.Thread):
     _canceled = False
     _download_status = ""
 
-    def __init__(self):
+    def __init__(self, sleep=(1.0, 3.0)):
         super(CancelableThread, self).__init__()
+        self.sleep = sleep
         self.daemon = True
 
     def progress(self):
@@ -166,8 +167,9 @@ class CancelableThread(threading.Thread):
         self._download_status = ""
         return data
 
-    def download_retry(self, url, params=None, sleep=(1.0, 3.0), timeout=60):
-        if self._canceled: return None
+    def download_retry(self, url, params=None, timeout=60):
+        if self._canceled:
+            return None
         try:
             req = urllib2.Request(url, data=params, headers=URL_HEADER)
             try: response = urllib2.urlopen(req, timeout=timeout)
@@ -182,12 +184,18 @@ class CancelableThread(threading.Thread):
                 data = self._chunk_download(response, total_size)
             else: data = response.read()
             return data
-        except (URLError, httplib.BadStatusLine):
-            warn_nl("Connection to %s failed. Retrying..." % url)
-            time.sleep(random.uniform(*sleep))
-            return self.download_retry(url, params)
         except Exception as e:
-            warn_nl("Error on %s: '%s'. Retrying..." % (url, e))
-            time.sleep(random.uniform(*sleep))
+            sleep_time = random.uniform(*self.sleep)
+            if isinstance(e, URLError) or isinstance(e, httplib.BadStatusLine):
+                warn_str = f"Connection to {url} failed. "
+            else:
+                warn_str = f"Error on {url}: '{e}'. "
+            warn_str += f"Retrying in {sleep_time:.1f} sec..."
+            warn_nl(warn_str)
+            while sleep_time > 0:
+                if self._canceled:
+                    return None
+                time.sleep(min(sleep_time, 1))
+                sleep_time -= 1
             return self.download_retry(url, params)
 
