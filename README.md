@@ -38,13 +38,7 @@ listed in the following blog post: http://tovotu.de/blog/536-Kostenlose-Wrterbch
 How to get started
 ------------------
 
-`dictmaster` requires the library `gobject-introspection` (with developer package). Depending on your
-operating system and package manager, one of these commands might work for you:
-
-    # on RPM-based systems (CentOS, Fedora etc.)
-    sudo dnf install gobject-introspection gobject-introspection-devel
-    # on DEB-based systems (Ubuntu, Debian etc.)
-    sudo apt install libgirepository1.0 libgirepository1.0-dev
+Note that, since 2021, `dictmaster` requires Python 3.7 or higher (due to third-party dependencies).
 
 First, clone this repository and make sure you execute the following
 commands from the root directory of the repository:

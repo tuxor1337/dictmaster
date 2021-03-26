@@ -1,12 +1,6 @@
 
 from setuptools import setup, find_packages
 
-pyglossary_base_url = "https://github.com/ilius/pyglossary"
-pyglossary_version = "3.2.1"
-pyglossary_url = "{url}/archive/{ver}.tar.gz".format(
-              url=pyglossary_base_url, ver=pyglossary_version)
-pyglossary_pkg = "pyglossary @ {0}#egg=pyglossary-{1}".format(pyglossary_url, pyglossary_version)
-
 setup(
     name='Dictmaster',
     version='0.1',
@@ -30,7 +24,7 @@ setup(
         "jinja2",
         "lxml",
         "html5lib",
-        pyglossary_pkg,
+        "pyglossary",
     ],
     scripts=["bin/dictmaster"],
     project_urls={ 'Source': 'https://framagit.org/tuxor1337/dictmaster', },
