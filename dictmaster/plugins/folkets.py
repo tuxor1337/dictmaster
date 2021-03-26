@@ -148,7 +148,7 @@ class FolketsProcessor(HtmlContainerProcessor):
         term = doc.attr("value")
         return term
 
-    def do_html_definition(self, html, term):
+    def do_html_definition(self, dt_html, html, term):
         d = pq(html)
         lang = html.attr("lang")
         head = '<img src="%s" /> <b>%s</b>' % (FLAG_IMG[lang][0], term)

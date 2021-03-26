@@ -93,7 +93,7 @@ class DraeProcessor(HtmlContainerProcessor):
         term = doc("header.f").eq(0).text().strip(". ")
         return term
 
-    def do_html_definition(self, html, term):
+    def do_html_definition(self, dt_html, html, term):
         # Output is black/white and condensed as in
         # http://www.rae.es/sites/default/files/Articulos_de_muestra.pdf
         doc = pq(html)

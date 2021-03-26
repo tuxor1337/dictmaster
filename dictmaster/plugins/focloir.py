@@ -92,7 +92,7 @@ class FocloirProcessor(HtmlContainerProcessor):
         for r in regex: term = re.sub(r[0], r[1], term)
         return term
 
-    def do_html_definition(self, html, term):
+    def do_html_definition(self, dt_html, html, term):
         doc = pq(html)
 
         # links to related articles

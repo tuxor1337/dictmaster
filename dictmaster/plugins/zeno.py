@@ -122,7 +122,7 @@ class ZenoProcessor(HtmlContainerProcessor):
         )
         return term
 
-    def do_html_definition(self, html, term):
+    def do_html_definition(self, dt_html, html, term):
         doc = pq(html)
         doc.remove("a.zenoTXKonk[title='Faksimile']")
         for div in doc("div.zenoIMBreak"):

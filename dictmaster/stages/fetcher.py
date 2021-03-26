@@ -36,10 +36,11 @@ class FetcherThread(CancelableThread):
     _flag = 0
     _queue = None
 
-    def __init__(self, no, uris, queue, flag, postdata=None):
+    def __init__(self, no, uris, queue, flag, postdata=None, sleep=(1.0, 3.0)):
         super(FetcherThread, self).__init__()
         self.uris, self.postdata = uris, postdata
         self.no = no
+        self.sleep = sleep
         self._queue = queue
         self._flag = flag | FLAGS["FETCHED"]
         self._canceled = len(self.uris) == 0
@@ -48,7 +49,8 @@ class FetcherThread(CancelableThread):
     def parse_uri(self, uri): return uri
 
     def fetch_uri(self, rawid, uri):
-        data = self.download_retry(self.parse_uri(uri), self.postdata)
+        data = self.download_retry(self.parse_uri(uri), self.postdata,
+                                   sleep=self.sleep)
         if self._canceled: return
         data = self.filter_data(data, uri)
         self._queue.put((rawid, uri, data, self._flag))
@@ -78,13 +80,15 @@ class Fetcher(CancelableThread):
     def __init__(self,
         plugin,
         threadcnt=DEFAULT_THREADCNT,
-        postdata=None
+        postdata=None,
+        sleep=(1.0, 3.0)
     ):
         super(Fetcher, self).__init__()
         self._subthreads = [None]*threadcnt
         self._queue = RawDbQueue(plugin.output_db)
         self.plugin = plugin
         self.postdata = postdata
+        self.sleep = sleep
 
     def init_subthreads(self, uris):
         self._subthreads = self._subthreads[:len(uris)]
@@ -95,7 +99,8 @@ class Fetcher(CancelableThread):
                 uris=uri_portion,
                 queue=self._queue,
                 flag=self._flag,
-                postdata=self.postdata
+                postdata=self.postdata,
+                sleep=self.sleep
             )
 
     def progress(self):
@@ -127,8 +132,8 @@ class Fetcher(CancelableThread):
             SELECT id, uri FROM raw
             WHERE flag & ? == 0
             AND flag & ? > 0
-        ''', (FLAGS["FETCHED"],self._flag)).fetchall()
-        self._fetched = float(self._fetched)/(len(uris)+self._fetched)
+        ''', (FLAGS["FETCHED"], self._flag)).fetchall()
+        self._fetched = float(self._fetched) / (len(uris) + self._fetched)
         conn.close()
         if self._canceled or len(uris) == 0: return
         self.init_subthreads(uris)

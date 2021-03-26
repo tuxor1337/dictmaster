@@ -50,7 +50,7 @@ class XmlittreProcessor(HtmlContainerProcessor):
         term = doc.attr("terme").lower()
         return term
 
-    def do_html_definition(self, html, term):
+    def do_html_definition(self, dt_html, html, term):
         d = pq(html)
         for e in html.find("entete"):
             d(e).replaceWith(

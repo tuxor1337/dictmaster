@@ -610,7 +610,7 @@ class GcideProcessor(HtmlContainerProcessor):
         if self._last_container != None:
             Processor.append(self, *self._last_container)
 
-    def do_html_alts(self, dd, term):
+    def do_html_alts(self, dt_html, dd, term):
         d = pq(dd)
         alts = []
         regex = [[r"[\"`\*']",""]]
@@ -656,7 +656,7 @@ class GcideProcessor(HtmlContainerProcessor):
             term = re.sub(r[0], r[1], term)
         return term.lower()
 
-    def do_html_definition(self, html, term):
+    def do_html_definition(self, dt_html, html, term):
         try:
             if not html.html():
                 return ""

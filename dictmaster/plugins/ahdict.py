@@ -91,7 +91,7 @@ class AhdictProcessor(HtmlContainerProcessor):
         for r in regex: term = re.sub(r[0], r[1], term)
         return term
 
-    def do_html_definition(self, html, term):
+    def do_html_definition(self, dt_html, html, term):
         doc = pq(html)
         for a in doc("a:not([href])"): doc(a).replaceWith(doc(a).html())
         for a in doc("a"):

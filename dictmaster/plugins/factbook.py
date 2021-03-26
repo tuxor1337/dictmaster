@@ -364,7 +364,7 @@ class FactbookProcessor(HtmlABProcessor):
         doc = doc("ul.expandcollapse")
         HtmlABProcessor.do_html(self, doc)
 
-    def do_html_alts(self, dd, term):
+    def do_html_alts(self, dt_html, dd, term):
         d = pq(dd)
         alts = []
         regex = [
@@ -389,7 +389,7 @@ class FactbookProcessor(HtmlABProcessor):
             term = re.sub(r[0], r[1], term)
         return term.strip()
 
-    def do_html_definition(self, html, term):
+    def do_html_definition(self, dt_html, html, term):
         d = pq(html)
         curr = d("div:first-child")[0]
         curr_cat = ""

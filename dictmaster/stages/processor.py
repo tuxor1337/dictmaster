@@ -195,13 +195,13 @@ class HtmlProcessor(Processor):
     def do_pre_html(self, encoded_str): return encoded_str
     def do_html(self, doc): self.append(doc("dt").eq(0), doc("dd").eq(0))
     def do_html_term(self, dt): return ""
-    def do_html_alts(self, dd, term): return []
-    def do_html_definition(self, dd, term): return ""
+    def do_html_alts(self, dt, dd, term): return []
+    def do_html_definition(self, dt, dd, term): return ""
 
     def append(self, dt, dd):
         term = self.do_html_term(dt)
-        alts = self.do_html_alts(dd, term)
-        definition = self.do_html_definition(dd, term)
+        alts = self.do_html_alts(dt, dd, term)
+        definition = self.do_html_definition(dt, dd, term)
         Processor.append(self, term, definition, alts)
 
 class HtmlABProcessor(HtmlProcessor):

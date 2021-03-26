@@ -55,7 +55,7 @@ FLAGS = {
 }
 
 URL_HEADER = {
-    "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:61.0) Gecko/20100101 Firefox/61.0",
+    "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0",
 }
 
 def warn_nl(msg):
@@ -166,11 +166,11 @@ class CancelableThread(threading.Thread):
         self._download_status = ""
         return data
 
-    def download_retry(self, url, params=None):
+    def download_retry(self, url, params=None, sleep=(1.0, 3.0), timeout=60):
         if self._canceled: return None
         try:
             req = urllib2.Request(url, data=params, headers=URL_HEADER)
-            try: response = urllib2.urlopen(req, timeout=60)
+            try: response = urllib2.urlopen(req, timeout=timeout)
             except HTTPError as e:
                 if e.code in [403,404]: return ""
                 else: raise
@@ -184,10 +184,10 @@ class CancelableThread(threading.Thread):
             return data
         except (URLError, httplib.BadStatusLine):
             warn_nl("Connection to %s failed. Retrying..." % url)
-            time.sleep(random.uniform(1.0,3.0))
+            time.sleep(random.uniform(*sleep))
             return self.download_retry(url, params)
         except Exception as e:
             warn_nl("Error on %s: '%s'. Retrying..." % (url, e))
-            time.sleep(random.uniform(1.0,3.0))
+            time.sleep(random.uniform(*sleep))
             return self.download_retry(url, params)
 

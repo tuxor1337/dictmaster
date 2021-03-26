@@ -96,9 +96,9 @@ class DWDSProcessor(HtmlContainerProcessor):
         for r in regex: term = re.sub(r[0], r[1], term)
         return term
 
-    def do_html_alts_1(self, html, term): return []
+    def do_html_alts_1(self, dt_html, html, term): return []
 
-    def do_html_alts_2(self, html, term):
+    def do_html_alts_2(self, dt_html, html, term):
         doc = pq(html)("h2#etymwb > div").eq(0)
         alts = doc("div.etymwb-entry").prev("div")
         alts = sum([doc(a).text().split(u"·") for a in alts], [])
@@ -109,7 +109,7 @@ class DWDSProcessor(HtmlContainerProcessor):
         for r in regex: alts = [re.sub(r[0],r[1],a) for a in alts]
         return alts
 
-    def do_html_definition_1(self, html, term):
+    def do_html_definition_1(self, dt_html, html, term):
         doc = pq(html)
         doc("button,img,audio,script,nav,ul.nav,h2").remove()
         doc("div.dwdswb-quelle,div.gb-quelle,div.wp-quelle").remove()

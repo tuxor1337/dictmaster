@@ -88,7 +88,7 @@ class AcadfranProcessor(HtmlContainerProcessor):
         term = doc("B b font[color=blue]").eq(0).text().strip().lower()
         return term
 
-    def do_html_definition(self, html, term):
+    def do_html_definition(self, dt_html, html, term):
         html.html(
             re.sub(r"^ *\([0-9]+\) *", "", html.html())
         )

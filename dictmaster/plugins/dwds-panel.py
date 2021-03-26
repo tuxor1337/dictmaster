@@ -100,9 +100,9 @@ class DWDSProcessor(HtmlContainerProcessor):
         for r in regex: term = re.sub(r[0], r[1], term)
         return term
 
-    def do_html_alts_147(self, html, term): return []
+    def do_html_alts_147(self, dt_html, html, term): return []
 
-    def do_html_alts_148(self, html, term):
+    def do_html_alts_148(self, dt_html, html, term):
         doc = pq(html)
         regex = [
             [r" ([0-9]+)$",r"(\1)"],
@@ -116,7 +116,7 @@ class DWDSProcessor(HtmlContainerProcessor):
             if m != None: alts.extend([m.group(1),m.group(1).lower()])
         return alts
 
-    def do_html_definition_147(self, html, term):
+    def do_html_definition_147(self, dt_html, html, term):
         doc = pq(html)
         doc("img,audio,script,embed").remove()
         doc("span.wb_lzga").remove()

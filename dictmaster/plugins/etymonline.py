@@ -87,7 +87,7 @@ class EtymonlineProcessor(HtmlContainerProcessor):
     def do_html_term(self, doc):
         return doc("a.word__name--TTbAA").eq(0).text().strip()
 
-    def do_html_alts(self, doc, term):
+    def do_html_alts(self, dt_html, doc, term):
         regex = [
             [r" +\([^\)]+\)$",r""],
         ]
@@ -95,7 +95,7 @@ class EtymonlineProcessor(HtmlContainerProcessor):
             term_stripped = re.sub(r[0], r[1], term)
         return [term, term_stripped]
 
-    def do_html_definition(self, html, term):
+    def do_html_definition(self, dt_html, html, term):
         doc = pq(html)("object > section")
         doc("ins").remove()
 
