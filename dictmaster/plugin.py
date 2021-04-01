@@ -261,19 +261,22 @@ class BasePlugin(CancelableThread):
             for row in c.execute('''SELECT key,value FROM info''').fetchall():
                 info[row[0]]=row[1]
             c.execute('''SELECT word,def,id FROM dict''')
-            rows = c.fetchall(); no = len(rows)
+            rows = c.fetchall()
+            no = len(rows)
             syns = c.execute('''SELECT syn,wid FROM synonyms''').fetchall()
-            syn_list = {x[2]:[] for x in rows}
-            [syn_list[syn[1]].append(syn[0]) for syn in syns]
+            print(syns)
+            syn_list = {wid: [] for word, definition, wid in rows}
+            [syn_list[wid].append(syn) for syn, wid in syns]
             if "sametypesequence" in info: defiFormat = info["sametypesequence"]
             else: defiFormat = "h"
+            Glossary.init()
             g = Glossary()
-            for i,row in enumerate(rows):
+            for i, (word, definition, wid) in enumerate(rows):
                 self._status = "Reading from db entry %d of %d..." % (i,no)
-                g.addEntry(
-                    [row[0]] + syn_list[row[2]],
-                    row[1],
-                    defiFormat=defiFormat)
+                g.addEntryObj(g.newEntry(
+                    [word] + syn_list[wid],
+                    definition,
+                    defiFormat=defiFormat))
             self._status = "Writing to output file..."
             g.setInfo("bookname", info["bookname"])
             g.write(fname, "Stardict")
