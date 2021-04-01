@@ -27,6 +27,8 @@ from dictmaster.plugin import BasePlugin
 from dictmaster.stages.fetcher import Fetcher
 from dictmaster.stages.processor import HtmlContainerProcessor
 
+# TODO: Extract words from sitemap (https://www.dwds.de/sitemap/A)
+
 DICTNAMES = {
     "1": u"Wörterbuch der deutschen Gegenwartssprache",
     "2": u"Etymologisches Wörterbuch © Dr. Wolfgang Pfeifer",

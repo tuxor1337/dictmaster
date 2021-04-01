@@ -19,14 +19,14 @@ Furthermore `dictmaster` is able to retrieve data from the following online sour
 * Georges, Pape (http://www.zeno.org)
 * Folkets Lexikon (http://folkets-lexikon.csc.kth.se/folkets/)
 * XMLittré (http://www.littre.org)
-* Dictionnaire de l'Académie Française (http://atilf.atilf.fr/academie.htm)
+* Dictionnaire de l'Académie Française (https://academie.atilf.fr/, **plugin broken**)
 * Diccionario de la lengua española (http://lema.rae.es/drae/)
 * GNU Collaborative International Dictionary of English (http://gcide.gnu.org.ua/)
 * Online Etymology Dictionary (http://etymonline.com)
 * American Heritage Dictionary (https://ahdictionary.com)
-* Oxford Dictionaries Online (http://oxforddictionaries.com, **plugin broken**)
+* Oxford Lexico English Dictionary Online (http://lexico.com)
 * Ó Dónaill’s Irish-English Dictionary (https://www.teanglann.ie/en/fgb/)
-* CIA World Factbook (https://www.cia.gov/library/publications/the-world-factbook/)
+* CIA World Factbook (https://www.cia.gov/the-world-factbook/about/archives/)
 * There is basic support for BEOLINGUS (http://dict.tu-chemnitz.de/) and dict.cc
 (http://www.dict.cc/), but the algorithms used in dictmaster don't perform well
 with the csv-like file structure and the Stardict output format is not really
@@ -98,7 +98,7 @@ of all the changes. That's why many of dictmaster's plugins are defunct by now.
 We don't remove broken plugins from the repository because, in many cases,
 functionality can be easily restored with minor changes to the code.
 
-Plugins that are known to be broken: `dwds` (please use `dwds-panel` instead), `oxford`
+Plugins that are known to be broken: `dwds` (please use `dwds-panel` instead), `acadfran`
 
 Limitations
 -----------

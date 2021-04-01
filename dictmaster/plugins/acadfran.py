@@ -22,6 +22,36 @@ from dictmaster.plugin import BasePlugin
 from dictmaster.stages.fetcher import Fetcher
 from dictmaster.stages.processor import HtmlContainerProcessor
 
+# TODO: Update for new web page: https://academie.atilf.fr/
+# The new API is JSON-based, no session cookies required:
+json_request_data = {
+    "range":  {"begin": 0, "end": 100},
+    "actions": [],
+    "query": {
+        "maxMatchSize": 16000,
+        "input": "match vedettesearch(//orth/hi,  BEGIN) = \"a.*\" %dc compound(//entryFree) = vedettesearch  \n",
+        "modifiers": ""
+    },
+    "format": "json+html"
+}
+json_response_data = {
+    "type": "compound",
+    "size": 3819,
+    "timeout": false,
+    "duration": 0,
+    "view": {"size": 1,"range": {"begin": 0,"end": 1}},
+    "source": {"type": "compound","size": 3819},
+    "metadata": {"datasets": ["word"]},
+    "results": [
+        {
+            "document": "aca8tei.xml",
+            "result": "..."  # main HTML content for single word is included here
+        }
+    ]
+}
+
+# TODO: Support version 9 from https://www.dictionnaire-academie.fr/
+
 BASE_URL = "http://atilf.atilf.fr/dendien/scripts/generic"
 STEP_SIZE = 100
 CHARSET = "iso-8859-1"
