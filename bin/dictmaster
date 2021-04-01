@@ -2,10 +2,18 @@
 
 import sys
 
+from dictmaster.cli.main import cli_main
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        from dictmaster.cli.main import cli_main
         cli_main()
     else:
-        from dictmaster.gui.main import gui_main
+        try:
+            from dictmaster.gui.main import gui_main
+        except ImportError as e:
+            print("Failed to load GTK user interface:")
+            print(e)
+            print("You can still use dictmaster via command line interface:")
+            cli_main()
+            sys.exit(1)
         gui_main()
