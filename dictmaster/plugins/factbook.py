@@ -332,7 +332,7 @@ class Plugin(BasePlugin):
 
     def post_setup(self, cursor):
         urls = [
-            "https://www.cia.gov/library/publications/download/download-2017/factbook.zip"
+            "https://www.cia.gov/the-world-factbook/about/archives/download/factbook-2017.zip"
         ]
         cursor.executemany('''
             INSERT INTO raw (uri, flag)
