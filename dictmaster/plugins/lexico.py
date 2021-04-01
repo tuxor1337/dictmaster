@@ -37,9 +37,9 @@ class Plugin(BasePlugin):
 
     def __init__(self, dirname, popts=[]):
         super(Plugin, self).__init__(dirname)
-        sleep = (300.0, 600.0)
-        self.stages['UrlFetcher'] = LexicoUrlFetcher(self, sleep=sleep)
-        self.stages['Fetcher'] = LexicoFetcher(self, sleep=sleep, pause=(3.0, 5.0))
+        fetcher_kwargs = dict(sleep=(240.0, 360.0), threadcnt=5)
+        self.stages['UrlFetcher'] = LexicoUrlFetcher(self, **fetcher_kwargs)
+        self.stages['Fetcher'] = LexicoFetcher(self, **fetcher_kwargs)
         self.stages['Processor'] = LexicoProcessor("div.entryHead", self)
 
     def post_setup(self, cursor):
