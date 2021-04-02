@@ -18,7 +18,6 @@ setup(
     packages=find_packages(),
     package_data={'': ['*.glade']},
     install_requires=[
-        "PyGObject",
         "pyquery",
         "beautifulsoup4",
         "jinja2",

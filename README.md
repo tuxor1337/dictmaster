@@ -48,8 +48,9 @@ commands from the root directory of the repository:
     pip3 install --user wheel
     pip3 install --user -e ./
 
-Running `dictmaster` then starts a graphical user interface.
-However, many features are exclusively available through the command line:
+Running `dictmaster` then starts a graphical user interface if your operating system comes with GTK3 and `PyGObject`.
+Otherwise, the software will fall back to using the command line interface.
+Actually, many features are exclusively available through the command line which is used as follows:
 
     dictmaster PLUGIN_NAME
 
