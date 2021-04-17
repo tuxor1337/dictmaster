@@ -264,7 +264,6 @@ class BasePlugin(CancelableThread):
             rows = c.fetchall()
             no = len(rows)
             syns = c.execute('''SELECT syn,wid FROM synonyms''').fetchall()
-            print(syns)
             syn_list = {wid: [] for word, definition, wid in rows}
             [syn_list[wid].append(syn) for syn, wid in syns]
             if "sametypesequence" in info: defiFormat = info["sametypesequence"]
