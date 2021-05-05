@@ -22,6 +22,7 @@ from pyquery import PyQuery as pq
 from lxml import etree
 
 from dictmaster.util import FLAGS
+from dictmaster.replacer import *
 from dictmaster.plugin import BasePlugin
 from dictmaster.stages.fetcher import Fetcher
 from dictmaster.stages.urlfetcher import UrlFetcher
@@ -73,7 +74,7 @@ class Plugin(BasePlugin):
         cursor.executemany('''
             INSERT INTO raw (uri, flag)
             VALUES (?,?)
-        ''', [(i, FLAGS["URL_FETCHER"]) for i in range(0,wordcount,20)])
+        ''', [(i, FLAGS["URL_FETCHER"]) for i in range(0, wordcount, 20)])
 
 class ZenoUrlFetcher(UrlFetcher):
     class FetcherThread(UrlFetcher.FetcherThread):
@@ -81,7 +82,8 @@ class ZenoUrlFetcher(UrlFetcher):
             d = pq(data)
             hitlist = d("span.zenoSRHitTitle")
             if len(hitlist) == 0: return []
-            return [d(hit).find("a").attr("href") for hit in hitlist]
+            links = [d(hit).find("a").attr("href") for hit in hitlist]
+            return [uri for uri in links if "/A/" in uri]
 
     def __init__(self, plugin, url_pattern):
         super(ZenoUrlFetcher, self).__init__(plugin)
@@ -90,13 +92,16 @@ class ZenoUrlFetcher(UrlFetcher):
 
 class ZenoFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
-        def parse_uri(self, uri): return ZENO_URL + uri
+        def parse_uri(self, uri):
+            return ZENO_URL + uri
+
         def filter_data(self, data, uri):
             if data == None: return None
             container = "div.zenoCOMain"
-            encoded_str = data.decode("iso-8859-1").encode("utf-8")
+            data = data.decode("iso-8859-1")
+            data = data.replace("<b/>", "")
             parser = etree.HTMLParser(encoding="utf-8")
-            doc = pq(etree.fromstring(encoded_str, parser=parser))
+            doc = pq(etree.fromstring(data.encode("utf-8"), parser=parser))
             if len(doc(container)) == 0:
                 return None
             else:
@@ -125,30 +130,33 @@ class ZenoProcessor(HtmlContainerProcessor):
     def do_html_definition(self, dt_html, html, term):
         doc = pq(html)
         doc.remove("a.zenoTXKonk[title='Faksimile']")
-        for div in doc("div.zenoIMBreak"):
-            doc(div).replaceWith(
-                doc("<p/>").html(doc(div).find("div a").html()).outerHtml()
-            )
-        for div in doc("div.zenoIMBreak"):
-            doc(div).replaceWith(
-                doc("<p/>").html(doc(div).find("div a").html()).outerHtml()
-            )
+        doc.remove("div.zenoCOAdRight")
+
+        for div in doc("a"):
+            if "/I/" not in doc(div).attr("href"):
+                print("a", term, doc(div).attr("href"))
+        doc_rewrap_els(doc, "a", "<span/>")
+
+        for div in doc("div"):
+            print("div", term)
         doc.remove("div")
-        for a in doc("a"):
-            doc(a).replaceWith(
-                doc("<span/>").html(doc(a).html()).outerHtml()
-            )
-        for font_el in doc("font"):
-            replacement = doc("<span/>").html(doc(font_el).html())
-            if font_el.attr("color"):
-                replacement.css("color", font_el.attr("color"))
-            doc(font_el).replaceWith(replacement.outerHtml())
-        doc("b").css("color", "#47A")
+
+        color = "#47A"
+        if self.plugin.zeno_key != "Pape-1880":
+            doc_rewrap_els(doc, "b", "<span class='tmp_bold' />")
+            doc_rewrap_els(doc, "span.tmp_bold", "<b/>", css=[("color", color)])
+
+        i_color = "#000" if self.plugin.zeno_key == "Pape-1880" else color
+        doc_rewrap_els(doc, "i", "<span class='tmp_italic' />")
+        doc_rewrap_els(doc, "span.tmp_italic", "<i/>", css=[("color", i_color)])
+
         self._download_res(doc)
         result = ""
         for para in doc.find("p"):
             if doc(para).html():
                 result += "%s<br />" % doc(para).html()
+        if self.plugin.zeno_key == "Pape-1880":
+            result = f'<span style="color: {color}">{result}</span>'
         return result
 
     def _download_res(self, doc):
@@ -157,8 +165,8 @@ class ZenoProcessor(HtmlContainerProcessor):
             basename = url.split('/')[-1]
             data = self.download_retry(url)
             res_dirname = os.path.join(self.plugin.output_directory, "res")
-            with open(os.path.join(res_dirname,basename), "w") as img_file:
+            basename = basename.split("?")[0]
+            with open(os.path.join(res_dirname, basename), "wb") as img_file:
                 img_file.write(data)
             doc(img).attr("src", basename)
-        definition = doc.html()
 

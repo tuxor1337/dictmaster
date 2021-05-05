@@ -193,8 +193,8 @@ class gui_main(object):
         conn = sqlite3.connect(self.plugin.output_db)
         curs = conn.cursor()
         entries = curs.execute('''
-            SELECT id, %s FROM %s
-        ''' % (DB_DESCR[i][1],DB_DESCR[i][0])).fetchall()
+            SELECT id, %s FROM %s ORDER BY %s COLLATE NOCASE ASC
+        ''' % (DB_DESCR[i][1], DB_DESCR[i][0], DB_DESCR[i][1])).fetchall()
         for e in entries:
             self.db_store.insert_with_valuesv(-1, [0,1],
                 [e[0],GLib.markup_escape_text(e[1])])
