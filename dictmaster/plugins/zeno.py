@@ -65,10 +65,8 @@ class Plugin(BasePlugin):
         )
         processor = ZenoProcessor("", self, singleton=True)
         processor.nonarticles = ZENO_OPTS[self.zeno_key]["non-articles"]
-        fetcher = ZenoFetcher(self)
-        fetcher._queue.reload_duplicates = True
         self.stages['UrlFetcher'] = url_fetcher
-        self.stages['Fetcher'] = fetcher
+        self.stages['Fetcher'] = ZenoFetcher(self)
         self.stages['Processor'] = processor
 
     def post_setup(self, cursor):
@@ -115,6 +113,10 @@ class ZenoFetcher(Fetcher):
             else:
                 doc("script").remove()
                 return doc(container).html()
+
+    def init_queue(self):
+        Fetcher.init_queue(self)
+        self._queue.reload_duplicates = True
 
 class ZenoProcessor(HtmlContainerProcessor):
     nonarticles = []

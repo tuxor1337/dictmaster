@@ -96,12 +96,15 @@ class Fetcher(CancelableThread):
     ):
         super(Fetcher, self).__init__(**kwargs)
         self._subthreads = [None]*threadcnt
-        self._queue = RawDbQueue(plugin.output_db)
         self.pause = pause
         self.plugin = plugin
         self.postdata = postdata
 
+    def init_queue(self):
+        self._queue = RawDbQueue(self.plugin.output_db)
+
     def init_subthreads(self, uris):
+        self.init_queue()
         self._subthreads = self._subthreads[:len(uris)]
         for i in range(len(self._subthreads)):
             uri_portion = uris[i::len(self._subthreads)]
