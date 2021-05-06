@@ -65,8 +65,10 @@ class Plugin(BasePlugin):
         )
         processor = ZenoProcessor("", self, singleton=True)
         processor.nonarticles = ZENO_OPTS[self.zeno_key]["non-articles"]
+        fetcher = ZenoFetcher(self)
+        fetcher._queue.reload_duplicates = True
         self.stages['UrlFetcher'] = url_fetcher
-        self.stages['Fetcher'] = ZenoFetcher(self)
+        self.stages['Fetcher'] = fetcher
         self.stages['Processor'] = processor
 
     def post_setup(self, cursor):
@@ -78,6 +80,9 @@ class Plugin(BasePlugin):
 
 class ZenoUrlFetcher(UrlFetcher):
     class FetcherThread(UrlFetcher.FetcherThread):
+        _retry403 = True
+        _retry404 = True
+
         def filter_data(self, data, uri):
             d = pq(data)
             hitlist = d("span.zenoSRHitTitle")
@@ -92,6 +97,9 @@ class ZenoUrlFetcher(UrlFetcher):
 
 class ZenoFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
+        _retry403 = True
+        _retry404 = True
+
         def parse_uri(self, uri):
             return ZENO_URL + uri
 

@@ -140,6 +140,8 @@ to a (cancelable and feedback providing) download method.
 class CancelableThread(threading.Thread):
     _canceled = False
     _download_status = ""
+    _retry403 = False
+    _retry404 = False
 
     def __init__(self, sleep=(1.0, 3.0)):
         super(CancelableThread, self).__init__()
@@ -174,8 +176,14 @@ class CancelableThread(threading.Thread):
             req = urllib2.Request(url, data=params, headers=URL_HEADER)
             try: response = urllib2.urlopen(req, timeout=timeout)
             except HTTPError as e:
-                if e.code in [403,404]: return ""
-                else: raise
+                if e.code == 404 and not self._retry404:
+                    warn_nl(f"Not found ({e.code}): {url}")
+                    return b""
+                elif e.code == 403 and not self._retry403:
+                    warn_nl(f"Forbidden ({e.code}): {url}")
+                    return b""
+                else:
+                    raise
             total_size = response.info()['Content-Length']
             if total_size != None: total_size = int(total_size.strip())
             else: total_size = 0

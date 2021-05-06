@@ -134,10 +134,10 @@ class Fetcher(CancelableThread):
                 prog += "{}:{} ".format(i, p[:13])
         return prog
 
-    def run(self):
+    def get_unfetched_uris(self):
         conn = sqlite3.connect(self.plugin.output_db)
         curs = conn.cursor()
-        self._fetched = curs.execute('''
+        n_fetched = curs.execute('''
             SELECT COUNT(*) FROM raw WHERE flag & :0 == :0
         ''', [FLAGS["FETCHED"] | self._flag]).fetchone()[0]
         uris = curs.execute('''
@@ -145,8 +145,12 @@ class Fetcher(CancelableThread):
             WHERE flag & ? == 0
             AND flag & ? > 0
         ''', (FLAGS["FETCHED"], self._flag)).fetchall()
-        self._fetched = float(self._fetched) / (len(uris) + self._fetched)
         conn.close()
+        return n_fetched, uris
+
+    def run(self):
+        self._fetched, uris = self.get_unfetched_uris()
+        self._fetched = float(self._fetched) / (len(uris) + self._fetched)
         if self._canceled or len(uris) == 0: return
         self.init_subthreads(uris)
         self._queue.start()
@@ -154,6 +158,9 @@ class Fetcher(CancelableThread):
         [s.join() for s in self._subthreads]
         self._queue.cancel()
         self._queue.join()
+        if self._canceled: return
+        # restart in case some uris couldn't be fetched due to problems
+        self.run()
 
     def reset(self):
         conn = sqlite3.connect(self.plugin.output_db)

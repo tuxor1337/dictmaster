@@ -44,6 +44,7 @@ class QueueThread(CancelableThread):
 
 class RawDbQueue(QueueThread):
     output_db = ""
+    reload_duplicates = False
 
     _conn = None
     _c = None
@@ -56,11 +57,20 @@ class RawDbQueue(QueueThread):
         rawid, uri, data, flag = item
         test_flag = FLAGS["RAW_FETCHER"] | FLAGS["FETCHED"]
         if flag & test_flag == test_flag:
-            self._c.execute("SELECT id FROM raw WHERE data=?", (data,))
-            dupid = self._c.fetchone()
-            if dupid != None:
-                data = dupid[0]
-                flag |= FLAGS["DUPLICATE"]
+            self._c.execute('''
+                SELECT id, uri, flag FROM raw WHERE data=?
+            ''', (data,))
+            dupdata = self._c.fetchone()
+            if dupdata != None:
+                dupid, dupuri, dupflag = dupdata
+                if self.reload_duplicates:
+                    self._c.execute('''
+                        UPDATE raw SET flag=?, data=? WHERE id=?
+                    ''', (dupflag ^ FLAGS["FETCHED"], None, dupid))
+                    return
+                else:
+                    flag |= FLAGS["DUPLICATE"]
+                    data = dupid
         if rawid == None:
             self._c.execute('''
                 INSERT INTO raw(uri,data,flag)
