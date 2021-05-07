@@ -151,7 +151,11 @@ class ZenoProcessor(HtmlContainerProcessor):
             print("div", term)
         doc.remove("div")
 
-        color = "#47A"
+        color = {
+            "Georges-1913": "#47A",
+            "Georges-1910": "#A47",
+            "Pape-1880": "#4A7",
+        }[self.plugin.zeno_key]
         if self.plugin.zeno_key != "Pape-1880":
             doc_rewrap_els(doc, "b", "<span class='tmp_bold' />")
             doc_rewrap_els(doc, "span.tmp_bold", "<b/>", css=[("color", color)])
