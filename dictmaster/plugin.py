@@ -266,8 +266,10 @@ class BasePlugin(CancelableThread):
             syns = c.execute('''SELECT syn,wid FROM synonyms''').fetchall()
             syn_list = {wid: [] for word, definition, wid in rows}
             [syn_list[wid].append(syn) for syn, wid in syns]
-            if "sametypesequence" in info: defiFormat = info["sametypesequence"]
-            else: defiFormat = "h"
+            if "sametypesequence" in info:
+                defiFormat = info["sametypesequence"]
+            else:
+                defiFormat = "h"
             Glossary.init()
             g = Glossary()
             for i, (word, definition, wid) in enumerate(rows):

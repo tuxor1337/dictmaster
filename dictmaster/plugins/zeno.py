@@ -58,8 +58,8 @@ class Plugin(BasePlugin):
         self.zeno_key = popts[0]
         if self.zeno_key not in ZENO_OPTS:
             sys.exit("Zeno key not supported, try: {}".format(ZENO_KEYS))
-        super(Plugin, self).__init__(os.path.join(dirname, self.zeno_key))
         self.dictname = ZENO_OPTS[self.zeno_key]["dictname"]
+        super(Plugin, self).__init__(os.path.join(dirname, self.zeno_key))
         url_fetcher = ZenoUrlFetcher(self,
             "%s/Kategorien/T/%s?s=%%d" % (ZENO_URL, self.zeno_key)
         )
