@@ -44,6 +44,12 @@ ZENO_OPTS = {
         "non-articles": ["Verzeichnis", "Vorrede", "Ausgaben", "Georges", "Vorwort"],
         "wordcount": 26634
     },
+    "Meyers-1905": {
+        "dictname": u"Meyers: Großes Konversations-Lexikon (6. Auflage 1905-1909)",
+        "non-articles": ["Vorwort", "Stichwörter", "Faksimiles", "Zufälliger Artikel"],
+        "wordcount": 164716
+    },
+
 }
 
 ZENO_KEYS = ", ".join(ZENO_OPTS.keys())
@@ -106,6 +112,13 @@ class ZenoFetcher(Fetcher):
             container = "div.zenoCOMain"
             data = data.decode("iso-8859-1")
             data = data.replace("<b/>", "")
+
+            # restrict to contents of <body> because otherwise, the parser
+            # sometimes misinterprets stuff
+            body_start = re.search(r"<body[^>]*>", data)
+            body_end = re.search(r"</body>", data)
+            data = data[body_start.end():body_end.start()]
+
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(data.encode("utf-8"), parser=parser))
             if len(doc(container)) == 0:
@@ -142,21 +155,26 @@ class ZenoProcessor(HtmlContainerProcessor):
         doc.remove("a.zenoTXKonk[title='Faksimile']")
         doc.remove("div.zenoCOAdRight")
 
-        for div in doc("a"):
-            if "/I/" not in doc(div).attr("href"):
-                print("a", term, doc(div).attr("href"))
+        for a_el in doc("a"):
+            href = doc(a_el).attr("href")
+            if "/I/" not in href and "/A/" not in href:
+                print("a", term, href)
+
+        # TODO: links to other entries are discarded but, in some dictionaries,
+        # it might make sense to translate them to `bword://` references:
         doc_rewrap_els(doc, "a", "<span/>")
 
         for div in doc("div"):
-            print("div", term)
+            print("div", term, doc(div).text().replace("\n", "\\n")[:20])
         doc.remove("div")
 
-        color = {
+        color = ({
             "Georges-1913": "#47A",
             "Georges-1910": "#A47",
             "Pape-1880": "#4A7",
-        }[self.plugin.zeno_key]
-        if self.plugin.zeno_key != "Pape-1880":
+        }).get(self.plugin.zeno_key, "#4A7")
+
+        if self.plugin.zeno_key in ["Georges-1913", "Georges-1910"]:
             doc_rewrap_els(doc, "b", "<span class='tmp_bold' />")
             doc_rewrap_els(doc, "span.tmp_bold", "<b/>", css=[("color", color)])
 
