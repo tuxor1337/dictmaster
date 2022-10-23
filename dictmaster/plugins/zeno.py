@@ -136,11 +136,13 @@ class ZenoProcessor(HtmlContainerProcessor):
     def do_html_term(self, html):
         doc = pq(html)
         term = doc("h2.zenoTXul").eq(0).text().strip()
+        if "Meyers-1905-Bd-" in term:
+            return ""
         if term == "":
             h3 = doc("h3").text()
             if not h3:
                 h3 = doc("h2").text()
-            if not all(x not in h3 for x in self.nonarticles):
+            if any(x in h3 for x in self.nonarticles):
                 return ""
             else:
                 print(html)
@@ -151,18 +153,37 @@ class ZenoProcessor(HtmlContainerProcessor):
         return term
 
     def do_html_definition(self, dt_html, html, term):
+        if term == "":
+            return ""
+
         doc = pq(html)
         doc.remove("a.zenoTXKonk[title='Faksimile']")
         doc.remove("div.zenoCOAdRight")
+        doc.remove("div.zenoCOAdLeft")
 
         for a_el in doc("a"):
             href = doc(a_el).attr("href")
-            if "/I/" not in href and "/A/" not in href:
-                print("a", term, href)
-
-        # TODO: links to other entries are discarded but, in some dictionaries,
-        # it might make sense to translate them to `bword://` references:
+            content = doc(a_el).text()
+            if content is None:
+                continue
+            # TODO:
+            # * /A/: links to other entries are discarded but, in some
+            #        dictionaries, it might make sense to translate them to
+            #        `bword://` references:
+            # * /B/: links to appendices are discarded because the appendices
+            #        are currently not downloaded
+            is_unknown_linktype = (
+                href is not None and all(f"/{t}/" not in href for t in "IAB")
+            )
+            # make sure we know what this link does, otherwise log
+            if href is None or is_unknown_linktype:
+                print("a", term, href, content[:20])
         doc_rewrap_els(doc, "a", "<span/>")
+
+        for im_class in ["zenoTXThumbRight", "zenoIMBreak"]:
+            doc_rewrap_els(doc, f"div.{im_class} > div > div", "<span/>")
+            doc_strip_els(doc, f"div.{im_class} > div")
+            doc_rewrap_els(doc, f"div.{im_class}", "<p/>")
 
         for div in doc("div"):
             print("div", term, doc(div).text().replace("\n", "\\n")[:20])
