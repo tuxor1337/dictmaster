@@ -1,10 +1,9 @@
 dictmaster
 ==========
 
-A simple tool that automatically fetches dictionary data from
-different offline and online sources.
-The dictionaries are prettified and automatically converted to stardict
-format.
+Fetch dictionary data from several offline and online sources.
+
+The dictionaries are prettified and automatically converted to stardict format.
 The input format might be some XML or HTML format.
 Zipped data is also supported and there is basic support for Babylon dictionaries.
 
@@ -120,6 +119,7 @@ Legal issues
 ------------
 
 Keep in mind that you might not be the copyright holder for the data you download with
-the help of dictmaster. I'm not even sure whether this kind of data aggregation itself is legal.
-However, the stardict dictionaries created with dictmaster won't be freely distributable
-in most cases - personal use should be okay though.
+the help of dictmaster. While dictmaster does not circumvent any copyright protection or
+digital rights management, some kinds of massive data aggregation itself might be illegal
+in some jurisdictions. Therefore, the dictionaries created with dictmaster are not freely
+distributable in most cases - personal use should be okay though.
