@@ -24,6 +24,7 @@ from lxml import etree
 
 from pyglossary.glossary import Glossary
 
+from dictmaster.replacer import doc_replace_els
 from dictmaster.util import FLAGS, mkdir_p
 from dictmaster.plugin import BasePlugin
 from dictmaster.stages.processor import Processor
@@ -55,7 +56,7 @@ class Plugin(BasePlugin):
         mkdir_p(res_dirname)
         g.read(self.bgl_file)
         self.g_data = []
-        self.dictname = g.getInfo("bookname")
+        self.dictname = g.getInfo("title")
 
         proc_tasks = []
         for entry in g._data:
@@ -96,18 +97,25 @@ class BglProcessor(Processor):
     def do_bgl_definition(self, definition, term):
         parser = etree.HTMLParser(encoding="utf-8")
         doc = pq(etree.fromstring(definition, parser=parser))
-        for font_el in doc("font"):
-            replacement = doc("<span/>").html(doc(font_el).html())
-            if doc(font_el).attr("color"):
-                replacement.css("color", doc(font_el).attr("color"))
-            if doc(font_el).attr("face"):
-                replacement.css("font-family", doc(font_el).attr("face"))
-            if doc(font_el).attr("size"):
-                fontsize = doc(font_el).attr("size")
-                if fontsize[0] in "+-": fontsize = float(fontsize.strip("+"))+2
-                else: fontsize = float(fontsize)
-                fontsize = int(min(7, max(fontsize,1))-1)
-                replacement.css("font-size",
-                    ["0.8","1","1.3","1.5","2","2.7","4"][fontsize]+"em")
-            doc(font_el).replaceWith(replacement.outerHtml())
+
+        def _replace_font_el(el, doc=doc):
+            replacement = doc("<span/>").html(doc(el).html())
+            if doc(el).attr("color"):
+                replacement.css("color", doc(el).attr("color"))
+            if doc(el).attr("face"):
+                replacement.css("font-family", doc(el).attr("face"))
+            if doc(el).attr("size"):
+                fontsize_str = doc(el).attr("size")
+                fontsize_float = (
+                    float(fontsize_str.strip("+")) + 2
+                    if fontsize_str[0] in "+-"
+                    else float(fontsize_str)
+                )
+                fontsize_em = [
+                    "0.8", "1", "1.3", "1.5", "2", "2.7", "4"
+                ][int(min(7, max(fontsize_float, 1)) - 1)]
+                replacement.css("font-size", f"{fontsize_em}em")
+            return replacement
+        doc_replace_els(doc, "font", _replace_font_el)
+
         return doc.outerHtml()
