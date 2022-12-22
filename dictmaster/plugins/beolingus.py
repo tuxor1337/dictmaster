@@ -45,6 +45,7 @@ class Plugin(BasePlugin):
         self.stages['Processor'] = postprocessor
 
     def post_setup(self, cursor):
+        self.set_name(self.dictname, cursor=cursor)
         url = "http://ftp.tu-chemnitz.de/pub/Local/urz/ding/de-en-devel/de-en.txt.zip"
         cursor.execute('''
             INSERT INTO raw (uri, flag)

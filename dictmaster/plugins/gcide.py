@@ -571,11 +571,11 @@ xlit = [
     [ u"z", u"ζ" ]
 ]
 class Plugin(BasePlugin):
+    dictname = u"GNU Collaborative International Dictionary of English"
     enumerate = False
 
     def __init__(self, dirname, popts=[]):
         super(Plugin, self).__init__(dirname)
-        self.dictname = u"GNU Collaborative International Dictionary of English"
         self.stages['Fetcher'] = ZipFetcher(self)
         self.stages['Unzipper'] = GcideUnzipper(self)
         self.stages['Processor'] = GcideProcessor("p", self, charset="windows-1252")

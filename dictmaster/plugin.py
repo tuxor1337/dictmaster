@@ -96,15 +96,21 @@ class BasePlugin(CancelableThread):
 
     def post_setup(self, cursor): pass
 
-    def set_name(self, name):
+    def set_name(self, name, cursor=None):
         self.dictname = name
-        conn = sqlite3.connect(self.output_db)
-        c = conn.cursor()
-        c.execute('''
+
+        conn = None
+        if cursor is None:
+            conn = sqlite3.connect(self.output_db)
+            cursor = conn.cursor()
+
+        cursor.execute('''
             UPDATE info SET value=? WHERE key=?
         ''', (name, "bookname"))
-        conn.commit()
-        conn.close()
+
+        if conn is not None:
+            conn.commit()
+            conn.close()
 
     def reset(self):
         if os.path.exists(self.output_directory):

@@ -41,6 +41,7 @@ class Plugin(BasePlugin):
         self.stages['Processor'] = DictfileProcessor(self)
 
     def post_setup(self, cursor):
+        self.set_name(self.dictname, cursor=cursor)
         cursor.execute('''
             INSERT INTO raw (uri, data, flag)
             VALUES (?,?,?)

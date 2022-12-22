@@ -33,8 +33,7 @@ class Plugin(BasePlugin):
     g_data = []
     def __init__(self, dirname, popts=[]):
         if len(popts) != 1 or not os.path.exists(popts[0]):
-            patterns = ["*.bgl","*.BGL"]
-            bgl_files = sum(map(glob.glob, patterns), [])
+            bgl_files = sum(map(glob.glob, ["*.bgl", "*.BGL"]), [])
             if len(bgl_files) > 0:
                 print("Assuming you mean %s" % bgl_files[0])
                 popts = [bgl_files[0]]
@@ -56,7 +55,7 @@ class Plugin(BasePlugin):
         mkdir_p(res_dirname)
         g.read(self.bgl_file)
         self.g_data = []
-        self.dictname = g.getInfo("title")
+        self.set_name(g.getInfo("title"), cursor=cursor)
 
         proc_tasks = []
         for entry in g._data:

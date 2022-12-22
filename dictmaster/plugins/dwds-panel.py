@@ -58,6 +58,7 @@ class Plugin(BasePlugin):
         self.stages['Processor'] = DWDSProcessor(self)
 
     def post_setup(self, cursor):
+        self.set_name(self.dictname, cursor=cursor)
         words_to_db(self.word_file, cursor, ("utf-8", "utf-8"))
 
 class DWDSFetcher(Fetcher):

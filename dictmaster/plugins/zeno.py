@@ -76,6 +76,7 @@ class Plugin(BasePlugin):
         self.stages['Processor'] = processor
 
     def post_setup(self, cursor):
+        self.set_name(self.dictname, cursor=cursor)
         wordcount = ZENO_OPTS[self.zeno_key]["wordcount"]
         cursor.executemany('''
             INSERT INTO raw (uri, flag)

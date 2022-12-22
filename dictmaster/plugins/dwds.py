@@ -60,6 +60,7 @@ class Plugin(BasePlugin):
         self.stages['Processor'] = DWDSProcessor(self)
 
     def post_setup(self, cursor):
+        self.set_name(self.dictname, cursor=cursor)
         words_to_db(self.word_file, cursor, ("utf-8", "utf-8"))
 
 class DWDSFetcher(Fetcher):
@@ -67,8 +68,10 @@ class DWDSFetcher(Fetcher):
         def filter_data(self, data, uri):
             if data == None or len(data) < 2: return None
             data = data.decode("utf-8")
-            if '<h1 class="dwdswb-ft-lemmaansatz' not in data \
-            or 'Kein Eintrag zu <span' in data:
+            if (
+                '<h1 class="dwdswb-ft-lemmaansatz' not in data
+                or 'Kein Eintrag zu <span' in data
+            ):
                 return None
             data = " ".join(data.split())
             repl = [ ]

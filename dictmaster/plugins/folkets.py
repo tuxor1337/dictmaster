@@ -128,6 +128,7 @@ class Plugin(BasePlugin):
         self.stages['Processor'] = FolketsProcessor("word", self)
 
     def post_setup(self, cursor):
+        self.set_name(self.dictname, cursor=cursor)
         for flag_file in FLAG_IMG["sv"]:
             res_dirname = os.path.join(self.output_directory, "res")
             flag_path = os.path.join(res_dirname, flag_file)
