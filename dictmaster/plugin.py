@@ -270,7 +270,11 @@ class BasePlugin(CancelableThread):
                 defiFormat = info["sametypesequence"]
             else:
                 defiFormat = "h"
-            Glossary.init()
+
+            # this command should only be called once
+            if Glossary.plugins == {}:
+                Glossary.init()
+
             g = Glossary()
             for i, (word, definition, wid) in enumerate(rows):
                 self._status = "Reading from db entry %d of %d..." % (i,no)

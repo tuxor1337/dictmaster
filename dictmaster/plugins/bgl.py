@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import sys
 import glob
@@ -42,34 +43,55 @@ class Plugin(BasePlugin):
         super(Plugin, self).__init__(dirname)
 
     def post_setup(self, cursor):
+        # this command should only be called once
+        if Glossary.plugins == {}:
+            Glossary.init()
+
+        # suppress overly verbose WARNING log messages from pyglossary
+        logging.getLogger("pyglossary").setLevel(logging.ERROR)
+
         g = Glossary()
         res_dirname = os.path.join(self.output_directory, "res")
-        g.read(self.bgl_file, verbose=0, resPath=res_dirname)
-        self.g_data = g._data
+        mkdir_p(res_dirname)
+        g.read(self.bgl_file)
+        self.g_data = []
         self.dictname = g.getInfo("bookname")
+
+        proc_tasks = []
+        for entry in g._data:
+            if not entry.isData():
+                self.g_data.append(entry)
+                proc_tasks.append((len(self.g_data) - 1, FLAGS["MEMORY"]))
+                continue
+            if entry.getFileName() != "icon1.ico":
+                # the icon is never used anyway
+                entry.save(res_dirname)
+
         cursor.executemany('''
             INSERT INTO raw (uri, flag)
             VALUES (?,?)
-        ''', [(i, FLAGS["MEMORY"]) for i in range(len(self.g_data))])
+        ''', proc_tasks)
         self.stages['Processor'] = BglProcessor(self)
 
 class BglProcessor(Processor):
     def data_from_memory(self):
-        self._curr_row["data"] = self.plugin.g_data[int(self._curr_row["uri"])]
+        entry = self.plugin.g_data[int(self._curr_row["uri"])]
+        self._curr_row["data"] = (
+            entry.l_word,
+            entry if entry.isData() else entry.defi,
+            entry.defiFormat,
+        )
 
     def process(self):
         terms, definition, format = self._curr_row["data"]
-        if definition == "DATA":
-            res_dirname = os.path.join(self.plugin.output_directory, "res")
-            mkdir_p(res_dirname)
-            with open(os.path.join(res_dirname, terms), "wb") as f:
-                f.write(format.getData())
-        else:
-            if isinstance(terms, str): terms = [terms]
-            term = terms[0]
-            alts = terms[1:]
-            definition = self.do_bgl_definition(definition, term)
-            self.append(term, definition, alts)
+
+        if isinstance(terms, str):
+            terms = [terms]
+        term = terms[0]
+        alts = terms[1:]
+
+        definition = self.do_bgl_definition(definition, term)
+        self.append(term, definition, alts)
 
     def do_bgl_definition(self, definition, term):
         parser = etree.HTMLParser(encoding="utf-8")
