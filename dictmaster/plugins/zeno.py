@@ -164,7 +164,7 @@ class ZenoProcessor(HtmlContainerProcessor):
         for a_el in doc("a"):
             href = doc(a_el).attr("href")
             content = doc(a_el).text()
-            if content is None:
+            if content is None or content.strip() == "":
                 continue
             # TODO:
             # * /A/: links to other entries are discarded but, in some
