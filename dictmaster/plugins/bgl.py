@@ -90,10 +90,12 @@ class BglProcessor(Processor):
         term = terms[0]
         alts = terms[1:]
 
-        definition = self.do_bgl_definition(definition, term)
+        definition = self.do_bgl_definition(definition, term, alts)
+        alts = self.do_bgl_alts(definition, term, alts)
+        term = self.do_bgl_term(definition, term, alts)
         self.append(term, definition, alts)
 
-    def do_bgl_definition(self, definition, term):
+    def do_bgl_definition(self, definition, term, alts):
         parser = etree.HTMLParser(encoding="utf-8")
         doc = pq(etree.fromstring(definition, parser=parser))
 
@@ -118,3 +120,9 @@ class BglProcessor(Processor):
         doc_replace_els(doc, "font", _replace_font_el)
 
         return doc.outerHtml()
+
+    def do_bgl_alts(self, definition, term, alts):
+        return alts
+
+    def do_bgl_term(self, definition, term, alts):
+        return term
