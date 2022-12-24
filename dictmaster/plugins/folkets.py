@@ -121,8 +121,8 @@ class Plugin(BasePlugin):
         if len(popts) != 1 or popts[0] not in ["Sv-En", "En-Sv"]:
             sys.exit("Provide lang argument, either Sv-En or En-Sv!")
         self._folkets_lang = popts[0]
-        super(Plugin, self).__init__(os.path.join(dirname, self._folkets_lang))
-        self.dictname = u"Folkets lexikon %s, ©folkets-lexikon.csc.kth.se"
+        super().__init__(os.path.join(dirname, self._folkets_lang))
+        self.dictname = "Folkets lexikon %s, ©folkets-lexikon.csc.kth.se"
         self.dictname = self.dictname % self._folkets_lang
         self.stages['Fetcher'] = Fetcher(self)
         self.stages['Processor'] = FolketsProcessor("word", self)

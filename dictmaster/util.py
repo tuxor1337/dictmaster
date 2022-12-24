@@ -144,7 +144,7 @@ class CancelableThread(threading.Thread):
     _retry404 = False
 
     def __init__(self, sleep=(1.0, 3.0)):
-        super(CancelableThread, self).__init__()
+        super().__init__()
         self.sleep = sleep
         self.daemon = True
 

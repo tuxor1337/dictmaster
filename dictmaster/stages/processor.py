@@ -33,7 +33,7 @@ class Processor(CancelableThread):
     _i = 0
 
     def __init__(self, plugin, auto_synonyms=True):
-        super(Processor, self).__init__()
+        super().__init__()
         self.plugin = plugin
         self.auto_synonyms = auto_synonyms
 
@@ -114,7 +114,7 @@ class DictfileProcessor(Processor):
             subsubfieldSplit=None,
             flipCols=False
         ):
-        super(DictfileProcessor, self).__init__(plugin)
+        super().__init__(plugin)
         self.fieldSplit = fieldSplit
         self.subfieldSplit = subfieldSplit
         self.subsubfieldSplit = subsubfieldSplit
@@ -179,7 +179,7 @@ class HtmlProcessor(Processor):
     _charset = ""
 
     def __init__(self, plugin, charset="utf-8", auto_synonyms=True):
-        super(HtmlProcessor, self).__init__(plugin, auto_synonyms)
+        super().__init__(plugin, auto_synonyms)
         self._charset = charset
 
     def process(self):
@@ -208,7 +208,7 @@ class HtmlABProcessor(HtmlProcessor):
     AB = ("dt", "dd")
 
     def __init__(self, AB, plugin, charset="utf-8", auto_synonyms=True):
-        super(HtmlABProcessor, self).__init__(plugin, charset, auto_synonyms)
+        super().__init__(plugin, charset, auto_synonyms)
         self.AB = AB
 
     def do_html(self, doc):
@@ -221,7 +221,7 @@ class HtmlABProcessor(HtmlProcessor):
 
 class HtmlAXProcessor(HtmlProcessor):
     def __init__(self, A, plugin, charset="utf-8", auto_synonyms=True):
-        super(HtmlAXProcessor, self).__init__(plugin, charset, auto_synonyms)
+        super().__init__(plugin, charset, auto_synonyms)
         self.A = A
 
     def do_html(self, doc):
@@ -253,7 +253,7 @@ class HtmlContainerProcessor(HtmlProcessor):
         singleton=False,
         auto_synonyms=True
     ):
-        super(HtmlContainerProcessor, self).__init__(plugin, charset, auto_synonyms)
+        super().__init__(plugin, charset, auto_synonyms)
         self.container_tag, self.singleton = container_tag, singleton
 
     def do_html(self, doc):

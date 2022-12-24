@@ -65,7 +65,7 @@ class Plugin(BasePlugin):
         if self.zeno_key not in ZENO_OPTS:
             sys.exit("Zeno key not supported, try: {}".format(ZENO_KEYS))
         self.dictname = ZENO_OPTS[self.zeno_key]["dictname"]
-        super(Plugin, self).__init__(os.path.join(dirname, self.zeno_key))
+        super().__init__(os.path.join(dirname, self.zeno_key))
         url_fetcher = ZenoUrlFetcher(self,
             "%s/Kategorien/T/%s?s=%%d" % (ZENO_URL, self.zeno_key)
         )
@@ -96,7 +96,7 @@ class ZenoUrlFetcher(UrlFetcher):
             return [uri for uri in links if "/A/" in uri]
 
     def __init__(self, plugin, url_pattern):
-        super(ZenoUrlFetcher, self).__init__(plugin)
+        super().__init__(plugin)
         def parse_uri_override(fthread, uri): return url_pattern % int(uri)
         self.FetcherThread.parse_uri = parse_uri_override
 

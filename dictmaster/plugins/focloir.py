@@ -36,7 +36,7 @@ class Plugin(BasePlugin):
     dictname = u"Foclóir Gaeilge-Béarla (Ó Dónaill, 1977)"
 
     def __init__(self, dirname, popts=[]):
-        super(Plugin, self).__init__(dirname)
+        super().__init__(dirname)
         self.stages['UrlFetcher'] = FocloirUrlFetcher(self)
         self.stages['Fetcher'] = FocloirFetcher(self)
         self.stages['Processor'] = FocloirProcessor("div.entry", self)

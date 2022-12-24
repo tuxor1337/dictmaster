@@ -575,7 +575,7 @@ class Plugin(BasePlugin):
     enumerate = False
 
     def __init__(self, dirname, popts=[]):
-        super(Plugin, self).__init__(dirname)
+        super().__init__(dirname)
         self.stages['Fetcher'] = ZipFetcher(self)
         self.stages['Unzipper'] = GcideUnzipper(self)
         self.stages['Processor'] = GcideProcessor("p", self, charset="windows-1252")

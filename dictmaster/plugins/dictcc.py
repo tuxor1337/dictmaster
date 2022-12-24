@@ -35,7 +35,7 @@ class Plugin(BasePlugin):
             else:
                 sys.exit("Provide full path to (existing) dict.cc zip file!")
         self.zfile = popts[0]
-        super(Plugin, self).__init__(dirname)
+        super().__init__(dirname)
         self.dictname = "dict.cc %s" % os.path.basename(self.zfile)
         self.stages['Unzipper'] = Unzipper(self)
         self.stages['Processor'] = DictfileProcessor(self)

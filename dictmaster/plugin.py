@@ -36,7 +36,7 @@ class BasePlugin(CancelableThread):
     enumerate = True
 
     def __init__(self, dirname, popts=[]):
-        super(BasePlugin, self).__init__()
+        super().__init__()
         self.output_directory = dirname
         self.output_db = os.path.join(dirname, "db.sqlite")
         self.setup()

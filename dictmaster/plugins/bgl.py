@@ -40,7 +40,7 @@ class Plugin(BasePlugin):
             else:
                 sys.exit("Provide full path to (existing) BGL file!")
         self.bgl_file = popts[0]
-        super(Plugin, self).__init__(dirname)
+        super().__init__(dirname)
 
     def post_setup(self, cursor):
         # this command should only be called once

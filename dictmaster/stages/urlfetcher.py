@@ -31,7 +31,7 @@ class UrlFetcher(Fetcher):
             self._queue.put((rawid, uri, None, self._flag))
 
     def __init__(self, *args, **kwargs):
-        super(UrlFetcher, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._flag = FLAGS["URL_FETCHER"]
 
     def progress(self):

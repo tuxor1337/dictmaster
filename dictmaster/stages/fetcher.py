@@ -40,7 +40,7 @@ class FetcherThread(CancelableThread):
 
     def __init__(self, no, uris, queue, flag, postdata=None,
                  pause=None, **kwargs):
-        super(FetcherThread, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.uris, self.postdata = uris, postdata
         self.no = no
         self.pause = pause
@@ -94,7 +94,7 @@ class Fetcher(CancelableThread):
         pause=None,
         **kwargs
     ):
-        super(Fetcher, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._subthreads = [None]*threadcnt
         self.pause = pause
         self.plugin = plugin
@@ -190,7 +190,7 @@ class ZipFetcher(Fetcher):
             self._i += 1
 
     def __init__(self, plugin, postdata=None):
-        super(ZipFetcher, self).__init__(plugin,threadcnt=1,postdata=postdata)
+        super().__init__(plugin,threadcnt=1,postdata=postdata)
         self._flag = FLAGS["ZIP_FETCHER"]
         def to_file(fthread, data):
             zdirname = os.path.join(self.plugin.output_directory, "zip")

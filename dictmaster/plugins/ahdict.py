@@ -38,7 +38,7 @@ class Plugin(BasePlugin):
         if len(popts) == 0 or not os.path.exists(popts[0]):
             sys.exit("Provide full path to (existing) word list file!")
         self.word_file = popts[0]
-        super(Plugin, self).__init__(dirname)
+        super().__init__(dirname)
         self.stages['Fetcher'] = AhdictFetcher(self, threadcnt=12)
         self.stages['Processor'] = AhdictProcessor("td", self)
 

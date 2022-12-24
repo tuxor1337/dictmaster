@@ -26,7 +26,7 @@ class Unzipper(CancelableThread):
     plugin = None
 
     def __init__(self, plugin):
-        super(Unzipper, self).__init__()
+        super().__init__()
         self.plugin = plugin
 
     def progress(self):

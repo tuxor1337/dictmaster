@@ -62,7 +62,7 @@ class Plugin(BasePlugin):
 
     def __init__(self, dirname, popts=[]):
         self.setup_session()
-        super(Plugin, self).__init__(dirname)
+        super().__init__(dirname)
         self.stages['Fetcher'] = AcadfranFetcher(self, self.acadfran_vars)
         self.stages['Processor'] = AcadfranProcessor("tr > td > div", self)
 
@@ -97,7 +97,7 @@ class Plugin(BasePlugin):
 class AcadfranFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread): pass
     def __init__(self, plugin, vars):
-        super(AcadfranFetcher, self).__init__(plugin)
+        super().__init__(plugin)
         def parse_uri_override(fthread, uri):
             uri = int(uri)
             return "{}/affiche.exe?{};s={};d={};f={},t={},r={};".format(

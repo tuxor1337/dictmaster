@@ -52,7 +52,7 @@ class Plugin(BasePlugin):
             sys.exit(u"Panel ID {} is not supported. {}".format(
                 self.panelid, list_panel_ids()
             ))
-        super(Plugin, self).__init__(os.path.join(dirname, self.panelid))
+        super().__init__(os.path.join(dirname, self.panelid))
         self.dictname = DICTNAMES[self.panelid]
         self.stages['Fetcher'] = DWDSFetcher(self)
         self.stages['Processor'] = DWDSProcessor(self)
@@ -83,13 +83,13 @@ class DWDSFetcher(Fetcher):
             return doc("div.content_panel > div").html()
 
     def __init__(self, plugin):
-        super(DWDSFetcher, self).__init__(plugin, threadcnt=10)
+        super().__init__(plugin, threadcnt=10)
         self.FetcherThread.parse_uri = lambda fthread, uri: \
             "http://eins.dwds.de/panel/get/%s/?qu=%s"%(plugin.panelid,uri)
 
 class DWDSProcessor(HtmlContainerProcessor):
     def __init__(self, plugin):
-        super(DWDSProcessor, self).__init__("", plugin, singleton=True)
+        super().__init__("", plugin, singleton=True)
         self.do_html_definition = getattr(self, "do_html_definition_%s"%plugin.panelid)
         self.do_html_alts = getattr(self, "do_html_alts_%s"%plugin.panelid)
 

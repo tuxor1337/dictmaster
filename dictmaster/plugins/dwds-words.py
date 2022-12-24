@@ -28,7 +28,7 @@ class Plugin(BasePlugin):
     dictname = u"DWDS Wordlist"
 
     def __init__(self, dirname, popts=[]):
-        super(Plugin, self).__init__(dirname)
+        super().__init__(dirname)
         self.stages['UrlFetcher'] = DwdsUrlFetcher(self)
 
     def post_setup(self, cursor):

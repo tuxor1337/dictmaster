@@ -24,7 +24,7 @@ class QueueThread(CancelableThread):
     _queue = None
 
     def __init__(self):
-        super(QueueThread, self).__init__()
+        super().__init__()
         self._queue = queue.Queue()
 
     def process_item(self, item): return None
@@ -50,7 +50,7 @@ class RawDbQueue(QueueThread):
     _c = None
 
     def __init__(self, db_file):
-        super(RawDbQueue, self).__init__()
+        super().__init__()
         self.output_db = db_file
 
     def process_item(self, item):
