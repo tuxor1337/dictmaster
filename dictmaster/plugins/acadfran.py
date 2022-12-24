@@ -58,7 +58,7 @@ CHARSET = "iso-8859-1"
 
 class Plugin(BasePlugin):
     acadfran_vars = None
-    dictname = u"Dictionnaires de l’Académie française : 8ème édition"
+    dictname = "Dictionnaires de l’Académie française : 8ème édition"
 
     def __init__(self, dirname, popts=[]):
         self.setup_session()

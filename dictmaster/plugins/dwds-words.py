@@ -25,7 +25,7 @@ from dictmaster.plugin import BasePlugin
 from dictmaster.stages.urlfetcher import UrlFetcher
 
 class Plugin(BasePlugin):
-    dictname = u"DWDS Wordlist"
+    dictname = "DWDS Wordlist"
 
     def __init__(self, dirname, popts=[]):
         super().__init__(dirname)

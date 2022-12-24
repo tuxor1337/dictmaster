@@ -30,22 +30,22 @@ from dictmaster.stages.processor import HtmlContainerProcessor
 
 ZENO_OPTS = {
     "Pape-1880": {
-        "dictname": u"Pape: Handwörterbuch der griechischen Sprache",
+        "dictname": "Pape: Handwörterbuch der griechischen Sprache",
         "non-articles": ["hrung","Pape"],
         "wordcount": 98910
     },
     "Georges-1913": {
-        "dictname": u"Georges: Ausführliches lateinisch-deutsches Handwörterbuch",
+        "dictname": "Georges: Ausführliches lateinisch-deutsches Handwörterbuch",
         "non-articles": ["Verzeichnis", "Vorrede", "Ausgaben", "Georges"],
         "wordcount": 54866
     },
     "Georges-1910": {
-        "dictname": u"Georges: Kleines deutsch-lateinisches Handwörterbuch",
+        "dictname": "Georges: Kleines deutsch-lateinisches Handwörterbuch",
         "non-articles": ["Verzeichnis", "Vorrede", "Ausgaben", "Georges", "Vorwort"],
         "wordcount": 26634
     },
     "Meyers-1905": {
-        "dictname": u"Meyers: Großes Konversations-Lexikon (6. Auflage 1905-1909)",
+        "dictname": "Meyers: Großes Konversations-Lexikon (6. Auflage 1905-1909)",
         "non-articles": ["Vorwort", "Stichwörter", "Faksimiles", "Zufälliger Artikel"],
         "wordcount": 164716
     },

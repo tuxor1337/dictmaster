@@ -28,7 +28,7 @@ from dictmaster.stages.urlfetcher import UrlFetcher
 from dictmaster.stages.processor import HtmlContainerProcessor
 
 class Plugin(BasePlugin):
-    dictname = u"Online Etymology Dictionary, ©Douglas Harper/etymonline.com"
+    dictname = "Online Etymology Dictionary, ©Douglas Harper/etymonline.com"
 
     def __init__(self, dirname, popts=[]):
         super().__init__(dirname)

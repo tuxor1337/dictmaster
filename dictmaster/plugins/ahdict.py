@@ -32,7 +32,7 @@ from dictmaster.stages.processor import HtmlContainerProcessor
 POPTS_DEFAULT = ["thirdparty/wordlists/eng/ahdict.txt"]
 
 class Plugin(BasePlugin):
-    dictname = u"The American Heritage Dictionary of the English Language, Fifth Edition"
+    dictname = "The American Heritage Dictionary of the English Language, Fifth Edition"
 
     def __init__(self, dirname, popts=POPTS_DEFAULT):
         if len(popts) == 0 or not os.path.exists(popts[0]):

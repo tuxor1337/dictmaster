@@ -124,7 +124,7 @@ class DictfileProcessor(Processor):
         data = self._curr_row["data"].decode("utf-8")
         for line in data.split("\n"):
             if self._canceled: break
-            line = line.strip().replace(u"\u2028","")
+            line = line.strip().replace("\u2028","")
             self.do_line(line)
 
     def do_line(self, line):

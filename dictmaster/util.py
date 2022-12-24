@@ -92,8 +92,8 @@ def words_to_db(word_file, cursor, word_codec):
     ''', [(w, FLAGS["RAW_FETCHER"]) for w in tmplist])
 
 def find_synonyms(term, definition, alts):
-    greek_alph = u'αιηωυεοςρτθπσδφγξκλζχψβνμ'
-    latin_alph = u'aihwueosrtqpsdfgcklzxybnm'
+    greek_alph = 'αιηωυεοςρτθπσδφγξκλζχψβνμ'
+    latin_alph = 'aihwueosrtqpsdfgcklzxybnm'
 
     def add_alt(alts, a):
         if a not in alts and a != term: alts.append(a)
@@ -118,7 +118,7 @@ def remove_accents(input_str):
     if isinstance(input_str, bytes):
         input_str = input_str.decode("utf-8")
     nfkd_form = unicodedata.normalize('NFKD', input_str)
-    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
+    return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 def html_container_filter(container, charset="utf-8", bad_content=None):
     def tmp_func(fthread, data, uri):

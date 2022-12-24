@@ -29,10 +29,10 @@ class Plugin(BasePlugin):
     def __init__(self, dirname, popts=POPTS_DEFAULT):
         super().__init__(dirname)
         if len(popts) > 0 and popts[0] == "de-en":
-            self.dictname = u"BEOLINGUS Deutsch-Englisch"
+            self.dictname = "BEOLINGUS Deutsch-Englisch"
             flipCols = False
         else:
-            self.dictname = u"BEOLINGUS Englisch-Deutsch"
+            self.dictname = "BEOLINGUS Englisch-Deutsch"
             flipCols = True
         postprocessor = DictfileProcessor(self,
             fieldSplit="::",

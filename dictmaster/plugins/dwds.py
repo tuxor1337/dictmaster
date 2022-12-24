@@ -30,8 +30,8 @@ from dictmaster.stages.processor import HtmlContainerProcessor
 # TODO: Extract words from sitemap (https://www.dwds.de/sitemap/A)
 
 DICTNAMES = {
-    "1": u"Wörterbuch der deutschen Gegenwartssprache",
-    "2": u"Etymologisches Wörterbuch © Dr. Wolfgang Pfeifer",
+    "1": "Wörterbuch der deutschen Gegenwartssprache",
+    "2": "Etymologisches Wörterbuch © Dr. Wolfgang Pfeifer",
 }
 
 POPTS_DEFAULT = ["thirdparty/wordlists/deu/dwds.txt","1"]
@@ -51,7 +51,7 @@ class Plugin(BasePlugin):
         if not os.path.exists(self.word_file):
             sys.exit("Provide full path to (existing) word list file!")
         if self.panelid not in DICTNAMES:
-            sys.exit(u"Panel ID {} is not supported. {}".format(
+            sys.exit("Panel ID {} is not supported. {}".format(
                 self.panelid, list_panel_ids()
             ))
         super().__init__(os.path.join(dirname, self.panelid))
@@ -106,7 +106,7 @@ class DWDSProcessor(HtmlContainerProcessor):
     def do_html_alts_2(self, dt_html, html, term):
         doc = pq(html)("h2#etymwb > div").eq(0)
         alts = doc("div.etymwb-entry").prev("div")
-        alts = sum([doc(a).text().split(u"·") for a in alts], [])
+        alts = sum([doc(a).text().split("·") for a in alts], [])
         alts = [a.strip() for a in alts]
         regex = [
             [r" ([0-9]+)$",r""],
@@ -210,7 +210,7 @@ class DWDSProcessor(HtmlContainerProcessor):
 
         html = " ".join(doc("body").html().strip().split())
         regex = [
-            [u"↗",r""],
+            ["↗",r""],
             [r" +",r" "],
             [r"\s*;\s*$",r""],
             [r"\s+;\s+",r"; "],
@@ -241,7 +241,7 @@ class DWDSProcessor(HtmlContainerProcessor):
         doc("*").removeAttr("class").removeAttr("id")
         html = " ".join(doc.html().strip().split())
         repl = [
-            [u"↗",""],
+            ["↗",""],
         ]
         for r in repl: html = html.replace(r[0], r[1])
         return html

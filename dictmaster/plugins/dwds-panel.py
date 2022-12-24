@@ -28,8 +28,8 @@ from dictmaster.stages.fetcher import Fetcher
 from dictmaster.stages.processor import HtmlContainerProcessor
 
 DICTNAMES = {
-    "147": u"Digitales Wörterbuch der deutschen Sprache",
-    "148": u"Etymologisches Wörterbuch © Dr. Wolfgang Pfeifer",
+    "147": "Digitales Wörterbuch der deutschen Sprache",
+    "148": "Etymologisches Wörterbuch © Dr. Wolfgang Pfeifer",
 }
 
 POPTS_DEFAULT = ["thirdparty/wordlists/deu/dwds.txt","147"]
@@ -49,7 +49,7 @@ class Plugin(BasePlugin):
         if not os.path.exists(self.word_file):
             sys.exit("Provide full path to (existing) word list file!")
         if self.panelid not in DICTNAMES:
-            sys.exit(u"Panel ID {} is not supported. {}".format(
+            sys.exit("Panel ID {} is not supported. {}".format(
                 self.panelid, list_panel_ids()
             ))
         super().__init__(os.path.join(dirname, self.panelid))
@@ -107,8 +107,8 @@ class DWDSProcessor(HtmlContainerProcessor):
         doc = pq(html)
         regex = [
             [r" ([0-9]+)$",r"(\1)"],
-            [u"\xb2","(2)"],
-            [u"\xb3","(3)"]
+            ["\xb2","(2)"],
+            ["\xb3","(3)"]
         ]
         alts = [doc(a).text() for a in doc("span.wb_lzga_min a")]
         for r in regex: alts = [re.sub(r[0],r[1],a) for a in alts]

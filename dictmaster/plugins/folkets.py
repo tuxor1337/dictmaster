@@ -30,22 +30,22 @@ WORD_CLASS = {
         "nn": "substantiv",
         "ab": "adverb",
         "jj": "adjektiv",
-        "abbrev": u"förkortning",
+        "abbrev": "förkortning",
         "pn": "pronomen",
         "vb": "verb",
         "in": "interjektion",
         "rg": "grundtal",
-        "prefix": u"förled",
-        "suffix": u"suffix",
-        "ie": u"infinitivmärke",
+        "prefix": "förled",
+        "suffix": "suffix",
+        "ie": "infinitivmärke",
         "article": "artikel",
         "pm": "egennamn",
         "kn": "konjunktion",
-        "hp": u"frågande/relativt pronomen",
+        "hp": "frågande/relativt pronomen",
         "ps": "possessiv",
         "sn": "subjunktion",
         "pc": "particip",
-        u"hjälpverb": u"hjälpverb",
+        "hjälpverb": "hjälpverb",
         "latin": "latin",
         "ro": "ordningstal",
     },
@@ -71,7 +71,7 @@ WORD_CLASS = {
         "pc": "participle",
         "ro": "ordinal number",
         "latin": "latin",
-        u"hjälpverb": u"auxiliary verb",
+        "hjälpverb": "auxiliary verb",
     }
 }
 
@@ -82,15 +82,15 @@ TAG_NAMES = {
         "phonetic": "Uttal",
         "definition": "Definition",
         "synonym": "Synonymer",
-        "use": u"Användning",
+        "use": "Användning",
         "derivation": "Avledningar",
-        "paradigm": u"Böjningar",
-        "explanation": u"Förklaring",
+        "paradigm": "Böjningar",
+        "explanation": "Förklaring",
         "see": "Se",
         "grammar": "Grammatikkommentar",
         "variant": "Variantform",
         "related": "Relaterade ord",
-        "compound": u"Sammansättningar",
+        "compound": "Sammansättningar",
     },
     "sv": {
         "example": "Example",
@@ -137,7 +137,7 @@ class Plugin(BasePlugin):
                 data = self.download_retry(flag_url)
                 with open(flag_path, "wb") as img_file:
                     img_file.write(data)
-        url = u"http://folkets-lexikon.csc.kth.se/folkets/folkets_%s_public.xml"
+        url = "http://folkets-lexikon.csc.kth.se/folkets/folkets_%s_public.xml"
         url = url % self._folkets_lang.lower().replace("-","_")
         cursor.execute('''
             INSERT INTO raw (uri, flag)

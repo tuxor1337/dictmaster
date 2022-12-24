@@ -56,14 +56,14 @@ class XmlittreProcessor(HtmlContainerProcessor):
             d(e).replaceWith(
                 d("<p/>").html(d(e).html()).outerHtml()
             )
-        for res in html.find(u"résumé"):
+        for res in html.find("résumé"):
             for var in d(res).find("variante"):
                 if not d(var).attr("num"):
                     d(var).replaceWith(d(var).html())
                 else:
                     d(var).replaceWith(
                         d("<p/>").html(
-                            d(var).attr("num") + u"° " + d(var).html()
+                            d(var).attr("num") + "° " + d(var).html()
                         ).outerHtml()
                     )
             d(res).replaceWith(

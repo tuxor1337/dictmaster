@@ -33,7 +33,7 @@ from dictmaster.stages.urlfetcher import UrlFetcher
 from dictmaster.stages.processor import HtmlContainerProcessor
 
 class Plugin(BasePlugin):
-    dictname = u"Foclóir Gaeilge-Béarla (Ó Dónaill, 1977)"
+    dictname = "Foclóir Gaeilge-Béarla (Ó Dónaill, 1977)"
 
     def __init__(self, dirname, popts=[]):
         super().__init__(dirname)

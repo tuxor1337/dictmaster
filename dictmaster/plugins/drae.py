@@ -46,7 +46,7 @@ POSTDATA = b"TS017111a7_id=3"\
 POPTS_DEFAULT = ["thirdparty/wordlists/esp/drae.txt"]
 
 class Plugin(BasePlugin):
-    dictname = u"Diccionario de la lengua española: 23a edición"
+    dictname = "Diccionario de la lengua española: 23a edición"
 
     def __init__(self, dirname, popts=POPTS_DEFAULT):
         if len(popts) == 0 or not os.path.exists(popts[0]):
@@ -75,8 +75,8 @@ class DraeFetcher(Fetcher):
                     if len(curr) > 2: curr = curr.rstrip("s")
                     if curr in remove_accents(doc(a).text().lower()):
                         url = "%s/%s" % (BASE_URL, doc(a).attr("href"))
-            elif len(doc(u"img[alt='Ver artículo enmendado']")) > 0:
-                img = doc(u"img[alt='Ver artículo enmendado']")
+            elif len(doc("img[alt='Ver artículo enmendado']")) > 0:
+                img = doc("img[alt='Ver artículo enmendado']")
                 url = "%s/%s" % (BASE_URL, img.parent().attr("href"))
             else:
                 return "".join(doc(d).outerHtml() for d in doc(cont))

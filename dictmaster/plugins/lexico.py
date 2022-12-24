@@ -33,7 +33,7 @@ from dictmaster.stages.urlfetcher import UrlFetcher
 from dictmaster.stages.processor import HtmlAXProcessor
 
 class Plugin(BasePlugin):
-    dictname = u"Lexico English Dictionary Online (©Oxford)"
+    dictname = "Lexico English Dictionary Online (©Oxford)"
 
     def __init__(self, dirname, popts=[]):
         super().__init__(dirname)

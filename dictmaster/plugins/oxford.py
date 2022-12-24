@@ -30,7 +30,7 @@ from dictmaster.stages.processor import HtmlAXProcessor
 POPTS_DEFAULT = ["thirdparty/wordlists/eng/oxford.txt"]
 
 class Plugin(BasePlugin):
-    dictname = u"Oxford Dictionaries Online - British & World English"
+    dictname = "Oxford Dictionaries Online - British & World English"
 
     def __init__(self, dirname, popts=POPTS_DEFAULT):
         if len(popts) == 0 or not os.path.exists(popts[0]):
