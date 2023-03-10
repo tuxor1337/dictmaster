@@ -19,6 +19,7 @@ import sqlite3
 from string import ascii_lowercase as ALPHA
 from pyquery import PyQuery as pq
 from lxml import etree
+import urllib.parse
 
 from dictmaster.util import FLAGS
 from dictmaster.replacer import *
@@ -46,11 +47,15 @@ class EtymonlineUrlFetcher(UrlFetcher):
     class FetcherThread(UrlFetcher.FetcherThread):
         def filter_data(self, data, uri):
             d = pq(data)
-            a = d("li.ant-pagination-item a")[-1]
-            new = d(a).attr("href")
-            no = int(re.sub("^.*page=([0-9]+)&q=[a-z]$", r"\1", new))
-            pattern = re.sub("^.*(page=)([0-9]+)(&q=[a-z])$", r"\1%d\3", new)
-            return [pattern % i for i in range(1,no+1)]
+            a_page_max = d("li.ant-pagination-item a")[-1]
+            query_page_max = urllib.parse.parse_qs(
+                urllib.parse.urlparse(
+                    d(a_page_max).attr("href")
+                ).query
+            )
+            page_max = int(query_page_max["page"][0])
+            letter = query_page_max["q"]
+            return [f"page={p}&q={letter}" for p in range(1, page_max + 1)]
 
         def parse_uri(self,uri):
             return "http://www.etymonline.com/search?q=%s"%uri
