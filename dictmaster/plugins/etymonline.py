@@ -54,7 +54,7 @@ class EtymonlineUrlFetcher(UrlFetcher):
                 ).query
             )
             page_max = int(query_page_max["page"][0])
-            letter = query_page_max["q"]
+            letter = query_page_max["q"][0]
             return [f"page={p}&q={letter}" for p in range(1, page_max + 1)]
 
         def parse_uri(self,uri):
@@ -101,11 +101,11 @@ class EtymonlineProcessor(HtmlContainerProcessor):
         return [term, term_stripped]
 
     def do_html_definition(self, dt_html, html, term):
-        doc = pq(html)("object > section")
+        doc = pq(html)("section.word__defination--2q7ZH")
         doc("ins").remove()
 
         # links to related articles
-        regex = (r"^[^\?]+\?term=([^&]+)&.*$", r"bword://\1")
+        regex = (r"^/word/([^&]+)\?ref=etymonline_cross.*$", r"bword://\1")
         doc_replace_attr_re(doc, "a", "href", regex)
 
         # simple inline styles
@@ -121,7 +121,9 @@ class EtymonlineProcessor(HtmlContainerProcessor):
 
         # cleanup
         doc_rewrap_els(doc, "p", "<p/>", remove_empty=True)
+        doc_rewrap_els(doc, "div", "<div/>", remove_empty=True)
         doc("*").removeAttr("class")
+        doc("*").removeAttr("title")
 
         return "<b>%s</b> %s" % (term, doc.html())
 
