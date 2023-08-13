@@ -83,4 +83,4 @@ class LangProcessor(BglProcessor):
         for r in regex:
             definition = re.sub(r[0], r[1], definition)
 
-        return doc.html()
+        return definition.strip()
