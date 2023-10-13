@@ -35,7 +35,7 @@ class Plugin(BasePlugin):
         cursor.executemany('''
             INSERT INTO raw (uri, flag)
             VALUES (?,?)
-        ''', [(a, FLAGS["URL_FETCHER"]) for a in range(7030)])
+        ''', [(a, FLAGS["URL_FETCHER"]) for a in range(1, 210)])
 
 class DwdsUrlFetcher(UrlFetcher):
     class FetcherThread(UrlFetcher.FetcherThread):
@@ -47,7 +47,7 @@ class DwdsUrlFetcher(UrlFetcher):
             return [l[len(prefix):] for l in links]
 
         def parse_uri(self,uri):
-            return "https://www.dwds.de/backlist?p=%s"%uri
+            return "https://www.dwds.de/archiv/?p=%s"%uri
 
     def run(self):
         UrlFetcher.run(self)
