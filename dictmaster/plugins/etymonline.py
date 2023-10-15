@@ -70,8 +70,10 @@ class EtymonlineFetcher(Fetcher):
                 return None
             container = "div.ant-col-xs-24"
             doc = pq(data)
-            if len(doc(container)) == 0: return None
-            else: return doc(container).html()
+            if len(doc(container)) == 0:
+                 return None
+            else:
+                 return doc(container).html()
 
         def parse_uri(self, uri):
             return "http://www.etymonline.com/search?%s"%uri

@@ -37,8 +37,10 @@ class QueueThread(CancelableThread):
         while True:
             try: item = self._queue.get(timeout=1)
             except queue.Empty:
-                if self._canceled: break
-                else: continue
+                if self._canceled:
+                     break
+                else:
+                     continue
             self.process_item(item)
             self._queue.task_done()
 

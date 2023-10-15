@@ -30,7 +30,8 @@ class Unzipper(CancelableThread):
         self.plugin = plugin
 
     def progress(self):
-        if self._canceled: return "Sleeping..."
+        if self._canceled:
+             return "Sleeping..."
         return "Unzipping..."
 
     def zfile_filter(self, zfilename): return True
@@ -70,7 +71,8 @@ class Unzipper(CancelableThread):
                 SET flag=?
                 WHERE id=?
             ''', (flag | FLAGS["PROCESSED"], rawid))
-            if self._canceled: break
+            if self._canceled:
+                 break
         conn.commit()
         conn.close()
 

@@ -49,7 +49,8 @@ class Processor(CancelableThread):
         conn.close()
 
     def progress(self):
-        if self._curr_row == None or self._canceled: return "Sleeping..."
+        if self._curr_row == None or self._canceled:
+             return "Sleeping..."
         return "Processing... {}: {}".format(
             self._curr_row["uri"][-7:], self._i
         )
@@ -61,9 +62,13 @@ class Processor(CancelableThread):
         self._c = self._conn.cursor()
         self._i = self._c.execute("SELECT COUNT(*) FROM dict").fetchone()[0]
         curs = self._conn.cursor()
-        flag = FLAGS["PROCESSED"] | FLAGS["DUPLICATE"] \
-            | FLAGS["ZIP_FETCHER"] | FLAGS["URL_FETCHER"]
-        for row in curs.execute("SELECT * FROM raw WHERE flag&?==0", (flag,)):
+        flag = (
+            FLAGS["PROCESSED"]
+            | FLAGS["DUPLICATE"]
+            | FLAGS["ZIP_FETCHER"]
+            | FLAGS["URL_FETCHER"]
+        )
+        for row in curs.execute(f"SELECT * FROM raw WHERE flag & {flag:d} == 0"):
             self._curr_row = dict(row)
             if self._curr_row["flag"] & FLAGS["FILE"]:
                 with open(self._curr_row["uri"],"rb") as f:
@@ -89,10 +94,12 @@ class Processor(CancelableThread):
 
     def append(self, term, definition, alts=[]):
         term, definition = term.strip(), definition.strip()
-        if term == "" or definition == "": return
+        if term == "" or definition == "":
+             return
         if len(alts) == 0:
             m = re.search(r"^(.*)\([0-9]+\)$", term)
-            if m != None: alts = [m.group(1),m.group(1).lower()]
+            if m != None:
+                 alts = [m.group(1),m.group(1).lower()]
         if self.auto_synonyms:
             alts = find_synonyms(term,definition,alts)
         alts = [a for a in set(alts) if a != term]
@@ -123,19 +130,22 @@ class DictfileProcessor(Processor):
     def process(self):
         data = self._curr_row["data"].decode("utf-8")
         for line in data.split("\n"):
-            if self._canceled: break
+            if self._canceled:
+                 break
             line = line.strip().replace("\u2028","")
             self.do_line(line)
 
     def do_line(self, line):
         entries = []
-        if line.startswith("#") or line == "": return
+        if line.startswith("#") or line == "":
+             return
         fields = line.split(self.fieldSplit)[:2]
         if len(fields) != 2:
             print("Invalid file structure.")
             print(line)
             return
-        if self.flipCols: fields[0], fields[1] = fields[1], fields[0]
+        if self.flipCols:
+             fields[0], fields[1] = fields[1], fields[0]
         subfields = [ [], [] ]
         if self.subfieldSplit != None:
             subfields[0] = fields[0].split(self.subfieldSplit)
@@ -144,7 +154,8 @@ class DictfileProcessor(Processor):
                 print("Invalid unbalanced entry.")
                 print(line)
                 return
-        else: subfields = [[fields[0]], [fields[1]]]
+        else:
+             subfields = [[fields[0]], [fields[1]]]
         for i in range(len(subfields[0])):
             subfields[0][i] = subfields[0][i].strip()
             subfields[1][i] = subfields[1][i].strip()
@@ -152,8 +163,10 @@ class DictfileProcessor(Processor):
                 print("Empty pair.")
                 print(line)
                 continue
-            if len(subfields[0][i]) == 0: subfields[0][i] = "__"
-            if len(subfields[1][i]) == 0: subfields[1][i] = "__"
+            if len(subfields[0][i]) == 0:
+                 subfields[0][i] = "__"
+            if len(subfields[1][i]) == 0:
+                 subfields[1][i] = "__"
         term = subfields[0][0]
         if term == "__":
             try: term = subfields[0][1]
@@ -169,7 +182,8 @@ class DictfileProcessor(Processor):
             definition += "<dt>%s</dt><dd>%s</dd>" % (subfield[0], subfield[1])
             if self.subsubfieldSplit != None:
                 syns = subfield[0].split(self.subsubfieldSplit)
-                if syns[0] == term: syns = syns[1:]
+                if syns[0] == term:
+                     syns = syns[1:]
                 alts.extend([syn.strip() for syn in syns])
         term = re.sub(r" *(\{[^\}]*\}|\[[^\]]*\])", "", term)
         alts = [re.sub(r" *(\{[^\}]*\}|\[[^\]]*\])", "", alt) for alt in alts]
@@ -184,9 +198,11 @@ class HtmlProcessor(Processor):
 
     def process(self):
         string = self._curr_row["data"]
-        if string == None: return
+        if string == None:
+             return
         encoded_str = self.do_pre_html(string)
-        if encoded_str.strip() == "": return
+        if encoded_str.strip() == "":
+             return
         parser = etree.HTMLParser(encoding=self._charset)
         doc = pq(etree.fromstring(encoded_str, parser=parser))
         self.do_html(doc)
@@ -214,7 +230,8 @@ class HtmlABProcessor(HtmlProcessor):
     def do_html(self, doc):
         dt = doc(self.AB[0])
         while len(dt) > 0:
-            if self._canceled: break
+            if self._canceled:
+                 break
             dt, dd = dt.eq(0), dt.nextAll(self.AB[1]).eq(0)
             self.append(doc(dt), doc(dd))
             dt = dd.nextAll(self.AB[0])
@@ -227,7 +244,8 @@ class HtmlAXProcessor(HtmlProcessor):
     def do_html(self, doc):
         dt = doc(self.A)
         while len(dt) > 0:
-            if self._canceled: break
+            if self._canceled:
+                 break
             dt = dt.eq(0)
             dt_html = dt.outer_html()
             next_dt = dt.nextAll(self.A)
@@ -257,10 +275,14 @@ class HtmlContainerProcessor(HtmlProcessor):
         self.container_tag, self.singleton = container_tag, singleton
 
     def do_html(self, doc):
-        if self.singleton and self.container_tag == "": contlist = [doc]
-        else: contlist = doc(self.container_tag)
+        if self.singleton and self.container_tag == "":
+             contlist = [doc]
+        else:
+             contlist = doc(self.container_tag)
         for container in contlist:
-            if self._canceled: break
+            if self._canceled:
+                 break
             self.append(doc(container), doc(container))
-            if self.singleton: break
+            if self.singleton:
+                 break
 

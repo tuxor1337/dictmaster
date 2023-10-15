@@ -51,7 +51,7 @@ FLAGS = {
     "ZIP_FETCHER": 1 << 4,
     "FILE": 1 << 5,
     "MEMORY": 1 << 6,
-    "DUPLICATE": 1 << 7
+    "DUPLICATE": 1 << 7,
 }
 
 URL_HEADER = {
@@ -65,11 +65,14 @@ def warn_nl(msg):
 def mkdir_p(path):
     try: os.makedirs(path)
     except OSError as exc: # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path): pass
-        else: raise
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+             pass
+        else:
+             raise
 
 def load_plugin(plugin_name, popts=None, dirname=""):
-    if dirname == "": dirname = "data/%s/" % plugin_name
+    if dirname == "":
+         dirname = "data/%s/" % plugin_name
     try:
         plugin_module = importlib.import_module("dictmaster.plugins.%s" % plugin_name)
         importlib.reload(plugin_module)
@@ -96,7 +99,8 @@ def find_synonyms(term, definition, alts):
     latin_alph = 'aihwueosrtqpsdfgcklzxybnm'
 
     def add_alt(alts, a):
-        if a not in alts and a != term: alts.append(a)
+        if a not in alts and a != term:
+             alts.append(a)
 
     def add_greek_alt(alts, a):
         orig_a = a
@@ -122,14 +126,17 @@ def remove_accents(input_str):
 
 def html_container_filter(container, charset="utf-8", bad_content=None):
     def tmp_func(fthread, data, uri):
-        if data == None or len(data) < 2: return None
+        if data == None or len(data) < 2:
+             return None
         encoded_str = data.decode(charset).encode("utf-8")
         parser = etree.HTMLParser(encoding="utf-8")
         doc = pq(etree.fromstring(encoded_str, parser=parser))
-        if len(doc(container)) == 0: return None
+        if len(doc(container)) == 0:
+             return None
         elif bad_content != None and doc(container).text() == bad_content:
             return None
-        else: return doc(container).html()
+        else:
+             return doc(container).html()
     return tmp_func
 
 """
@@ -149,7 +156,8 @@ class CancelableThread(threading.Thread):
         self.daemon = True
 
     def progress(self):
-        if self._canceled: return "Sleeping..."
+        if self._canceled:
+             return "Sleeping..."
         return "Active..."
 
     def cancel(self): self._canceled = True
@@ -161,7 +169,8 @@ class CancelableThread(threading.Thread):
                 data = None
                 break
             chunk = response.read(chunk_size)
-            if not chunk: break
+            if not chunk:
+                 break
             data += chunk
             self._download_status = "Downloading... {: 6d} of {: 6d} KB".format(
                 int(len(data)/1000), int(total_size/1000)
@@ -185,12 +194,15 @@ class CancelableThread(threading.Thread):
                 else:
                     raise
             total_size = response.info()['Content-Length']
-            if total_size != None: total_size = int(total_size.strip())
-            else: total_size = 0
-            if total_size > 5*2**16:
+            if total_size != None:
+                 total_size = int(total_size.strip())
+            else:
+                 total_size = 0
+            if total_size > 5 * 2**16:
                 print("\nDownloading large file ({:.2f} MB)!".format(total_size/1000000.0))
                 data = self._chunk_download(response, total_size)
-            else: data = response.read()
+            else:
+                 data = response.read()
             return data
         except Exception as e:
             sleep_time = random.uniform(*self.sleep)

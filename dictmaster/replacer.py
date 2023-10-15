@@ -45,6 +45,12 @@ def doc_rewrap_els(doc, query, new_el, css=[], remove_empty=True,
         return replacement
     doc_replace_els(doc, query, fun)
 
+def doc_retag_els(doc, query, tag, css=[]):
+    for el in doc(query):
+        el.tag = tag
+        for s in css:
+            doc(el).css(*s)
+
 def doc_strip_els(doc, query, block=True, prefix=None, suffix=None):
     if prefix is None:
         prefix = " " if block else ""

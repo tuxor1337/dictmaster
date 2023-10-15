@@ -56,12 +56,10 @@ class BasePlugin(CancelableThread):
                     flag INTEGER
                 )
             ''');
-            c.execute('''
-                CREATE INDEX raw_uri_idx ON raw (uri)
-            ''')
-            c.execute('''
-                CREATE INDEX raw_data_idx ON raw (data)
-            ''')
+            for i, f in enumerate([1, 4, 5, 8, 9, 16, 17, 154]):
+                c.execute(f"CREATE INDEX raw_flag_{i}_idx ON raw (flag & {f})")
+            c.execute("CREATE INDEX raw_uri_idx ON raw (uri)")
+            c.execute("CREATE INDEX raw_data_idx ON raw (data)")
             c.execute('''
                 CREATE TABLE dict (
                     id INTEGER PRIMARY KEY,
@@ -77,9 +75,7 @@ class BasePlugin(CancelableThread):
                     syn TEXT
                 )
             ''');
-            c.execute('''
-                CREATE INDEX synonym_wid_idx ON synonyms (wid)
-            ''')
+            c.execute("CREATE INDEX synonym_wid_idx ON synonyms (wid)")
             c.execute('''
                 CREATE TABLE info (
                     id INTEGER PRIMARY KEY,
@@ -118,7 +114,8 @@ class BasePlugin(CancelableThread):
         self.setup()
 
     def progress(self):
-        if self.curr_stage == None: return "Setup..."
+        if self.curr_stage == None:
+             return "Setup..."
         return self.curr_stage.progress()
 
     def run(self):
@@ -132,15 +129,18 @@ class BasePlugin(CancelableThread):
         else:
             stages = [self.curr_stage]
         for s in stages:
-            if s is None: continue
+            if s is None:
+                 continue
             s.start()
             self.curr_stage = s
             s.join()
-            if self._canceled: break
+            if self._canceled:
+                 break
 
     def cancel(self):
         CancelableThread.cancel(self)
-        if self.curr_stage: self.curr_stage.cancel()
+        if self.curr_stage:
+             self.curr_stage.cancel()
 
     def optimize_data(self, enumerate=None):
         if enumerate is None:
@@ -150,8 +150,10 @@ class BasePlugin(CancelableThread):
 
         self.remove_empty()
         self.dupentries_remove()
-        if enumerate: self.dupidx_enumerate()
-        else: self.dupidx_cat()
+        if enumerate:
+             self.dupidx_enumerate()
+        else:
+             self.dupidx_cat()
         self.dupsyns_remove()
 
         self._conn.commit()
@@ -209,7 +211,8 @@ class BasePlugin(CancelableThread):
         lines = self._c.execute('''SELECT id, word FROM dict''')
         data = {}
         for entry in lines:
-            if entry[1] not in data: data[entry[1]] = []
+            if entry[1] not in data:
+                 data[entry[1]] = []
             data[entry[1]].append(entry[0])
         no = len(data.keys())
         for i,key in enumerate(data.keys()):
@@ -224,7 +227,7 @@ class BasePlugin(CancelableThread):
                     UPDATE dict
                     SET word=?
                     WHERE id=?
-                ''', [("%s(%d)" % (key,j+1),wid) for j,wid in enumerate(dups)])
+                ''', [("%s(%d)" % (key, j + 1), wid) for j, wid in enumerate(dups)])
 
     def dupidx_cat(self):
         """ Concatenate all dict entries for each term """

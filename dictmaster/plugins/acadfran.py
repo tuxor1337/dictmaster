@@ -102,9 +102,9 @@ class AcadfranFetcher(Fetcher):
             uri = int(uri)
             return "{}/affiche.exe?{};s={};d={};f={},t={},r={};".format(
                 BASE_URL,
-                120+uri/20,
+                120 + uri/20,
                 vars["sid"],
-                uri+1, uri+STEP_SIZE,
+                uri + 1, uri + STEP_SIZE,
                 vars["cnt"],
                 vars["r"]
             )

@@ -66,7 +66,7 @@ class DwbUrlFetcher(UrlFetcher):
 class DwbFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data, uri):
-            if data is None or data == "":
+            if data is None or len(data) == 0:
                 return None
             data = data.decode("utf-8")
             container = "div.col-md-7"
@@ -80,31 +80,96 @@ class DwbFetcher(Fetcher):
             return f"https://www.dwds.de/wb/dwb/{uri}"
 
 class DwbProcessor(HtmlContainerProcessor):
+    def do_pre_html(self, data):
+        # For performance reasons, we manipulate via regular expressions, and avoid
+        # DOM-manipulations if possible.
+        repl = []
+        for term in ["D", "versteck-"]:
+            if f'<a name="{term}"' in data:
+                repl.append((
+                    '<div class="dwb-head"><span class="dwb-form"/></div>',
+                    f'<div class="dwb-head"><span class="dwb-form">{term}</span></div>',
+                ))
+        repl += [
+            (' +title="zum Eintrag im DWB-Quellenverzeichnis"', " "),
+            (' +data-toggle="tooltip"', " "),
+            (' +data-placement="bottom"', " "),
+            ('<div class="dwb-sense-n"></div>', ""),
+            (r" *\n *", r" "),
+            (r'<i class="[^"]*bi-arrow-up-right[^"]*"/?>([^<]*</i>)?', ""),
+            (r'<span class="(?:&#10;)? *dwb-italics dwb-hi">([^<]*)</span>', r"<i>\1</i>"),
+            (r'<span class="(?:&#10;)? *dwb-title">([^<]*)</span>', r"<i>\1</i>"),
+            (
+                r'<span class="(?:&#10;)? *dwb-author"><a +href="[^"]*">([^<]*)</a></span>',
+                r'<span style="font-variant: small-caps">\1</span>',
+            ),
+            (
+                r'<span class="(?:&#10;)? *dwb-caps dwb-hi">([^<]*)</span>',
+                r'<span style="font-variant: small-caps">\1</span>',
+            ),
+            (r'<div class="dwb-sense-n">([^<]+)</div>', r"<b>\1</b>"),
+            (r'<a name="[^"]*"></a>', r""),
+            (r'<a href="/wb/dwb/([^"]+)">([^<]+)</a>', r'<a href="bword://\1">\2</a>'),
+        ]
+        for pattern, subst in repl:
+            data = re.sub(pattern, subst, data)
+
+        return data
+
     def do_html_term(self, doc):
-        return doc("div.dwb-head span.dwb-form").eq(0).text().rstrip(", ")
+        term = doc("div.dwb-head span.dwb-form").eq(0).text().rstrip(",) ").lstrip("(*— ")
+        if len(term) == 0:
+            term = self._curr_row["uri"]
+            print(f"\nWarning: Heading is missing for term {term}!")
+            return term
+        sup_nums = "¹²³⁴⁵⁶⁷⁸⁹"
+        if term[0] in sup_nums:
+            term = f"{term[1:]}({sup_nums.index(term[0]) + 1})"
+        else:
+            m = re.match(r"^([0-9]+)\) *(.+)", term)
+            if m is not None:
+                term = f"{m.group(2)}({m.group(1)})"
+            elif re.match(r"[A-Za-zúüäö-]", term[0]) is None:
+                print(term)
+        return term
 
     def do_html_alts(self, dt_html, doc, term):
-        return [term] + [
+        alts = [term] + [
             doc(elt).text().rstrip(", ")
             for elt in doc("div.dwb-head span.dwb-form")
         ]
+        alts += [a.replace("ú", "u") for a in alts]
+        return sorted(set(alts))
 
     def do_html_definition(self, dt_html, html, term):
         doc = pq(html)
-        doc = doc(doc("div.dwb-sense > div.dwb-sense-content").eq(0))
+
+        # other parts of the entry that we do not include
+        doc("p.label").remove()
+        doc("div.dwb-toc").remove()
+        doc("div.citation-help").remove()
 
         # italic style spans
         doc("i.bi-arrow-up-right").remove()
         doc_rewrap_els(doc, "span.dwb-italics", "<i/>")
 
-        # paragraphs for alternative meanings
+        # paragraphs for alternative meanings and subordinate lemmas (e.g. composita)
         doc_rewrap_els(doc, "div.dwb-sense-n", "<b/>")
-        doc_strip_els(doc, "div.dwb-sense > div.dwb-sense-content", block=False)
-        doc_strip_els(doc, "div.dwb-sense:first-child", block=False)
-        doc_rewrap_els(doc, "div.dwb-sense", "<div/>")
+        doc_strip_els(
+            doc, "div.dwb-sense-content > div.dwb-sense:first-child", block=False,
+        )
+
+        # heading and subheadings (.dwb-re, i.e. subordinate lemmas)
+        doc("div.dwb-head > a").remove()
+        doc_retag_els(
+            doc, "div.dwb-re span.dwb-form", "b",
+            css=[("font-variant", "small-caps")],
+        )
+        doc_retag_els(doc, "span.dwb-form", "b")
 
         # author names for sources/quotes
         doc_strip_els(doc, "span.dwb-author a", block=False)
+        doc_rewrap_els(doc, "span.dwb-caps", "<span/>", css=[("font-variant", "small-caps")])
         doc_rewrap_els(doc, "span.dwb-author", "<span/>", css=[("font-variant", "small-caps")])
 
         # links to related articles
@@ -112,15 +177,15 @@ class DwbProcessor(HtmlContainerProcessor):
         doc_replace_attr_re(doc, "a", "href", regex)
 
         # blockquotes
-        doc_rewrap_els(doc, "div.dwb-cit > div.dwb-bibl", "<p/>", css=[
+        doc_retag_els(doc, "div.dwb-cit > div.dwb-bibl", "p", css=[
             ("font-style", "normal"),
             ("font-size", "x-small"),
             ("text-align", "right"),
         ])
-        doc_rewrap_els(doc, "div.dwb-cit", "<blockquote/>")
+        doc_retag_els(doc, "div.dwb-cit", "blockquote")
 
         # cleanup
         doc("*").removeAttr("class")
         doc("*").removeAttr("title")
 
-        return f"<b>{term},</b> {doc.html().strip()}"
+        return doc.html().strip()

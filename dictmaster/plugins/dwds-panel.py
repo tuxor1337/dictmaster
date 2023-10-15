@@ -64,7 +64,8 @@ class Plugin(BasePlugin):
 class DWDSFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data, uri):
-            if data == None or len(data) < 2: return None
+            if data == None or len(data) < 2:
+                 return None
             data = data.decode("utf-8")
             if '<div id="ddc_panel_' not in data \
             or '<p style="text-align: center;">Kein Eintrag vorhanden</p>' in data:
@@ -114,7 +115,8 @@ class DWDSProcessor(HtmlContainerProcessor):
         for r in regex: alts = [re.sub(r[0],r[1],a) for a in alts]
         for a in alts+[term]:
             m = re.search(r"^(.*)\([0-9]+\)$", a)
-            if m != None: alts.extend([m.group(1),m.group(1).lower()])
+            if m != None:
+                 alts.extend([m.group(1),m.group(1).lower()])
         return alts
 
     def do_html_definition_147(self, dt_html, html, term):
@@ -150,7 +152,8 @@ class DWDSProcessor(HtmlContainerProcessor):
             old_html = doc.html()
             for el in doc("div,span,p"):
                 txt = doc(el).text().strip()
-                if txt in ["","Aussprache"]: doc(el).remove()
+                if txt in ["","Aussprache"]:
+                     doc(el).remove()
 
         # Only preserve "related words" section if it's the only section
         if doc("div.wb_zone_v").prevAll().text().strip() != "":
@@ -164,7 +167,8 @@ class DWDSProcessor(HtmlContainerProcessor):
     def do_html_definition_148(self, html, term):
         doc = pq(html)("div.wb_container_zone_s")
         for a in doc("a"):
-            if doc(a).text().strip() == "": doc(a).replaceWith(doc(a).text())
+            if doc(a).text().strip() == "":
+                 doc(a).replaceWith(doc(a).text())
             else:
                 href = "bword://%s" % doc(a).text().strip(". ").lower()
                 doc(a).attr("href", href)

@@ -72,10 +72,14 @@ class gui_main(object):
 
         self.win = builder.get_object("window1")
         screen = Gdk.Screen.get_default()
-        self.geometry   = (screen.width()/640.0,screen.height()/480.0,\
-                           int(screen.width()*0.5),int(screen.height()*0.5))
-        width = int(600.0*max(1,self.geometry[0]))
-        height = int(400.0*max(1,self.geometry[1]))
+        self.geometry = (
+            screen.width() / 640.0,
+            screen.height() / 480.0,
+            int(screen.width() * 0.5),
+            int(screen.height() * 0.5),
+        )
+        width = int(600.0 * max(1, self.geometry[0]))
+        height = int(400.0 * max(1, self.geometry[1]))
         self.win.set_size_request(width, height)
 
         self.views = {
@@ -90,7 +94,7 @@ class gui_main(object):
         self.db_labels = [
             [builder.get_object("lb_db_%s" % k),
              builder.get_object("lb_db_%s_val" % k)]
-            for k in ["id","key","flag"]
+            for k in ["id", "key", "flag"]
         ]
         self.db_dataview = builder.get_object("dataview")
         self.db_rawview = builder.get_object("rawview")
@@ -111,7 +115,7 @@ class gui_main(object):
 
         self.cb_plugins = builder.get_object("cb_plugins")
         for i,p in enumerate(PLUGINS):
-            self.cb_plugins.append(str(i+1), p)
+            self.cb_plugins.append(str(i + 1), p)
 
         self.console = builder.get_object("console")
         self.console_last = ""
@@ -147,7 +151,8 @@ class gui_main(object):
     def bt_runstage_clicked_cb(self, widget, data=None):
         i = self.cb_stages.get_active()
         if i != 0:
-            if self.plugin.stages[STAGES[i-1]] is None: return
+            if self.plugin.stages[STAGES[i-1]] is None:
+                 return
             self.plugin.curr_stage = self.plugin.stages[STAGES[i-1]]
         self.views["progress"].show()
         self.views["config"].hide()
@@ -163,7 +168,8 @@ class gui_main(object):
 
     def bt_resetstage_clicked_cb(self, widget, data=None):
         i = self.cb_stages.get_active()
-        if i == 0: # reset all
+        if i == 0:
+             # reset all
             self.plugin.reset()
         elif self.plugin.stages[STAGES[i-1]] is not None:
             self.plugin.stages[STAGES[i-1]].reset()
@@ -213,7 +219,8 @@ class gui_main(object):
             self.db_htmlscrolled.show()
 
     def db_select_cb(self, sel, data=None):
-        if self.db_changing: return
+        if self.db_changing:
+             return
         i = self.db_cb_tables.get_active()
         rows = sel.get_selected_rows()
         if len(rows[1]) > 0:

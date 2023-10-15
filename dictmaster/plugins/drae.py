@@ -62,17 +62,20 @@ class Plugin(BasePlugin):
 class DraeFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data, curr_word):
-            if data == None or len(data) < 2: return None
+            if data == None or len(data) < 2:
+                 return None
             data = data.decode("utf-8")
             cont = "div#a0 > article"
             parser = etree.HTMLParser(encoding="utf-8")
             doc = pq(etree.fromstring(data, parser=parser))
             url = ""
             if len(doc(cont)) == 0:
-                if len(doc("ul")) == 0: return None
+                if len(doc("ul")) == 0:
+                     return None
                 for a in doc("li a"):
                     curr = remove_accents(unquote(curr_word)).lower()
-                    if len(curr) > 2: curr = curr.rstrip("s")
+                    if len(curr) > 2:
+                         curr = curr.rstrip("s")
                     if curr in remove_accents(doc(a).text().lower()):
                         url = "%s/%s" % (BASE_URL, doc(a).attr("href"))
             elif len(doc("img[alt='Ver artículo enmendado']")) > 0:
@@ -83,7 +86,8 @@ class DraeFetcher(Fetcher):
             if url != "":
                 data = self.download_retry(url, self.postdata)
                 return self.filter_data(data, curr_word)
-            else: return None
+            else:
+                 return None
 
         def parse_uri(self, uri):
             return "%s/search?w=%s&m=form" % (BASE_URL, uri)

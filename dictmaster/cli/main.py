@@ -33,7 +33,8 @@ def cli_main():
     args = parser.parse_args()
 
     plugin = load_plugin(args.plugin, popts=args.popts, dirname=args.output)
-    if plugin == None: sys.exit("Plugin not found or plugin broken.")
+    if plugin == None:
+         sys.exit("Plugin not found or plugin broken.")
     plugin.force_process = args.force_process
 
     if args.reset:

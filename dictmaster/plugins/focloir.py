@@ -67,8 +67,10 @@ class FocloirFetcher(Fetcher):
                 return None
             container = "div.exacts"
             doc = pq(data)
-            if len(doc(container)) == 0: return None
-            else: return doc(container).html()
+            if len(doc(container)) == 0:
+                 return None
+            else:
+                 return doc(container).html()
 
         def parse_uri(self, uri):
             return "https://www.teanglann.ie/en/fgb/%s"%uri

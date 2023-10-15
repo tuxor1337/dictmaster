@@ -357,7 +357,7 @@ class FactbookProcessor(HtmlABProcessor):
         idx = data.rfind("<!DOCTYPE html>")
         if idx > 0:
             end = data.find("</html>")
-            data = data[idx:end+len("</html>")]
+            data = data[idx:end + len("</html>")]
         return data
 
     def do_html(self, doc):

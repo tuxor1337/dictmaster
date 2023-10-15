@@ -91,7 +91,8 @@ class ZenoUrlFetcher(UrlFetcher):
         def filter_data(self, data, uri):
             d = pq(data)
             hitlist = d("span.zenoSRHitTitle")
-            if len(hitlist) == 0: return []
+            if len(hitlist) == 0:
+                 return []
             links = [d(hit).find("a").attr("href") for hit in hitlist]
             return [uri for uri in links if "/A/" in uri]
 
@@ -109,7 +110,8 @@ class ZenoFetcher(Fetcher):
             return ZENO_URL + uri
 
         def filter_data(self, data, uri):
-            if data == None: return None
+            if data == None:
+                 return None
             container = "div.zenoCOMain"
             data = data.decode("iso-8859-1")
             data = data.replace("<b/>", "")

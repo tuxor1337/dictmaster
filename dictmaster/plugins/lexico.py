@@ -83,8 +83,10 @@ class LexicoFetcher(Fetcher):
             doc("div.socials").remove()
             doc("a.speaker").remove()
             doc("a:empty").remove()
-            if len(doc(container)) == 0: return None
-            else: return doc(container).html()
+            if len(doc(container)) == 0:
+                 return None
+            else:
+                 return doc(container).html()
 
         def parse_uri(self, uri):
             return f"https://www.lexico.com/definition/{uri}"

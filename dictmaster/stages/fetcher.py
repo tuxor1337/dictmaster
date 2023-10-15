@@ -53,7 +53,8 @@ class FetcherThread(CancelableThread):
 
     def fetch_uri(self, rawid, uri):
         data = self.download_retry(self.parse_uri(uri), self.postdata)
-        if self._canceled: return
+        if self._canceled:
+             return
         data = self.filter_data(data, uri)
         self._queue.put((rawid, uri, data, self._flag))
         self._i += 1
@@ -72,9 +73,11 @@ class FetcherThread(CancelableThread):
                     sleep_time -= 1
 
     def progress(self):
-        if self._download_status != "": return self._download_status
-        if self._canceled: return ""
-        return 100*self._i/float(len(self.uris))
+        if self._download_status != "":
+             return self._download_status
+        if self._canceled:
+             return ""
+        return 100 * self._i / float(len(self.uris))
 
 class Fetcher(CancelableThread):
     class FetcherThread(FetcherThread): pass
@@ -95,7 +98,7 @@ class Fetcher(CancelableThread):
         **kwargs
     ):
         super().__init__(**kwargs)
-        self._subthreads = [None]*threadcnt
+        self._subthreads = [None] * threadcnt
         self.pause = pause
         self.plugin = plugin
         self.postdata = postdata
@@ -119,13 +122,15 @@ class Fetcher(CancelableThread):
             )
 
     def progress(self):
-        if None in self._subthreads: return "Initializing threads..."
-        if self._canceled: return self._queue.progress()
+        if None in self._subthreads:
+             return "Initializing threads..."
+        if self._canceled:
+             return self._queue.progress()
         prog = "Fetching... "
         sub_p = [s.progress() for s in self._subthreads]
         if all(type(p) == float for p in sub_p):
-            percentage = 100*self._fetched
-            percentage += (1-self._fetched)*float(sum(sub_p))/len(sub_p)
+            percentage = 100 * self._fetched
+            percentage += (1 - self._fetched) * float(sum(sub_p)) / len(sub_p)
             prog += "{:.2f}%".format(percentage)
         elif any(type(p) == str and p[:11] == "Downloading" for p in sub_p):
             for p in sub_p:
@@ -133,35 +138,38 @@ class Fetcher(CancelableThread):
                     prog = p
                     break
         else:
-            for i,p in enumerate(sub_p):
+            for i, p in enumerate(sub_p):
                 prog += "{}:{} ".format(i, p[:13])
         return prog
 
     def get_unfetched_uris(self):
         conn = sqlite3.connect(self.plugin.output_db)
         curs = conn.cursor()
-        n_fetched = curs.execute('''
-            SELECT COUNT(*) FROM raw WHERE flag & :0 == :0
-        ''', [FLAGS["FETCHED"] | self._flag]).fetchone()[0]
-        uris = curs.execute('''
+        flag_fetched = FLAGS["FETCHED"] | self._flag
+        n_fetched = curs.execute(
+            f"SELECT COUNT(*) FROM raw WHERE flag & {flag_fetched:d} == {flag_fetched:d}"
+        ).fetchone()[0]
+        uris = curs.execute(f'''
             SELECT id, uri FROM raw
-            WHERE flag & ? == 0
-            AND flag & ? > 0
-        ''', (FLAGS["FETCHED"], self._flag)).fetchall()
+            WHERE flag & {FLAGS["FETCHED"]:d} == 0
+            AND flag & {self._flag:d} > 0
+        ''').fetchall()
         conn.close()
         return n_fetched, uris
 
     def run(self):
         self._fetched, uris = self.get_unfetched_uris()
         self._fetched = float(self._fetched) / (len(uris) + self._fetched)
-        if self._canceled or len(uris) == 0: return
+        if self._canceled or len(uris) == 0:
+             return
         self.init_subthreads(uris)
         self._queue.start()
         [s.start() for s in self._subthreads]
         [s.join() for s in self._subthreads]
         self._queue.cancel()
         self._queue.join()
-        if self._canceled: return
+        if self._canceled:
+             return
         # restart in case some uris couldn't be fetched due to problems
         self.run()
 
@@ -184,7 +192,8 @@ class ZipFetcher(Fetcher):
     class FetcherThread(FetcherThread):
         def fetch_uri(self, rawid, uri):
             data = self.download_retry(self.parse_uri(uri), self.postdata)
-            if self._canceled: return
+            if self._canceled:
+                 return
             path = self.to_file(data)
             self._queue.put((rawid, uri, path, self._flag))
             self._i += 1

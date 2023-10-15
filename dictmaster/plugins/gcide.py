@@ -597,9 +597,10 @@ class GcideProcessor(HtmlContainerProcessor):
         alts = self.do_html_alts(dd, term)
         definition = self.do_html_definition(dd, term)
         if not term.strip():
-            if self._last_container == None: return
+            if self._last_container == None:
+                 return
             term, olddef, oldalts = self._last_container
-            definition = olddef+self.do_html_definition(dd, term)
+            definition = olddef + self.do_html_definition(dd, term)
             alts.extend(oldalts)
         elif self._last_container != None:
             Processor.append(self, *self._last_container)

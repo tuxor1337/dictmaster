@@ -66,7 +66,8 @@ class Plugin(BasePlugin):
 class DWDSFetcher(Fetcher):
     class FetcherThread(Fetcher.FetcherThread):
         def filter_data(self, data, uri):
-            if data == None or len(data) < 2: return None
+            if data == None or len(data) < 2:
+                 return None
             data = data.decode("utf-8")
             if (
                 '<h1 class="dwdswb-ft-lemmaansatz' not in data
@@ -203,7 +204,8 @@ class DWDSProcessor(HtmlContainerProcessor):
             old_html = doc.html()
             for el in doc("div,span"):
                 txt = doc(el).text().strip()
-                if txt in ["","Aussprache"]: doc(el).remove()
+                if txt in ["","Aussprache"]:
+                     doc(el).remove()
 
         doc("*").removeAttr("class").removeAttr("id") \
                 .removeAttr("onclick").removeAttr("data-id")
@@ -220,7 +222,8 @@ class DWDSProcessor(HtmlContainerProcessor):
 
     def do_html_definition_2(self, html, term):
         doc = pq(html)("h2#etymwb > div")
-        if len(doc) == 0: return ""
+        if len(doc) == 0:
+             return ""
         doc = doc.eq(0)
         doc_rewrap_els(doc, "div.etymwb-entry", "<p/>")
         doc("div").remove()
